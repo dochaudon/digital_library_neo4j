@@ -1,0 +1,64 @@
+{% extends "library/layouts/base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/books/book.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="books-wrapper">
+
+        <div class="books-header">
+            <h2>📚 Danh sách Sách</h2>
+        </div>
+
+        <div class="books-list">
+
+            {% for b in books %}
+            <div class="book-item">
+
+                <div class="book-img">
+                    <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png">
+                </div>
+
+                <div class="book-content">
+
+                    <a href="{{ url_for('main.book_detail', id=b.id) }}" 
+                       class="book-title"
+                       title="{{ b.title }}">
+                        {{ b.title }}
+                    </a>
+
+                    <p class="book-author">
+                        👨‍🏫 {{ b.authors | join(', ') }}
+                    </p>
+
+                    <p class="book-publisher">
+                        🏢 {{ b.publisher or 'N/A' }}
+                    </p>
+
+                    <div class="book-footer">
+                        <span>📅 {{ b.year }}</span>
+                        <span class="isbn">ISBN: {{ b.isbn }}</span>
+                    </div>
+
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    {% include 'library/components/pagination.html' %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/book.js') }}"></script>
+{% endblock %}

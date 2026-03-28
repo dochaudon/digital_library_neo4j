@@ -1,0 +1,132 @@
+/* =========================
+   CONTAINER
+========================= */
+.form-container {
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    max-width: 800px;
+    margin: auto;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* =========================
+   HEADER
+========================= */
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.form-header h2 {
+    margin: 0;
+}
+
+/* =========================
+   GRID
+========================= */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+/* FULL WIDTH */
+.form-group.full {
+    grid-column: span 2;
+}
+
+/* =========================
+   FORM GROUP
+========================= */
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+/* REQUIRED */
+.required {
+    color: red;
+}
+
+/* =========================
+   INPUT / TEXTAREA
+========================= */
+.form-group input,
+.form-group textarea {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+/* FOCUS */
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #273c75;
+    outline: none;
+}
+
+/* =========================
+   TEXTAREA
+========================= */
+.form-group textarea {
+    resize: vertical;
+}
+
+/* =========================
+   ACTIONS
+========================= */
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+/* =========================
+   BUTTON
+========================= */
+.btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* SAVE */
+.btn-save {
+    background: #44bd32;
+}
+
+.btn-save:hover {
+    background: #3aa62b;
+}
+
+/* CANCEL */
+.btn-cancel {
+    background: #e84118;
+}
+
+.btn-cancel:hover {
+    background: #c23616;
+}
+
+/* BACK */
+.btn-back {
+    background: #718093;
+}
+
+.btn-back:hover {
+    background: #57606f;
+}

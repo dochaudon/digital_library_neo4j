@@ -1,0 +1,105 @@
+{% extends "library/layouts/base.html" %}
+
+{% block title %}Trang chủ{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/index.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero-section">
+    <div class="container">
+
+        <h1>Tìm kiếm tài liệu</h1>
+        <p>Khám phá sách, bài báo, luận văn trong thư viện số.</p>
+
+        <!-- SEARCH WRAPPER -->
+        <div class="search-wrapper">
+
+            <form action="{{ url_for('main.search') }}" method="get" class="hero-search">
+                <input 
+                    type="text" 
+                    name="query" 
+                    id="search-input"
+                    placeholder="Tìm sách, bài báo, luận văn..."
+                    autocomplete="off"
+                >
+                <button type="submit">Tìm kiếm</button>
+            </form>
+
+            <!-- DROPDOWN -->
+            <div id="suggest-box" class="suggest-box"></div>
+
+        </div>
+
+        <!-- GỢI Ý -->
+        <div class="search-suggestions">
+            <span>bài báo của đại học kinh tế quốc dân</span>
+            <span>luận văn năm 2025</span>
+            <span>sách năm 2013</span>
+        </div>
+
+    </div>
+</section>
+
+<!-- MAIN -->
+<section class="section full-width-section">
+
+    <div class="container">
+
+        <!-- HEADER -->
+        <div class="library-header">
+            <div class="left-title">Bộ lọc</div>
+            <div class="right-title">Tài liệu mới nhất</div>
+        </div>
+
+        <!-- BODY -->
+        <div class="library-body">
+
+            <!-- SIDEBAR -->
+            <aside class="sidebar-box">
+
+                <div class="filter-box">
+                    <p><strong>Loại tài liệu</strong></p>
+                    <ul>
+                        <li>Sách</li>
+                        <li>Bài báo</li>
+                        <li>Luận văn</li>
+                    </ul>
+                </div>
+
+                <div class="filter-box">
+                    <p><strong>Từ khóa</strong></p>
+                    <ul>
+                        <li>AI</li>
+                        <li>Data</li>
+                        <li>Web</li>
+                    </ul>
+                </div>
+
+            </aside>
+
+            <!-- CONTENT -->
+            <div class="content-box">
+
+                <div class="document-grid">
+                    {% for doc in documents %}
+                        {% include 'library/partials/document_card.html' %}
+                    {% endfor %}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}

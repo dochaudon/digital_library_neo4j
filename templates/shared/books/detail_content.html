@@ -1,0 +1,226 @@
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <a class="doc-type-link" href="{{ url_for('main.books_page') }}">
+            📘 Sách
+        </a>
+    </div>
+
+    <div class="detail-layout">
+
+        <!-- LEFT -->
+        <div class="left-panel">
+            <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" 
+                 class="pdf-image" 
+                 alt="PDF">
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right-panel">
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event, 'desc')">Mô tả</button>
+                <button class="tab-btn" onclick="openTab(event, 'author')">Tác giả</button>
+                <button class="tab-btn" onclick="openTab(event, 'pdf')">Tài liệu số</button>
+            </div>
+
+            <!-- ===================== -->
+            <!-- DESC -->
+            <!-- ===================== -->
+            <div id="desc" class="tab-content active">
+                <table class="doc-table">
+
+                    <tr>
+                        <td>Nhan đề</td>
+                        <td>{{ book.title or 'N/A' }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>ISBN</td>
+                        <td>{{ book.isbn or 'N/A' }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>Năm</td>
+                        <td>{{ book.year or 'N/A' }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>Nhà xuất bản</td>
+                        <td>{{ book.publisher or 'N/A' }}</td>
+                    </tr>
+
+                    <tr>
+                        <td>Số trang</td>
+                        <td>{{ book.pages or 'N/A' }}</td>
+                    </tr>
+
+                    <!-- LANGUAGE -->
+                    <tr>
+                        <td>Ngôn ngữ</td>
+                        <td>
+                            {% if book.languages and book.languages|length > 0 %}
+                                {{ book.languages | join(', ') }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- TOPICS -->
+                    <tr>
+                        <td>Chủ đề</td>
+                        <td>
+                            {% if book.topics and book.topics|length > 0 %}
+                                {% for t in book.topics %}
+                                    <a href="{{ url_for('main.search', query=t) }}">{{ t }}</a>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- KEYWORDS -->
+                    <tr>
+                        <td>Từ khóa</td>
+                        <td>
+                            {% if book.keywords and book.keywords|length > 0 %}
+                                {% for k in book.keywords %}
+                                    <a href="{{ url_for('main.search', query=k) }}">{{ k }}</a>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                </table>
+            </div>
+
+            <!-- ===================== -->
+            <!-- AUTHOR -->
+            <!-- ===================== -->
+            <div id="author" class="tab-content">
+
+                {% if book.authors_info and book.authors_info|length > 0 %}
+
+                <table class="author-table">
+                    <tr>
+                        <th>Tên</th>
+                        <th>Đơn vị</th>
+                        <th>Quốc gia</th>
+                    </tr>
+
+                    {% for a in book.authors_info %}
+                    <tr>
+                        <td>
+                            {% if a.name %}
+                                <a href="{{ url_for('main.search', query=a.name) }}">{{ a.name }}</a>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ a.affiliation or 'N/A' }}</td>
+                        <td>{{ a.country or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+
+                {% else %}
+                    <div class="empty-box">Chưa có thông tin tác giả.</div>
+                {% endif %}
+
+            </div>
+
+            <!-- ===================== -->
+            <!-- PDF -->
+            <!-- ===================== -->
+            <div id="pdf" class="tab-content">
+
+                {% if book.file_url %}
+
+                <div class="pdf-actions">
+                    <button class="pdf-btn" onclick="togglePdfViewer()">Xem PDF</button>
+                    <a href="{{ book.file_url }}" target="_blank" class="pdf-link">
+                        Mở tab mới
+                    </a>
+                </div>
+
+                <div id="pdf-viewer" class="pdf-viewer hidden">
+                    <iframe src="{{ book.file_url }}"></iframe>
+                </div>
+
+                {% else %}
+                    <div class="empty-box">Chưa có tài liệu số.</div>
+                {% endif %}
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===================== -->
+    <!-- ABSTRACT -->
+    <!-- ===================== -->
+    <div class="section-card">
+        <h3>📄 Tóm tắt</h3>
+        <p class="abstract-text">
+            {{ book.abstract or "Chưa có mô tả" }}
+        </p>
+    </div>
+
+    <!-- ===================== -->
+    <!-- GRAPH -->
+    <!-- ===================== -->
+    <div class="section-card">
+        <h3>🔗 Đồ thị tri thức</h3>
+
+        <!-- TOOLBAR -->
+        <div class="graph-toolbar">
+
+            <!-- LEGEND -->
+            <div class="graph-legend">
+
+                <span class="legend-item">
+                    <span class="legend-swatch book"></span> Sách
+                </span>
+
+                <span class="legend-item">
+                    <span class="legend-swatch author"></span> Tác giả
+                </span>
+
+                <span class="legend-item">
+                    <span class="legend-swatch topic"></span> Chủ đề
+                </span>
+
+                <span class="legend-item">
+                    <span class="legend-swatch keyword"></span> Từ khóa
+                </span>
+
+                <span class="legend-item">
+                    <span class="legend-swatch publisher"></span> NXB
+                </span>
+
+                <span class="legend-item">
+                    <span class="legend-swatch language"></span> Ngôn ngữ
+                </span>
+
+                <span class="legend-item">
+                    <span class="legend-swatch related"></span> Liên quan
+                </span>
+
+            </div>
+        </div>
+
+        <!-- GRAPH -->
+        <div id="graph"></div>
+
+        <div class="graph-note">
+            Click vào node để tìm kiếm hoặc mở tài liệu liên quan.
+        </div>
+    </div>
+
+</div>

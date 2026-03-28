@@ -1,0 +1,81 @@
+/* ===== RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ===== BODY ===== */
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    line-height: 1.5;
+}
+
+/* ===== CONTAINER ===== */
+.container {
+    width: 90%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ===== MAIN ===== */
+.main-content {
+    min-height: 70vh;
+    padding: 20px 0;
+}
+
+/* ===== LINKS ===== */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ===== LIST ===== */
+ul {
+    list-style: none;
+}
+
+/* ===== BUTTON ===== */
+button {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+}
+
+/* ===== INPUT ===== */
+input {
+    font-family: inherit;
+    outline: none;
+}
+
+/* ===== IMAGE ===== */
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* ===== TEXT UTIL ===== */
+.text-center {
+    text-align: center;
+}
+
+/* ===== SPACING UTIL ===== */
+.mt-10 { margin-top: 10px; }
+.mt-20 { margin-top: 20px; }
+.mb-10 { margin-bottom: 10px; }
+.mb-20 { margin-bottom: 20px; }
+
+/* ===== CARD BASE ===== */
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+}
+
+/* ===== SHADOW ===== */
+.shadow {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}

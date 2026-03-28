@@ -1,0 +1,27 @@
+<div class="book-card">
+    <a href="{{ url_for('main.document_detail', id=book.id) }}" class="book-card-link">
+
+        <div class="book-card-body">
+
+            <h3 class="book-card-title">
+                {{ book.title }}
+            </h3>
+
+            <p class="book-card-authors">
+                {{ book.authors | default('Chưa cập nhật') }}
+            </p>
+
+            <p class="book-card-meta">
+                {{ book.type or 'Document' }} • {{ book.year or 'N/A' }}
+            </p>
+
+            {% if book.abstract %}
+            <p class="book-card-abstract">
+                {{ book.abstract[:150] }}...
+            </p>
+            {% endif %}
+
+        </div>
+
+    </a>
+</div>

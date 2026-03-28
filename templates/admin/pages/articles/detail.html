@@ -1,0 +1,16 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+
+<h2>📰 Chi tiết bài báo</h2>
+
+<p><b>Tiêu đề:</b> {{ article.title }}</p>
+<p><b>Năm:</b> {{ article.year }}</p>
+<p><b>DOI:</b> {{ article.doi }}</p>
+<p><b>Tạp chí:</b> {{ article.journal }}</p>
+
+<p>{{ article.abstract }}</p>
+
+<a href="/admin/articles/edit/{{ article.id }}" class="btn btn-edit">Edit</a>
+
+{% endblock %}

@@ -1,0 +1,50 @@
+.site-header {
+    width: 100%;
+    background: #0d3b66;
+    color: white;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* hàng trên */
+.header-inner {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+}
+
+/* logo */
+.brand {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+    color: white;
+}
+
+.brand-icon {
+    margin-right: 6px;
+}
+
+/* 🔥 đẩy sang phải */
+.header-right {
+    margin-left: auto;
+    display: flex;
+    gap: 15px;
+}
+
+/* link */
+.auth-link,
+.admin-link {
+    color: white;
+    text-decoration: none;
+}
+
+.auth-link:hover,
+.admin-link:hover {
+    text-decoration: underline;
+}

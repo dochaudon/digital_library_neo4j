@@ -1,0 +1,120 @@
+{% extends "library/layouts/base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/results.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <!-- SEARCH BAR -->
+    <form action="{{ url_for('main.search') }}" method="get" class="search-bar">
+        <input type="text" name="query" value="{{ query }}" placeholder="Tìm kiếm...">
+        <button>Tìm kiếm</button>
+    </form>
+
+    <div class="results-layout">
+
+        <!-- ===== FILTER SIDEBAR ===== -->
+        <aside class="filter-container">
+
+            <h3>🔎 Bộ lọc</h3>
+
+            <!-- TYPE (giữ lại nếu bạn vẫn muốn UI, không dùng backend) -->
+            <div class="filter-group">
+                <p><strong>Loại tài liệu</strong></p>
+                <label><input type="checkbox" value="Book" class="filter-type"> Sách</label>
+                <label><input type="checkbox" value="Article" class="filter-type"> Bài báo</label>
+                <label><input type="checkbox" value="Thesis" class="filter-type"> Luận văn</label>
+            </div>
+
+            <!-- SORT -->
+            <div class="filter-group">
+                <p><strong>Sắp xếp</strong></p>
+                <select id="sort-select">
+                    <option value="">Mặc định</option>
+                    <option value="year_desc">Năm ↓</option>
+                    <option value="year_asc">Năm ↑</option>
+                    <option value="az">A → Z</option>
+                    <option value="za">Z → A</option>
+                </select>
+            </div>
+
+        </aside>
+
+        <!-- ===== RESULTS ===== -->
+        <div class="results-container">
+
+            <h2>Kết quả cho: "{{ query }}"</h2>
+
+            <div id="results-list">
+
+                {% for doc in results %}
+                <div class="result-card"
+                     data-type="{{ doc.type }}"
+                     data-year="{{ doc.year }}"
+                     data-title="{{ doc.title }}">
+
+                    <div class="result-icon">📄</div>
+
+                    <div class="result-content">
+
+                        <!-- TYPE -->
+                        <span class="result-type">
+                            {% if doc.type == "Book" %}📘 Sách
+                            {% elif doc.type == "Article" %}📰 Bài báo
+                            {% elif doc.type == "Thesis" %}🎓 Luận văn
+                            {% endif %}
+                        </span>
+
+                        <!-- TITLE -->
+                        <a class="result-title"
+                           href="{% if doc.type == 'Book' %}
+                                    {{ url_for('main.book_detail', id=doc.id) }}
+                                 {% elif doc.type == 'Article' %}
+                                    {{ url_for('main.article_detail', id=doc.id) }}
+                                 {% else %}
+                                    {{ url_for('main.thesis_detail', id=doc.id) }}
+                                 {% endif %}">
+                            {{ doc.title }}
+                        </a>
+
+                        <!-- META -->
+                        <p class="result-meta">
+                            {% if doc.authors %}
+                                {{ doc.authors | join(', ') }}
+                            {% elif doc.publisher %}
+                                {{ doc.publisher }}
+                            {% elif doc.university %}
+                                {{ doc.university }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+
+                        <p class="result-year">📅 {{ doc.year or 'N/A' }}</p>
+
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </div>
+
+            <!-- ===== PAGINATION (🔥 THÊM Ở ĐÂY) ===== -->
+            <div class="mt-20">
+                {% include 'library/components/pagination.html' %}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/results.js') }}"></script>
+{% endblock %}

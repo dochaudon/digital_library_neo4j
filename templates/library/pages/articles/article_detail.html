@@ -1,0 +1,144 @@
+{% extends "library/layouts/base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/articles/article_detail.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <div class="doc-header">
+        <a class="doc-type-link" href="{{ url_for('main.articles_page') }}">
+            📰 Bài báo
+        </a>
+    </div>
+
+    <div class="detail-layout">
+
+        <div class="left-panel">
+            <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" class="pdf-image">
+        </div>
+
+        <div class="right-panel">
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event,'desc')">Mô tả</button>
+                <button class="tab-btn" onclick="openTab(event,'author')">Tác giả</button>
+                <button class="tab-btn" onclick="openTab(event,'pdf')">Tài liệu số</button>
+            </div>
+
+            <!-- DESC -->
+            <div id="desc" class="tab-content active">
+                <table class="doc-table">
+                    <tr><td>Nhan đề</td><td>{{ article.title }}</td></tr>
+                    <tr><td>Tạp chí</td><td>{{ article.journal or 'N/A' }}</td></tr>
+                    <tr><td>DOI</td><td>{{ article.doi or 'N/A' }}</td></tr>
+                    <tr><td>Năm</td><td>{{ article.year or 'N/A' }}</td></tr>
+
+                    <tr>
+                        <td>Chủ đề</td>
+                        <td>
+                            {% for t in article.topics or [] %}
+                                <a href="{{ url_for('main.search', query=t) }}">{{ t }}</a>{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>Từ khóa</td>
+                        <td>
+                            {% for k in article.keywords or [] %}
+                                <a href="{{ url_for('main.search', query=k) }}">{{ k }}</a>{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- AUTHOR -->
+            <div id="author" class="tab-content">
+                {% if article.authors_info %}
+                <table class="author-table">
+                    <tr>
+                        <th>Tên</th>
+                        <th>Đơn vị</th>
+                        <th>Quốc gia</th>
+                        <th>Email</th>
+                    </tr>
+                    {% for a in article.authors_info %}
+                    <tr>
+                        <td><a href="/search?author={{ a.name }}">{{ a.name }}</a></td>
+                        <td>{{ a.affiliation or 'N/A' }}</td>
+                        <td>{{ a.country or 'N/A' }}</td>
+                        <td>{{ a.email or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                    <div class="empty-box">Chưa có tác giả</div>
+                {% endif %}
+            </div>
+
+            <!-- PDF -->
+            <div id="pdf" class="tab-content">
+                {% if article.file_url %}
+                <div class="pdf-actions">
+                    <button class="pdf-btn" onclick="togglePdfViewer()">Xem PDF</button>
+                    <a class="pdf-link" href="{{ article.file_url }}" target="_blank">Mở tab mới</a>
+                </div>
+
+                <div id="pdf-viewer" class="pdf-viewer hidden">
+                    <iframe src="{{ article.file_url }}"></iframe>
+                </div>
+                {% else %}
+                    <div class="empty-box">Chưa có tài liệu</div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ABSTRACT -->
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">📄</span>
+            <h3>Tóm tắt</h3>
+        </div>
+        <p class="abstract-text">{{ article.abstract }}</p>
+    </div>
+
+    <!-- GRAPH -->
+    <div class="section-card">
+        <div class="section-title">
+            <span class="section-icon">🔗</span>
+            <h3>Đồ thị tri thức</h3>
+        </div>
+
+        <div class="graph-toolbar">
+            <div class="graph-legend">
+                <span class="legend-item"><span class="legend-swatch article"></span>Bài báo</span>
+                <span class="legend-item"><span class="legend-swatch author"></span>Tác giả</span>
+                <span class="legend-item"><span class="legend-swatch topic"></span>Chủ đề</span>
+                <span class="legend-item"><span class="legend-swatch keyword"></span>Từ khóa</span>
+                <span class="legend-item"><span class="legend-swatch journal"></span>Tạp chí</span>
+                <span class="legend-item"><span class="legend-swatch language"></span>Ngôn ngữ</span>
+                <span class="legend-item"><span class="legend-swatch related"></span>Liên quan</span>
+            </div>
+        </div>
+
+        <div id="graph"></div>
+        <div class="graph-note">Click vào node để tìm kiếm</div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const graphData = JSON.parse('{{ graph_data | tojson | safe }}');
+</script>
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="{{ url_for('static', filename='js/pages/article_detail.js') }}"></script>
+{% endblock %}

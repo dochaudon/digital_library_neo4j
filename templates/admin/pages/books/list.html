@@ -1,0 +1,111 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/books/list.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- HEADER -->
+<div class="page-header">
+    <h1>📚 Quản lý sách</h1>
+
+    <a href="/admin/books/create" class="btn btn-add">
+        <i class="fa fa-plus"></i> Thêm sách
+    </a>
+</div>
+
+<!-- SEARCH -->
+<div class="toolbar">
+    <form method="GET" class="search-form">
+
+        <input 
+            type="text" 
+            name="query" 
+            placeholder="Tìm theo tên sách..." 
+            value="{{ request.args.get('query', '') }}"
+        >
+
+        <input 
+            type="number" 
+            name="year" 
+            placeholder="Năm"
+            value="{{ request.args.get('year', '') }}"
+        >
+
+        <button type="submit" class="btn btn-search">
+            <i class="fa fa-search"></i>
+        </button>
+
+    </form>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrapper">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Tiêu đề</th>
+                <th>Năm</th>
+                <th class="center">Hành động</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for b in books %}
+            <tr>
+                <td>{{ loop.index + (page - 1) * limit }}</td>
+
+                <!-- CLICK TITLE -->
+                <td class="title">
+                    <a href="/admin/books/{{ b.id }}" class="link-title">
+                        {{ b.title }}
+                    </a>
+                </td>
+
+                <td>{{ b.year }}</td>
+
+                <td class="actions">
+
+                    <!-- VIEW -->
+                    <a href="/admin/books/{{ b.id }}" 
+                       class="btn btn-view"
+                       title="Xem chi tiết">
+                        <i class="fa fa-eye"></i>
+                    </a>
+
+                    <!-- EDIT -->
+                    <a href="/admin/books/edit/{{ b.id }}" 
+                       class="btn btn-edit"
+                       title="Chỉnh sửa">
+                        <i class="fa fa-pen"></i>
+                    </a>
+
+                    <!-- DELETE -->
+                    <a href="/admin/books/delete/{{ b.id }}" 
+                       class="btn btn-delete"
+                       title="Xóa"
+                       onclick="return confirm('Bạn có chắc muốn xóa?')">
+                       <i class="fa fa-trash"></i>
+                    </a>
+
+                </td>
+            </tr>
+            {% endfor %}
+
+            {% if books|length == 0 %}
+            <tr>
+                <td colspan="4" class="empty">
+                    📭 Không có dữ liệu
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- PAGINATION -->
+{% include 'admin/components/pagination.html' with context %}
+
+{% endblock %}

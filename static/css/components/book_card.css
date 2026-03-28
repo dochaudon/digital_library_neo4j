@@ -1,0 +1,54 @@
+/* ===== CARD ===== */
+.book-card {
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    padding: 15px;
+    transition: 0.25s;
+    border: 1px solid #e5e7eb;
+}
+
+/* hover */
+.book-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
+/* link */
+.book-card-link {
+    color: inherit;
+    display: block;
+}
+
+/* ===== TITLE ===== */
+.book-card-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #0d3b66;
+    margin-bottom: 5px;
+}
+
+.book-card-title:hover {
+    text-decoration: underline;
+}
+
+/* ===== AUTHORS ===== */
+.book-card-authors {
+    font-size: 13px;
+    color: #2b7a78;
+    margin-bottom: 4px;
+}
+
+/* ===== META ===== */
+.book-card-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+/* ===== ABSTRACT ===== */
+.book-card-abstract {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.5;
+}

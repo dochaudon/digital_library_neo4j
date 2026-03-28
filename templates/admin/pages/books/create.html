@@ -1,0 +1,86 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/books/create.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="form-container">
+    <h2>📚 Thêm sách</h2>
+
+    <form method="POST" class="admin-form">
+
+        <!-- TITLE -->
+        <div class="form-group">
+            <label>Tiêu đề</label>
+            <input type="text" name="title" required>
+        </div>
+
+        <!-- YEAR -->
+        <div class="form-group">
+            <label>Năm xuất bản</label>
+            <input type="number" name="year" required>
+        </div>
+
+        <!-- ISBN -->
+        <div class="form-group">
+            <label>ISBN</label>
+            <input type="text" name="isbn">
+        </div>
+
+        <!-- PAGES -->
+        <div class="form-group">
+            <label>Số trang</label>
+            <input type="number" name="pages">
+        </div>
+
+        <!-- FILE URL -->
+        <div class="form-group">
+            <label>File URL</label>
+            <input type="text" name="file_url" placeholder="Link file PDF...">
+        </div>
+
+        <!-- ABSTRACT -->
+        <div class="form-group">
+            <label>Mô tả</label>
+            <textarea name="abstract" rows="4"></textarea>
+        </div>
+
+        <!-- AUTHOR (QUAN HỆ) -->
+        <div class="form-group">
+            <label>Tác giả</label>
+            <input type="text" name="authors" placeholder="Nhập tên tác giả, cách nhau bởi dấu phẩy">
+        </div>
+
+        <!-- TOPIC -->
+        <div class="form-group">
+            <label>Chủ đề</label>
+            <input type="text" name="topics" placeholder="VD: AI, Machine Learning">
+        </div>
+
+        <!-- KEYWORD -->
+        <div class="form-group">
+            <label>Từ khóa</label>
+            <input type="text" name="keywords" placeholder="keyword1, keyword2">
+        </div>
+
+        <!-- LANGUAGE -->
+        <div class="form-group">
+            <label>Ngôn ngữ</label>
+            <select name="language">
+                <option value="vi">Tiếng Việt</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+
+        <!-- BUTTON -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-save">💾 Lưu</button>
+            <a href="/admin/books" class="btn btn-cancel">Hủy</a>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}

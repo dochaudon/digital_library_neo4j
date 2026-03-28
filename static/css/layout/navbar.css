@@ -1,0 +1,54 @@
+/* ===== NAVBAR ===== */
+.site-nav {
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* container */
+.nav-inner {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    padding: 10px 0;
+}
+
+/* link */
+.nav-inner a {
+    position: relative;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 2px;
+    transition: 0.3s;
+}
+
+/* hover effect */
+.nav-inner a:hover {
+    color: #0d3b66;
+}
+
+/* underline animation */
+.nav-inner a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -3px;
+    width: 0%;
+    height: 2px;
+    background: #0d3b66;
+    transition: 0.3s;
+}
+
+.nav-inner a:hover::after {
+    width: 100%;
+}
+
+/* active link */
+.nav-inner a.active {
+    color: #0d3b66;
+    font-weight: 600;
+}
+
+.nav-inner a.active::after {
+    width: 100%;
+}

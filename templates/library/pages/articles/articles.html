@@ -1,0 +1,64 @@
+{% extends "library/layouts/base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/articles/article.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="articles-wrapper">
+
+        <div class="articles-header">
+            <h2>📄 Danh sách Bài báo</h2>
+        </div>
+
+        <div class="articles-list">
+
+            {% for a in articles %}
+            <div class="article-item">
+
+                <div class="article-img">
+                    <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png">
+                </div>
+
+                <div class="article-content">
+
+                    <a href="{{ url_for('main.article_detail', id=a.id) }}" 
+                       class="article-title"
+                       title="{{ a.title }}">
+                        {{ a.title }}
+                    </a>
+
+                    <p class="article-author">
+                        👨‍🏫 {{ a.authors | join(', ') }}
+                    </p>
+
+                    <p class="article-journal">
+                        📚 {{ a.journal or 'N/A' }}
+                    </p>
+
+                    <div class="article-footer">
+                        <span>📅 {{ a.year }}</span>
+                        <span class="doi">DOI: {{ a.doi or 'N/A' }}</span>
+                    </div>
+
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    {% include 'library/components/pagination.html' %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/article.js') }}"></script>
+{% endblock %}

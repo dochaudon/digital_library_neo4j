@@ -1,0 +1,35 @@
+<div class="pagination">
+
+    <!-- PREV -->
+    {% if page > 1 %}
+        <a href="?query={{ query|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ page - 1 }}" class="page-btn">«</a>
+    {% else %}
+        <span class="page-btn disabled">«</span>
+    {% endif %}
+
+    <!-- PAGE NUMBERS -->
+    {% for p in range(1, total_pages + 1) %}
+
+        {% if p == page %}
+            <span class="page-btn active">{{ p }}</span>
+
+        {% elif p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+            <a href="?query={{ query|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ p }}" class="page-btn">{{ p }}</a>
+
+        {% elif p == 3 and page > 4 %}
+            <span class="dots">...</span>
+
+        {% elif p == total_pages - 2 and page < total_pages - 3 %}
+            <span class="dots">...</span>
+        {% endif %}
+
+    {% endfor %}
+
+    <!-- NEXT -->
+    {% if page < total_pages %}
+        <a href="?query={{ query|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ page + 1 }}" class="page-btn">»</a>
+    {% else %}
+        <span class="page-btn disabled">»</span>
+    {% endif %}
+
+</div>

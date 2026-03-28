@@ -1,0 +1,34 @@
+<header class="site-header">
+    <div class="container header-inner">
+
+        <!-- LEFT: Logo -->
+        <a href="{{ url_for('main.home') }}" class="brand">
+            <span class="brand-icon">📚</span>
+            <span class="brand-text">Thư Viện Số</span>
+        </a>
+
+        <!-- RIGHT -->
+        <div class="header-right">
+
+            {% if session.get("user") %}
+                
+                <!-- Admin -->
+                {% if session.get("user")["role"] == "admin" %}
+                    <a href="/admin/books" class="admin-link">⚙️ Admin</a>
+                {% endif %}
+
+                <!-- Logout -->
+                <a href="/auth/logout" class="auth-link">🚪 Đăng xuất</a>
+
+            {% else %}
+
+                <!-- Login / Register -->
+                <a href="/auth/login-page" class="auth-link">🔐 Đăng nhập</a>
+                <a href="/auth/register-page" class="auth-link">📝 Đăng ký</a>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+</header>

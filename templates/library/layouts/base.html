@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Thư Viện Số{% endblock %}</title>
+
+    <!-- ===== BASE CSS ===== -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+
+    <!-- ===== LAYOUT CSS ===== -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout/header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout/footer.css') }}">
+
+    <!-- ===== COMPONENT CSS ===== -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/book_card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/document_card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/pagination.css') }}">
+
+    <!-- ===== PAGE CSS ===== -->
+    {% block extra_css %}{% endblock %}
+
+</head>
+
+<body>
+
+    <!-- ===== HEADER ===== -->
+    {% include 'library/partials/header.html' %}
+
+    <!-- ===== NAVBAR ===== -->
+    {% include 'library/partials/navbar.html' %}
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    {% include 'library/partials/footer.html' %}
+
+    <!-- ===== GLOBAL JS ===== -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- ===== PAGE JS ===== -->
+    {% block scripts %}{% endblock %}
+
+</body>
+
+</html>

@@ -1,0 +1,67 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<!-- dùng CSS chung -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/books/edit.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="form-container">
+    <div class="form-header">
+        <h2>✏️ Chỉnh sửa sách</h2>
+        <a href="/admin/books" class="btn btn-back">← Quay lại</a>
+    </div>
+
+    <form method="POST" class="admin-form">
+
+        <div class="form-grid">
+
+            <!-- TITLE -->
+            <div class="form-group">
+                <label>Tiêu đề</label>
+                <input type="text" name="title" value="{{ book.title }}" required>
+            </div>
+
+            <!-- YEAR -->
+            <div class="form-group">
+                <label>Năm xuất bản</label>
+                <input type="number" name="year" value="{{ book.year }}" required>
+            </div>
+
+            <!-- ISBN -->
+            <div class="form-group">
+                <label>ISBN</label>
+                <input type="text" name="isbn" value="{{ book.isbn }}">
+            </div>
+
+            <!-- PAGES -->
+            <div class="form-group">
+                <label>Số trang</label>
+                <input type="number" name="pages" value="{{ book.pages }}">
+            </div>
+
+            <!-- FILE URL -->
+            <div class="form-group full">
+                <label>File URL</label>
+                <input type="text" name="file_url" value="{{ book.file_url or '' }}">
+            </div>
+
+            <!-- ABSTRACT -->
+            <div class="form-group full">
+                <label>Mô tả</label>
+                <textarea name="abstract" rows="4">{{ book.abstract }}</textarea>
+            </div>
+
+        </div>
+
+        <!-- ACTION -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-save">💾 Cập nhật</button>
+            <a href="/admin/books" class="btn btn-cancel">Hủy</a>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}

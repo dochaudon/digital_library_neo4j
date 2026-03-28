@@ -1,0 +1,59 @@
+<div class="document-card">
+
+    <div class="doc-image">
+        <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" alt="pdf">
+    </div>
+
+    <div class="doc-content">
+
+        <!-- TYPE BADGE -->
+        <span class="doc-type">
+            {% if doc.type == "Book" %}
+                📘 Sách
+            {% elif doc.type == "Article" %}
+                📰 Bài báo
+            {% elif doc.type == "Thesis" %}
+                🎓 Luận văn
+            {% else %}
+                📄 Tài liệu
+            {% endif %}
+        </span>
+
+        <!-- LINK ĐỘNG -->
+        {% if doc.type == "Book" %}
+            {% set detail_url = url_for('main.book_detail', id=doc.id) %}
+        {% elif doc.type == "Article" %}
+            {% set detail_url = url_for('main.article_detail', id=doc.id) %}
+        {% elif doc.type == "Thesis" %}
+            {% set detail_url = url_for('main.thesis_detail', id=doc.id) %}
+        {% else %}
+            {% set detail_url = "#" %}
+        {% endif %}
+
+        <a href="{{ detail_url }}" 
+           class="doc-title"
+           title="{{ doc.title }}">
+            {{ doc.title }}
+        </a>
+
+        <!-- META -->
+        <p class="doc-meta">
+            {% if doc.authors and doc.authors|length > 0 %}
+                {{ doc.authors | join(', ') }}
+            {% elif doc.publisher %}
+                {{ doc.publisher }}
+            {% elif doc.university %}
+                {{ doc.university }}
+            {% else %}
+                N/A
+            {% endif %}
+        </p>
+
+        <!-- YEAR -->
+        <p class="doc-year">
+            {{ doc.year or 'N/A' }}
+        </p>
+
+    </div>
+
+</div>

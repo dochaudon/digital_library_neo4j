@@ -1,0 +1,64 @@
+{% extends "library/layouts/base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/thesis/thesis.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="thesis-wrapper">
+
+        <div class="thesis-header">
+            <h2>🎓 Danh sách Luận văn</h2>
+        </div>
+
+        <div class="thesis-list">
+
+            {% for t in thesis %}
+            <div class="thesis-item">
+
+                <div class="thesis-img">
+                    <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png">
+                </div>
+
+                <div class="thesis-content">
+
+                    <a href="{{ url_for('main.thesis_detail', id=t.id) }}" 
+                       class="thesis-title"
+                       title="{{ t.title }}">
+                        {{ t.title }}
+                    </a>
+
+                    <p class="thesis-author">
+                        👨‍🏫 {{ t.authors | join(', ') }}
+                    </p>
+
+                    <p class="thesis-university">
+                        🏫 {{ t.university or 'N/A' }}
+                    </p>
+
+                    <div class="thesis-footer">
+                        <span>🎓 {{ t.degree or 'N/A' }}</span>
+                        <span>📅 {{ t.year }}</span>
+                    </div>
+
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    {% include 'library/components/pagination.html' %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/thesis.js') }}"></script>
+{% endblock %}

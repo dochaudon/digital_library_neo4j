@@ -1,0 +1,19 @@
+{% extends 'library/layouts/base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/books/book_detail.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% include 'shared/books/detail_content.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const graphData = JSON.parse('{{ graph_data | tojson | safe }}');
+</script>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="{{ url_for('static', filename='js/pages/book_detail.js') }}"></script>
+{% endblock %}
