@@ -1,22 +1,37 @@
 from database.neo4j_connection import neo4j_conn
 
-def get_article_by_id(id):
+
+# =========================
+# GET ARTICLE DETAIL (FULL)
+# =========================
+def get_article_detail(article_id):
     query = """
     MATCH (a:Article {id:$id})
-    OPTIONAL MATCH (a)-[:WRITTEN_BY]->(au:Author)
 
-    RETURN 
+    OPTIONAL MATCH (a)-[:HAS_AUTHOR]->(au:Author)
+    OPTIONAL MATCH (a)-[:HAS_SUBJECT]->(s:Subject)
+    OPTIONAL MATCH (a)-[:HAS_KEYWORD]->(k:Keyword)
+    OPTIONAL MATCH (a)-[:IN_LANGUAGE]->(l:Language)
+    OPTIONAL MATCH (a)-[:PUBLISHED_IN]->(j:Journal)
+
+    RETURN
         a.id AS id,
         a.title AS title,
         a.year AS year,
-        a.journal AS journal,
         a.doi AS doi,
-        collect(au.name) AS authors
+        a.abstract AS abstract,
+
+        collect(DISTINCT au.name) AS authors,
+        collect(DISTINCT s.name) AS subjects,
+        collect(DISTINCT k.name) AS keywords,
+        collect(DISTINCT l.name) AS languages,
+
+        head(collect(DISTINCT j.name)) AS journal
     """
-    result = neo4j_conn.query(query, {"id": id})
+
+    result = neo4j_conn.query(query, {"id": article_id})
     return result[0] if result else None
 
-from database.neo4j_connection import neo4j_conn
 
 # =========================
 # CREATE
@@ -28,7 +43,6 @@ def create_article(data):
         title: $title,
         year: $year,
         doi: $doi,
-        journal: $journal,
         abstract: $abstract
     })
     RETURN a
@@ -39,13 +53,22 @@ def create_article(data):
 # =========================
 # GET ALL + PAGINATION
 # =========================
-def get_all_articles(skip=0, limit=10):
+def get_all_articles(skip=0, limit=20):
     query = """
     MATCH (a:Article)
-    RETURN a.id AS id, a.title AS title, a.year AS year
+
+    OPTIONAL MATCH (a)-[:HAS_AUTHOR]->(au:Author)
+
+    RETURN
+        a.id AS id,
+        a.title AS title,
+        a.year AS year,
+        collect(DISTINCT au.name) AS authors
+
     ORDER BY a.year DESC
     SKIP $skip LIMIT $limit
     """
+
     return neo4j_conn.query(query, {
         "skip": skip,
         "limit": limit
@@ -67,26 +90,26 @@ def count_articles():
 # =========================
 # UPDATE
 # =========================
-def update_article(id, data):
+def update_article(article_id, data):
     query = """
     MATCH (a:Article {id:$id})
     SET a.title = $title,
         a.year = $year,
         a.doi = $doi,
-        a.journal = $journal,
         a.abstract = $abstract
     RETURN a
     """
-    params = {"id": id, **data}
+
+    params = {"id": article_id, **data}
     return neo4j_conn.query(query, params)
 
 
 # =========================
 # DELETE
 # =========================
-def delete_article(id):
+def delete_article(article_id):
     query = """
     MATCH (a:Article {id:$id})
     DETACH DELETE a
     """
-    return neo4j_conn.query(query, {"id": id})
+    return neo4j_conn.query(query, {"id": article_id})

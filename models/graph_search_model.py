@@ -1,46 +1,10 @@
 from database.neo4j_connection import neo4j_conn
 
-FULLTEXT_INDEX = "documentSearchIndex"
-
 
 # =========================
-# FULLTEXT SEARCH (KEYWORD)
+# GRAPH SEARCH MAIN
 # =========================
-def search_documents_fulltext(query, limit=20):
-
-    if not query:
-        return []
-
-    cypher = """
-    CALL db.index.fulltext.queryNodes($index, $query) YIELD node, score
-    WHERE node:Book OR node:Article OR node:Thesis
-
-    RETURN
-        node.id AS id,
-        node.title AS title,
-        node.year AS year,
-        labels(node)[0] AS type,
-        score AS relevance_score,
-        'keyword' AS source
-
-    ORDER BY score DESC
-    LIMIT $limit
-    """
-
-    return neo4j_conn.query(
-        cypher,
-        {
-            "index": FULLTEXT_INDEX,
-            "query": query,
-            "limit": limit
-        }
-    )
-
-
-# =========================
-# GRAPH SEARCH
-# =========================
-def search_documents_graph(filters, limit=20):
+def graph_search(filters, limit=20):
 
     if not any(filters.values()):
         return []
@@ -140,51 +104,24 @@ def search_documents_graph(filters, limit=20):
 
 
 # =========================
-# HYBRID SEARCH (🔥 QUAN TRỌNG)
+# QUICK SEARCH FUNCTIONS
 # =========================
-def hybrid_search(query, filters=None, limit=20):
 
-    filters = filters or {}
-
-    fulltext_results = search_documents_fulltext(query, limit)
-    graph_results = search_documents_graph(filters, limit)
-
-    combined = fulltext_results + graph_results
-
-    # remove duplicate (by id)
-    seen = set()
-    unique_results = []
-
-    for item in combined:
-        if item["id"] not in seen:
-            seen.add(item["id"])
-            unique_results.append(item)
-
-    # sort theo score
-    unique_results.sort(
-        key=lambda x: x.get("relevance_score", 0),
-        reverse=True
-    )
-
-    return unique_results[:limit]
+def search_by_author(author, limit=20):
+    return graph_search({"author": author}, limit)
 
 
-# =========================
-# LATEST DOCUMENTS
-# =========================
-def get_latest_documents(limit=20):
-    query = """
-    MATCH (d)
-    WHERE d:Book OR d:Article OR d:Thesis
+def search_by_subject(subject, limit=20):
+    return graph_search({"subject": subject}, limit)
 
-    RETURN
-        d.id AS id,
-        d.title AS title,
-        d.year AS year,
-        labels(d)[0] AS type
 
-    ORDER BY d.year DESC
-    LIMIT $limit
-    """
+def search_by_publisher(publisher, limit=20):
+    return graph_search({"publisher": publisher}, limit)
 
-    return neo4j_conn.query(query, {"limit": limit})
+
+def search_by_university(university, limit=20):
+    return graph_search({"university": university}, limit)
+
+
+def search_by_year(year, limit=20):
+    return graph_search({"year": year}, limit)
