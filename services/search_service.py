@@ -1,11 +1,8 @@
 import re
 import unicodedata
 
-from models.search_model import (
-    search_documents_by_title,
-    search_documents_by_graph,
-    get_latest_documents
-)
+from models.hybrid_search_model import hybrid_search
+from models.search_model import get_latest_documents
 
 
 # =========================
@@ -27,7 +24,7 @@ def clean(x):
 
 
 # =========================
-# NLP PARSER (GIỮ NGUYÊN)
+# NLP PARSER (UPDATED)
 # =========================
 def parse_nl_query(query: str):
 
@@ -37,7 +34,7 @@ def parse_nl_query(query: str):
     filters = {
         "doc_type": None,
         "author": None,
-        "topic": None,
+        "subject": None,   # 🔥 đổi từ topic → subject
         "publisher": None,
         "university": None,
         "year": None
@@ -71,7 +68,7 @@ def parse_nl_query(query: str):
     if uni_match:
         filters["university"] = uni_match.group(1).strip()
 
-    # ===== TOPIC (SMART)
+    # ===== SUBJECT (SMART)
     temp = q
 
     remove_words = [
@@ -87,71 +84,27 @@ def parse_nl_query(query: str):
     temp = temp.strip()
 
     if temp:
-        filters["topic"] = temp
+        filters["subject"] = temp   # 🔥 đổi topic → subject
 
     return filters
 
 
 # =========================
-# MERGE HYBRID
+# MAIN SEARCH (HYBRID)
 # =========================
-def merge_results(k_results, g_results, limit=20):
-
-    merged = {}
-
-    for r in k_results:
-        merged[r["id"]] = r
-
-    for r in g_results:
-        if r["id"] in merged:
-            merged[r["id"]]["relevance_score"] += r["relevance_score"]
-        else:
-            merged[r["id"]] = r
-
-    return sorted(
-        merged.values(),
-        key=lambda x: x.get("relevance_score", 0),
-        reverse=True
-    )[:limit]
-
-
-# =========================
-# MAIN SEARCH
-# =========================
-def search_documents(query="", mode="auto", filters=None, limit=20):
+def search_documents(query="", filters=None, limit=20):
 
     filters = filters or {}
 
+    # NLP parse
     parsed = parse_nl_query(query)
 
-    # merge NLP filters
+    # merge filters
     for k, v in parsed.items():
         if not filters.get(k):
             filters[k] = v
 
-    has_filter = any(filters.values())
-
-    keyword_results = []
-    graph_results = []
-
-    if query:
-        keyword_results = search_documents_by_title(query, limit * 2)
-
-    if has_filter:
-        graph_results = search_documents_by_graph(filters, limit * 2)
-
-    # ===== MODE =====
-    if mode == "keyword":
-        return keyword_results[:limit]
-
-    if mode == "graph":
-        return graph_results[:limit]
-
-    # ===== AUTO / HYBRID =====
-    if graph_results:
-        return merge_results(keyword_results, graph_results, limit)
-
-    return keyword_results[:limit]
+    return hybrid_search(query, filters, limit)
 
 
 # =========================

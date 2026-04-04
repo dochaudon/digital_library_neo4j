@@ -1,34 +1,54 @@
-from models.book_model import get_book_by_id
-
-def get_book_detail(id):
-    return get_book_by_id(id)
-
-import uuid
 from models.book_model import (
     create_book,
     get_all_books,
-    get_book_by_id,
+    get_book_detail,
     update_book,
-    delete_book
+    delete_book,
+    count_books
 )
 
+import uuid
 
+
+# =========================
+# CREATE
+# =========================
 def create_book_service(data):
     data["id"] = str(uuid.uuid4())
     return create_book(data)
 
 
-def get_books_service():
-    return get_all_books()
+# =========================
+# GET LIST + PAGINATION
+# =========================
+def get_books_service(page=1, limit=20):
+    skip = (page - 1) * limit
+    return get_all_books(skip, limit)
 
 
-def get_book_detail_service(id):
-    return get_book_by_id(id)
+# =========================
+# COUNT
+# =========================
+def count_books_service():
+    return count_books()
 
 
-def update_book_service(id, data):
-    return update_book(id, data)
+# =========================
+# GET DETAIL
+# =========================
+def get_book_detail_service(book_id):
+    return get_book_detail(book_id)
 
 
-def delete_book_service(id):
-    return delete_book(id)
+# =========================
+# UPDATE
+# =========================
+def update_book_service(book_id, data):
+    return update_book(book_id, data)
+
+
+# =========================
+# DELETE
+# =========================
+def delete_book_service(book_id):
+    return delete_book(book_id)

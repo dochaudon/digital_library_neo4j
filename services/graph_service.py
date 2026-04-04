@@ -6,6 +6,16 @@ from models.graph_model import (
 
 
 # =========================
+# MAP TYPE → FUNCTION
+# =========================
+GRAPH_FUNCTIONS = {
+    "book": get_book_graph_data,
+    "article": get_article_graph_data,
+    "thesis": get_thesis_graph_data
+}
+
+
+# =========================
 # MAIN GRAPH SERVICE
 # =========================
 def get_graph_data(doc_type, document_id):
@@ -13,43 +23,34 @@ def get_graph_data(doc_type, document_id):
     if not doc_type or not document_id:
         return {"nodes": [], "edges": []}
 
-    # Normalize type (tránh lỗi input)
-    doc_type = doc_type.strip()
+    # normalize input
+    doc_type = doc_type.strip().lower()
 
-    if doc_type == "Book":
-        return get_book_graph_data(document_id)
+    graph_func = GRAPH_FUNCTIONS.get(doc_type)
 
-    elif doc_type == "Article":
-        return get_article_graph_data(document_id)
+    if not graph_func:
+        return {"nodes": [], "edges": []}
 
-    elif doc_type == "Thesis":
-        return get_thesis_graph_data(document_id)
-
-    # fallback
-    return {"nodes": [], "edges": []}
+    try:
+        return graph_func(document_id)
+    except Exception:
+        return {"nodes": [], "edges": []}
 
 
 # =========================
-# OPTIONAL: AUTO DETECT TYPE
+# AUTO DETECT TYPE
 # =========================
 def get_graph_auto(document_id):
 
-    """
-    Dùng khi bạn không biết trước loại document
-    (tìm trong cả 3 loại)
-    """
+    if not document_id:
+        return {"nodes": [], "edges": []}
 
-    # thử từng loại
-    book = get_book_graph_data(document_id)
-    if book["nodes"]:
-        return book
-
-    article = get_article_graph_data(document_id)
-    if article["nodes"]:
-        return article
-
-    thesis = get_thesis_graph_data(document_id)
-    if thesis["nodes"]:
-        return thesis
+    for func in GRAPH_FUNCTIONS.values():
+        try:
+            result = func(document_id)
+            if result.get("nodes"):
+                return result
+        except Exception:
+            continue
 
     return {"nodes": [], "edges": []}
