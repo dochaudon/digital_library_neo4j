@@ -1,30 +1,60 @@
 <footer class="site-footer">
+
     <div class="container footer-content">
 
+        <!-- ABOUT -->
         <div class="footer-col">
-            <h3>Thư Viện Số</h3>
-            <p>Hệ thống tìm kiếm ngữ nghĩa cho tài liệu học thuật: sách, bài báo và luận văn.</p>
+            <h3>📚 Thư Viện Số</h3>
+            <p>
+                Hệ thống tìm kiếm <strong>ngữ nghĩa (Semantic Search)</strong> 
+                kết hợp <strong>Knowledge Graph</strong> cho tài liệu học thuật: 
+                sách, bài báo và luận văn.
+            </p>
         </div>
 
+        <!-- LINKS -->
         <div class="footer-col">
-            <h4>Liên kết</h4>
+            <h4>🔗 Liên kết</h4>
             <ul>
-                <li><a href="{{ url_for('main.home') }}">Trang chủ</a></li>
-                <li><a href="{{ url_for('main.books_page') }}">Sách</a></li>
-                <li><a href="{{ url_for('main.articles_page') }}">Bài báo</a></li>
-                <li><a href="{{ url_for('main.thesis_page') }}">Luận văn</a></li>
+                <li><a href="{{ url_for('main.home') }}">🏠 Trang chủ</a></li>
+                <li><a href="{{ url_for('main.books_page') }}">📘 Sách</a></li>
+                <li><a href="{{ url_for('main.articles_page') }}">📰 Bài báo</a></li>
+                <li><a href="{{ url_for('main.thesis_page') }}">🎓 Luận văn</a></li>
             </ul>
         </div>
 
+        <!-- QUICK SEARCH -->
         <div class="footer-col">
-            <h4>Liên hệ</h4>
-            <p>Email: contact@digitallibrary.com</p>
-            <p>Địa chỉ: Nha Trang, Việt Nam</p>
+            <h4>⚡ Tìm nhanh</h4>
+            <ul class="quick-search">
+                <li><a href="/search?query=AI">AI</a></li>
+                <li><a href="/search?query=Machine Learning">Machine Learning</a></li>
+                <li><a href="/search?query=Data Science">Data Science</a></li>
+                <li><a href="/search?query=Web">Web</a></li>
+            </ul>
+        </div>
+
+        <!-- CONTACT -->
+        <div class="footer-col">
+            <h4>📬 Liên hệ</h4>
+            <p>📧 contact@digitallibrary.com</p>
+            <p>📍 Nha Trang, Việt Nam</p>
+
+            <!-- SOCIAL -->
+            <div class="footer-social">
+                <a href="#">🌐</a>
+                <a href="#">📘</a>
+                <a href="#">🐦</a>
+            </div>
         </div>
 
     </div>
 
+    <!-- BOTTOM -->
     <div class="footer-bottom">
-        <p>© 2026 Thư Viện Số - Digital Library</p>
+        <p>
+            © 2026 <strong>Thư Viện Số</strong> — Semantic Digital Library System
+        </p>
     </div>
+
 </footer>

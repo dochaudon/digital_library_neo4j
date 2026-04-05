@@ -31,16 +31,29 @@
             <!-- DESC -->
             <div id="desc" class="tab-content active">
                 <table class="doc-table">
-                    <tr><td>Nhan đề</td><td>{{ article.title }}</td></tr>
-                    <tr><td>Tạp chí</td><td>{{ article.journal or 'N/A' }}</td></tr>
-                    <tr><td>DOI</td><td>{{ article.doi or 'N/A' }}</td></tr>
-                    <tr><td>Năm</td><td>{{ article.year or 'N/A' }}</td></tr>
+                    <tr>
+                        <td>Nhan đề</td>
+                        <td>{{ article.title }}</td>
+                    </tr>
+                    <tr>
+                        <td>Tạp chí</td>
+                        <td>{{ article.journal or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td>DOI</td>
+                        <td>{{ article.doi or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Năm</td>
+                        <td>{{ article.year or 'N/A' }}</td>
+                    </tr>
 
                     <tr>
                         <td>Chủ đề</td>
                         <td>
                             {% for t in article.topics or [] %}
-                                <a href="{{ url_for('main.search', query=t) }}">{{ t }}</a>{% if not loop.last %}, {% endif %}
+                            <a href="{{ url_for('main.search', query=t) }}">{{ t }}</a>{% if not loop.last %}, {% endif
+                            %}
                             {% endfor %}
                         </td>
                     </tr>
@@ -49,7 +62,8 @@
                         <td>Từ khóa</td>
                         <td>
                             {% for k in article.keywords or [] %}
-                                <a href="{{ url_for('main.search', query=k) }}">{{ k }}</a>{% if not loop.last %}, {% endif %}
+                            <a href="{{ url_for('main.search', query=k) }}">{{ k }}</a>{% if not loop.last %}, {% endif
+                            %}
                             {% endfor %}
                         </td>
                     </tr>
@@ -76,7 +90,7 @@
                     {% endfor %}
                 </table>
                 {% else %}
-                    <div class="empty-box">Chưa có tác giả</div>
+                <div class="empty-box">Chưa có tác giả</div>
                 {% endif %}
             </div>
 
@@ -92,7 +106,7 @@
                     <iframe src="{{ article.file_url }}"></iframe>
                 </div>
                 {% else %}
-                    <div class="empty-box">Chưa có tài liệu</div>
+                <div class="empty-box">Chưa có tài liệu</div>
                 {% endif %}
             </div>
 

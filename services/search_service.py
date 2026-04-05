@@ -24,7 +24,7 @@ def clean(x):
 
 
 # =========================
-# NLP PARSER (UPDATED)
+# NLP PARSER (IMPROVED)
 # =========================
 def parse_nl_query(query: str):
 
@@ -34,7 +34,7 @@ def parse_nl_query(query: str):
     filters = {
         "doc_type": None,
         "author": None,
-        "subject": None,   # 🔥 đổi từ topic → subject
+        "subject": None,
         "publisher": None,
         "university": None,
         "year": None
@@ -53,38 +53,43 @@ def parse_nl_query(query: str):
     if year_match:
         filters["year"] = int(year_match.group())
 
-    # ===== AUTHOR =====
-    author_match = re.search(r"(?:cua|tac gia|viet boi)\s+(.+)", q)
+    # ===== AUTHOR (fix greedy bug) =====
+    author_match = re.search(r"(?:cua|tac gia|viet boi)\s+([a-zA-Z\s]+)", q)
     if author_match:
         filters["author"] = author_match.group(1).strip()
 
     # ===== PUBLISHER =====
-    pub_match = re.search(r"(?:nha xuat ban|xuat ban boi)\s+(.+)", q)
+    pub_match = re.search(r"(?:nha xuat ban|xuat ban boi)\s+([a-zA-Z\s]+)", q)
     if pub_match:
         filters["publisher"] = pub_match.group(1).strip()
 
     # ===== UNIVERSITY =====
-    uni_match = re.search(r"(?:truong|truong dai hoc)\s+(.+)", q)
+    uni_match = re.search(r"(?:truong dai hoc|truong)\s+([a-zA-Z\s]+)", q)
     if uni_match:
         filters["university"] = uni_match.group(1).strip()
 
-    # ===== SUBJECT (SMART)
+    # ===== SUBJECT (SMART CLEAN) =====
     temp = q
 
     remove_words = [
         "sach", "bai bao", "luan van",
         "cua", "tac gia", "viet boi",
-        "nha xuat ban", "truong", "truong dai hoc"
+        "nha xuat ban", "xuat ban boi",
+        "truong", "truong dai hoc"
     ]
 
     for w in remove_words:
         temp = temp.replace(w, "")
 
+    # remove year
     temp = re.sub(r"\b(19|20)\d{2}\b", "", temp)
-    temp = temp.strip()
 
-    if temp:
-        filters["subject"] = temp   # 🔥 đổi topic → subject
+    # clean multiple spaces
+    temp = re.sub(r"\s+", " ", temp).strip()
+
+    # tránh subject = author
+    if temp and temp != filters["author"]:
+        filters["subject"] = temp
 
     return filters
 
@@ -99,12 +104,13 @@ def search_documents(query="", filters=None, limit=20):
     # NLP parse
     parsed = parse_nl_query(query)
 
-    # merge filters
-    for k, v in parsed.items():
-        if not filters.get(k):
-            filters[k] = v
+    # merge filters (ưu tiên user input)
+    final_filters = {}
 
-    return hybrid_search(query, filters, limit)
+    for key in ["doc_type", "author", "subject", "publisher", "university", "year"]:
+        final_filters[key] = filters.get(key) or parsed.get(key)
+
+    return hybrid_search(query, final_filters, limit)
 
 
 # =========================

@@ -34,42 +34,57 @@
             <!-- DESC -->
             <div id="desc" class="tab-content active">
                 <table class="doc-table">
-                    <tr><td>Nhan đề</td><td>{{ thesis.title }}</td></tr>
-                    <tr><td>Năm</td><td>{{ thesis.year or 'N/A' }}</td></tr>
-                    <tr><td>Bằng cấp</td><td>{{ thesis.degree or 'N/A' }}</td></tr>
-                    <tr><td>Trường</td><td>{{ thesis.university or 'N/A' }}</td></tr>
-                    <tr><td>Số trang</td><td>{{ thesis.pages or 'N/A' }}</td></tr>
+                    <tr>
+                        <td>Nhan đề</td>
+                        <td>{{ thesis.title }}</td>
+                    </tr>
+                    <tr>
+                        <td>Năm</td>
+                        <td>{{ thesis.year or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Bằng cấp</td>
+                        <td>{{ thesis.degree or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Trường</td>
+                        <td>{{ thesis.university or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Số trang</td>
+                        <td>{{ thesis.pages or 'N/A' }}</td>
+                    </tr>
                 </table>
             </div>
 
             <!-- AUTHOR -->
             <div id="author" class="tab-content">
                 {% if thesis.authors %}
-                    <ul>
-                        {% for a in thesis.authors %}
-                            <li>
-                                <a href="{{ url_for('main.search', author=a) }}">{{ a }}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
+                <ul>
+                    {% for a in thesis.authors %}
+                    <li>
+                        <a href="{{ url_for('main.search', author=a) }}">{{ a }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
                 {% else %}
-                    <div class="empty-box">Chưa có tác giả</div>
+                <div class="empty-box">Chưa có tác giả</div>
                 {% endif %}
             </div>
 
             <!-- PDF -->
             <div id="pdf" class="tab-content">
                 {% if thesis.file_url %}
-                    <div class="pdf-actions">
-                        <button class="pdf-btn" onclick="togglePdfViewer()">Xem PDF</button>
-                        <a class="pdf-link" href="{{ thesis.file_url }}" target="_blank">Mở tab mới</a>
-                    </div>
+                <div class="pdf-actions">
+                    <button class="pdf-btn" onclick="togglePdfViewer()">Xem PDF</button>
+                    <a class="pdf-link" href="{{ thesis.file_url }}" target="_blank">Mở tab mới</a>
+                </div>
 
-                    <div id="pdf-viewer" class="pdf-viewer hidden">
-                        <iframe src="{{ thesis.file_url }}"></iframe>
-                    </div>
+                <div id="pdf-viewer" class="pdf-viewer hidden">
+                    <iframe src="{{ thesis.file_url }}"></iframe>
+                </div>
                 {% else %}
-                    <div class="empty-box">Chưa có tài liệu số</div>
+                <div class="empty-box">Chưa có tài liệu số</div>
                 {% endif %}
             </div>
 

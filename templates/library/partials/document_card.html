@@ -1,57 +1,59 @@
 <div class="document-card">
 
+    <!-- IMAGE -->
     <div class="doc-image">
         <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" alt="pdf">
     </div>
 
     <div class="doc-content">
 
-        <!-- TYPE BADGE -->
-        <span class="doc-type">
-            {% if doc.type == "Book" %}
-                📘 Sách
-            {% elif doc.type == "Article" %}
-                📰 Bài báo
-            {% elif doc.type == "Thesis" %}
-                🎓 Luận văn
-            {% else %}
-                📄 Tài liệu
-            {% endif %}
-        </span>
+        <!-- TYPE + URL (🔥 gom logic lại 1 chỗ) -->
+        {% set detail_url = "#" %}
+        {% set type_label = "📄 Tài liệu" %}
 
-        <!-- LINK ĐỘNG -->
         {% if doc.type == "Book" %}
             {% set detail_url = url_for('main.book_detail', id=doc.id) %}
+            {% set type_label = "📘 Sách" %}
         {% elif doc.type == "Article" %}
             {% set detail_url = url_for('main.article_detail', id=doc.id) %}
+            {% set type_label = "📰 Bài báo" %}
         {% elif doc.type == "Thesis" %}
             {% set detail_url = url_for('main.thesis_detail', id=doc.id) %}
-        {% else %}
-            {% set detail_url = "#" %}
+            {% set type_label = "🎓 Luận văn" %}
         {% endif %}
 
-        <a href="{{ detail_url }}" 
+        <!-- TYPE BADGE -->
+        <span class="doc-type">
+            {{ type_label }}
+        </span>
+
+        <!-- TITLE -->
+        <a href="{{ detail_url }}"
            class="doc-title"
            title="{{ doc.title }}">
             {{ doc.title }}
         </a>
+        <!-- DEBUG -->
 
-        <!-- META -->
         <p class="doc-meta">
             {% if doc.authors and doc.authors|length > 0 %}
-                {{ doc.authors | join(', ') }}
+                tác giả {{ doc.authors | join(', ') }}
             {% elif doc.publisher %}
-                {{ doc.publisher }}
+                🏢 {{ doc.publisher }}
             {% elif doc.university %}
-                {{ doc.university }}
+                🏫 {{ doc.university }}
             {% else %}
                 N/A
             {% endif %}
         </p>
 
-        <!-- YEAR -->
         <p class="doc-year">
-            {{ doc.year or 'N/A' }}
+            📅 
+            {% if doc.year is not none and doc.year != 0 %}
+                {{ doc.year }}
+            {% else %}
+                N/A
+            {% endif %}
         </p>
 
     </div>

@@ -11,18 +11,23 @@
         <div class="header-right">
 
             {% if session.get("user") %}
-                
-                <!-- Admin -->
+
+                <!-- USER INFO -->
+                <span class="user-name">
+                    👤 {{ session.get("user")["username"] }}
+                </span>
+
+                <!-- ADMIN -->
                 {% if session.get("user")["role"] == "admin" %}
                     <a href="/admin/books" class="admin-link">⚙️ Admin</a>
                 {% endif %}
 
-                <!-- Logout -->
+                <!-- LOGOUT -->
                 <a href="/auth/logout" class="auth-link">🚪 Đăng xuất</a>
 
             {% else %}
 
-                <!-- Login / Register -->
+                <!-- LOGIN / REGISTER -->
                 <a href="/auth/login-page" class="auth-link">🔐 Đăng nhập</a>
                 <a href="/auth/register-page" class="auth-link">📝 Đăng ký</a>
 
