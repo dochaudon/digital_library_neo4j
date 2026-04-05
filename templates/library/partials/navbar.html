@@ -1,27 +1,30 @@
 <nav class="site-nav">
     <div class="container nav-inner">
 
+        <!-- HOME -->
         <a href="{{ url_for('main.home') }}" 
            class="{% if request.endpoint == 'main.home' %}active{% endif %}">
-            Trang chủ
+            🏠 Trang chủ
         </a>
 
+        <!-- BOOK -->
         <a href="{{ url_for('main.books_page') }}" 
            class="{% if request.endpoint == 'main.books_page' %}active{% endif %}">
-            Sách
+            📘 Sách
         </a>
 
+        <!-- ARTICLE -->
         <a href="{{ url_for('main.articles_page') }}" 
            class="{% if request.endpoint == 'main.articles_page' %}active{% endif %}">
-            Bài báo
+            📰 Bài báo
         </a>
 
+        <!-- THESIS -->
         <a href="{{ url_for('main.thesis_page') }}" 
            class="{% if request.endpoint == 'main.thesis_page' %}active{% endif %}">
-            Luận văn
+            🎓 Luận văn
         </a>
 
-        <a href="#">Chủ đề</a>
 
     </div>
 </nav>

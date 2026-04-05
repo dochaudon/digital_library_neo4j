@@ -51,10 +51,8 @@
             <div id="results-list">
 
                 {% for doc in results %}
-                <div class="result-card"
-                     data-type="{{ doc.type }}"
-                     data-year="{{ doc.year }}"
-                     data-title="{{ doc.title }}">
+                <div class="result-card" data-type="{{ doc.type }}" data-year="{{ doc.year }}"
+                    data-title="{{ doc.title }}">
 
                     <div class="result-icon">📄</div>
 
@@ -69,8 +67,7 @@
                         </span>
 
                         <!-- TITLE -->
-                        <a class="result-title"
-                           href="{% if doc.type == 'Book' %}
+                        <a class="result-title" href="{% if doc.type == 'Book' %}
                                     {{ url_for('main.book_detail', id=doc.id) }}
                                  {% elif doc.type == 'Article' %}
                                     {{ url_for('main.article_detail', id=doc.id) }}
@@ -83,13 +80,13 @@
                         <!-- META -->
                         <p class="result-meta">
                             {% if doc.authors %}
-                                {{ doc.authors | join(', ') }}
+                            {{ doc.authors | join(', ') }}
                             {% elif doc.publisher %}
-                                {{ doc.publisher }}
+                            {{ doc.publisher }}
                             {% elif doc.university %}
-                                {{ doc.university }}
+                            {{ doc.university }}
                             {% else %}
-                                N/A
+                            N/A
                             {% endif %}
                         </p>
 
