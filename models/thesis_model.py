@@ -8,7 +8,7 @@ def get_thesis_detail(thesis_id):
     query = """
     MATCH (t:Thesis {id:$id})
 
-    OPTIONAL MATCH (t)-[:HAS_AUTHOR]->(a:Author)
+    OPTIONAL MATCH (t)-[r:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (t)-[:HAS_SUBJECT]->(s:Subject)
     OPTIONAL MATCH (t)-[:HAS_KEYWORD]->(k:Keyword)
     OPTIONAL MATCH (t)-[:IN_LANGUAGE]->(l:Language)
@@ -20,8 +20,13 @@ def get_thesis_detail(thesis_id):
         t.year AS year,
         t.degree AS degree,
         t.abstract AS abstract,
+        t.pages AS pages,
 
-        collect(DISTINCT a.name) AS authors,
+        collect(DISTINCT {
+            name: a.name,
+            role: r.role
+        }) AS authors_info,
+
         collect(DISTINCT s.name) AS subjects,
         collect(DISTINCT k.name) AS keywords,
         collect(DISTINCT l.name) AS languages,
@@ -31,8 +36,6 @@ def get_thesis_detail(thesis_id):
 
     result = neo4j_conn.query(query, {"id": thesis_id})
     return result[0] if result else None
-
-
 # =========================
 # CREATE
 # =========================
@@ -43,7 +46,8 @@ def create_thesis(data):
         title: $title,
         year: $year,
         degree: $degree,
-        abstract: $abstract
+        abstract: $abstract,
+        pages: $pages
     })
     RETURN t
     """
@@ -97,7 +101,8 @@ def update_thesis(thesis_id, data):
     SET t.title = $title,
         t.year = $year,
         t.degree = $degree,
-        t.abstract = $abstract
+        t.abstract = $abstract,
+        t.pages = $pages
     RETURN t
     """
 

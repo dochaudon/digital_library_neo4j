@@ -26,7 +26,7 @@ END
 
 
 # =========================
-# FULLTEXT SEARCH
+# FULLTEXT SEARCH (🔥 FIX)
 # =========================
 def search_documents_fulltext(query, limit=20):
 
@@ -34,21 +34,29 @@ def search_documents_fulltext(query, limit=20):
         return []
 
     cypher = f"""
-    CALL db.index.fulltext.queryNodes($index, $query) YIELD node, score
+    CALL db.index.fulltext.queryNodes($index, $query)
+    YIELD node, score
+
     WHERE node:Book OR node:Article OR node:Thesis
 
     OPTIONAL MATCH (node)-[:HAS_AUTHOR]->(a:Author)
+
+    WITH node,
+         score,
+         collect(DISTINCT CASE 
+            WHEN a.name IS NOT NULL THEN a.name 
+         END) AS authors
 
     RETURN
         node.id AS id,
         node.title AS title,
         coalesce(node.year, 0) AS year,
         {TYPE_CASE_NODE} AS type,
-        collect(DISTINCT a.name) AS authors,
+        authors,
         score * 2 AS relevance_score,
         'keyword' AS source
 
-    ORDER BY score DESC
+    ORDER BY relevance_score DESC
     LIMIT $limit
     """
 
@@ -80,7 +88,9 @@ def search_documents_graph(filters, limit=20):
     OPTIONAL MATCH (d)-[:SUBMITTED_TO]->(u:Institution)
 
     WITH d,
-         collect(DISTINCT a.name) AS authors,
+         collect(DISTINCT CASE 
+            WHEN a.name IS NOT NULL THEN a.name 
+         END) AS authors,
          collect(DISTINCT s.name) AS subjects,
          head(collect(DISTINCT p.name)) AS publisher,
          head(collect(DISTINCT u.name)) AS university
@@ -133,62 +143,18 @@ def search_documents_graph(filters, limit=20):
 
 
 # =========================
-# HYBRID SEARCH (🔥 FIX FULL)
-# =========================
-# =========================
-# HYBRID SEARCH (FINAL FIX)
+# HYBRID SEARCH (FINAL)
 # =========================
 def hybrid_search(query, filters=None, limit=20):
 
     filters = filters or {}
 
-    fulltext_results = search_documents_fulltext(query, limit)
-    graph_results = search_documents_graph(filters, limit)
+    if any(filters.values()):
+            return search_documents_graph(filters, limit)
 
-    combined = fulltext_results + graph_results
+        # 🔥 nếu không có filter → dùng fulltext
+    return search_documents_fulltext(query, limit)
 
-    merged = {}
-
-    for item in combined:
-        doc_id = item.get("id")
-
-        if doc_id not in merged:
-            merged[doc_id] = item
-        else:
-            # merge score
-            merged[doc_id]["relevance_score"] = (
-                merged[doc_id].get("relevance_score", 0)
-                + item.get("relevance_score", 0)
-            )
-
-            # 🔥 FIX CHUẨN (không bị 0 bug nữa)
-            for key in ["year", "authors", "subjects", "publisher", "university"]:
-                if (merged[doc_id].get(key) in [None, "", []]) and item.get(key):
-                    merged[doc_id][key] = item[key]
-
-    results = list(merged.values())
-
-    # ===== RANKING =====
-    for item in results:
-        score = item.get("relevance_score", 0)
-
-        if item.get("source") == "graph":
-            score += 1.5
-
-        if query and query.lower() in (item.get("title") or "").lower():
-            score += 2
-
-        if item.get("year"):
-            score += item["year"] * 0.001
-
-        if item.get("authors"):
-            score += 0.5
-
-        item["final_score"] = score
-
-    results.sort(key=lambda x: x.get("final_score", 0), reverse=True)
-
-    return results[:limit]
 
 # =========================
 # LATEST DOCUMENTS
@@ -203,7 +169,9 @@ def get_latest_documents(limit=20):
     OPTIONAL MATCH (d)-[:SUBMITTED_TO]->(u:Institution)
 
     WITH d,
-         collect(DISTINCT a.name) AS authors,
+         collect(DISTINCT CASE 
+            WHEN a.name IS NOT NULL THEN a.name 
+         END) AS authors,
          head(collect(DISTINCT p.name)) AS publisher,
          head(collect(DISTINCT u.name)) AS university
 

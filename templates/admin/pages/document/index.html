@@ -1,0 +1,84 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/document/index.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/pages/document/index.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+
+<section class="document-page">
+
+    <!-- HEADER -->
+    <header class="document-header">
+        <h2 class="document-title">📚 Document Management</h2>
+
+        <a href="/admin/documents/create" class="document-add-btn">
+            ➕ Add Document
+        </a>
+    </header>
+
+    <!-- TABLE -->
+    <section class="document-table-wrapper">
+
+        <table class="document-table">
+
+            <thead class="document-table-head">
+                <tr>
+                    <th class="col-title">Title</th>
+                    <th class="col-year">Year</th>
+                    <th class="col-type">Type</th>
+                    <th class="col-action">Action</th>
+                </tr>
+            </thead>
+
+            <tbody class="document-table-body">
+            {% for doc in documents %}
+                <tr class="document-row">
+
+                    <td class="document-title-cell" title="{{ doc.title }}">
+                        {{ doc.title }}
+                    </td>
+
+                    <td class="document-year">
+                        {{ doc.year }}
+                    </td>
+
+                    <td class="document-type">
+                        <span class="type-badge type-{{ doc.type|lower }}">
+                            {{ doc.type }}
+                        </span>
+                    </td>
+
+                    <td class="document-actions">
+                        <a href="/admin/documents/edit/{{ doc.id }}"
+                           class="action-btn edit-btn">
+                           ✏️
+                        </a>
+
+                        <a href="/admin/documents/delete/{{ doc.id }}"
+                           class="action-btn delete-btn"
+                           data-id="{{ doc.id }}">
+                           🗑
+                        </a>
+                    </td>
+
+                </tr>
+            {% endfor %}
+            </tbody>
+
+        </table>
+
+    </section>
+
+    <!-- PAGINATION -->
+    <section class="document-pagination">
+        {% include "admin/components/pagination.html" %}
+    </section>
+
+</section>
+
+{% endblock %}

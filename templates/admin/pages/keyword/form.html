@@ -1,0 +1,17 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+<div class="form-container">
+
+    <h2>Keyword</h2>
+
+    <input type="hidden" id="keywordId">
+
+    <input type="text" id="name" placeholder="Keyword name">
+
+    <button onclick="saveKeyword()">Save</button>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/keyword_form.js') }}"></script>
+{% endblock %}

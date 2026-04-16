@@ -7,6 +7,7 @@
 {% block content %}
 <div class="container">
 
+    <!-- HEADER -->
     <div class="doc-header">
         <a class="doc-type-link" href="{{ url_for('main.articles_page') }}">
             📰 Bài báo
@@ -15,10 +16,12 @@
 
     <div class="detail-layout">
 
+        <!-- LEFT -->
         <div class="left-panel">
             <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" class="pdf-image">
         </div>
 
+        <!-- RIGHT -->
         <div class="right-panel">
 
             <!-- TABS -->
@@ -28,74 +31,78 @@
                 <button class="tab-btn" onclick="openTab(event,'pdf')">Tài liệu số</button>
             </div>
 
+            <!-- ===================== -->
             <!-- DESC -->
+            <!-- ===================== -->
             <div id="desc" class="tab-content active">
                 <table class="doc-table">
+
                     <tr>
                         <td>Nhan đề</td>
                         <td>{{ article.title }}</td>
                     </tr>
+
                     <tr>
                         <td>Tạp chí</td>
                         <td>{{ article.journal or 'N/A' }}</td>
                     </tr>
-                    <tr>
-                        <td>DOI</td>
-                        <td>{{ article.doi or 'N/A' }}</td>
-                    </tr>
+
                     <tr>
                         <td>Năm</td>
                         <td>{{ article.year or 'N/A' }}</td>
                     </tr>
 
-                    <tr>
-                        <td>Chủ đề</td>
-                        <td>
-                            {% for t in article.topics or [] %}
-                            <a href="{{ url_for('main.search', query=t) }}">{{ t }}</a>{% if not loop.last %}, {% endif
-                            %}
-                            {% endfor %}
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Từ khóa</td>
-                        <td>
-                            {% for k in article.keywords or [] %}
-                            <a href="{{ url_for('main.search', query=k) }}">{{ k }}</a>{% if not loop.last %}, {% endif
-                            %}
-                            {% endfor %}
-                        </td>
+                   <tr>
+                        <td>Số trang</td>
+                        <td>{{ article.pages or 'N/A' }}</td>
                     </tr>
                 </table>
             </div>
 
-            <!-- AUTHOR -->
+            <!-- ===================== -->
+            <!-- AUTHOR (🔥 FIXED) -->
+            <!-- ===================== -->
             <div id="author" class="tab-content">
-                {% if article.authors_info %}
-                <table class="author-table">
-                    <tr>
-                        <th>Tên</th>
-                        <th>Đơn vị</th>
-                        <th>Quốc gia</th>
-                        <th>Email</th>
-                    </tr>
-                    {% for a in article.authors_info %}
-                    <tr>
-                        <td><a href="/search?author={{ a.name }}">{{ a.name }}</a></td>
-                        <td>{{ a.affiliation or 'N/A' }}</td>
-                        <td>{{ a.country or 'N/A' }}</td>
-                        <td>{{ a.email or 'N/A' }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
+
+                {% if article.authors_info and article.authors_info|length > 0 %}
+
+                    <table class="author-table">
+
+                        {% for a in article.authors_info %}
+                            {% if a and a.name %}
+                            <tr>
+                                <td class="author-role">
+                                    {% if a.role == "supervisor" %}
+                                        🎓 Giảng viên hướng dẫn
+                                    {% elif a.role == "contributor" %}
+                                        🤝 Đồng tác giả
+                                    {% else %}
+                                        👤 Tác giả
+                                    {% endif %}
+                                </td>
+
+                                <td class="author-name">
+                                    <a href="{{ url_for('main.search', author=a.name) }}">
+                                        {{ a.name }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+
+                    </table>
+
                 {% else %}
-                <div class="empty-box">Chưa có tác giả</div>
+                    <div class="empty-box">Chưa có tác giả</div>
                 {% endif %}
+
             </div>
 
+            <!-- ===================== -->
             <!-- PDF -->
+            <!-- ===================== -->
             <div id="pdf" class="tab-content">
+
                 {% if article.file_url %}
                 <div class="pdf-actions">
                     <button class="pdf-btn" onclick="togglePdfViewer()">Xem PDF</button>
@@ -108,12 +115,14 @@
                 {% else %}
                 <div class="empty-box">Chưa có tài liệu</div>
                 {% endif %}
+
             </div>
 
         </div>
     </div>
 
     <!-- ABSTRACT -->
+    {% if article.abstract %}
     <div class="section-card">
         <div class="section-title">
             <span class="section-icon">📄</span>
@@ -121,6 +130,7 @@
         </div>
         <p class="abstract-text">{{ article.abstract }}</p>
     </div>
+    {% endif %}
 
     <!-- GRAPH -->
     <div class="section-card">

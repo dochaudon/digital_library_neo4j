@@ -28,13 +28,18 @@ END
 # =========================
 # FULLTEXT SEARCH (KEYWORD)
 # =========================
+FULLTEXT_INDEX = "documentSearchIndex"
+
+
 def search_documents_fulltext(query, limit=20):
 
     if not query:
         return []
 
-    cypher = f"""
-    CALL db.index.fulltext.queryNodes($index, $query) YIELD node, score
+    cypher = """
+    CALL db.index.fulltext.queryNodes($index, $query)
+    YIELD node, score
+
     WHERE node:Book OR node:Article OR node:Thesis
 
     OPTIONAL MATCH (node)-[:HAS_AUTHOR]->(a:Author)
@@ -43,10 +48,10 @@ def search_documents_fulltext(query, limit=20):
         node.id AS id,
         node.title AS title,
         node.year AS year,
-        {TYPE_CASE_NODE} AS type,
+        labels(node)[0] AS type,
         collect(DISTINCT a.name) AS authors,
-        score * 2 AS relevance_score,
-        'keyword' AS source
+        score AS relevance_score,
+        'fulltext' AS source
 
     ORDER BY score DESC
     LIMIT $limit
@@ -172,38 +177,6 @@ def search_documents_graph(filters, limit=20):
 # =========================
 # HYBRID SEARCH (UPGRADE)
 # =========================
-def hybrid_search(query, filters=None, limit=20):
-
-    filters = filters or {}
-
-    fulltext_results = search_documents_fulltext(query, limit)
-    graph_results = search_documents_graph(filters, limit)
-
-    combined = fulltext_results + graph_results
-
-    # remove duplicate
-    seen = {}
-    for item in combined:
-        if item["id"] not in seen:
-            seen[item["id"]] = item
-        else:
-            # 🔥 merge score
-            seen[item["id"]]["relevance_score"] += item.get("relevance_score", 0)
-
-    results = list(seen.values())
-
-    # 🔥 final ranking
-    results.sort(
-        key=lambda x: (
-            x.get("relevance_score", 0),
-            x.get("year") or 0
-        ),
-        reverse=True
-    )
-
-    return results[:limit]
-
-
 # =========================
 # LATEST DOCUMENTS
 # =========================

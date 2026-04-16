@@ -91,43 +91,42 @@
             </div>
 
             <!-- ===================== -->
-            <!-- AUTHOR -->
+            <!-- AUTHOR (🔥 UPDATED) -->
             <!-- ===================== -->
             <div id="author" class="tab-content">
 
                 {% if book.authors_info and book.authors_info|length > 0 %}
 
-                {% set main_authors = [] %}
-                {% set co_authors = [] %}
+                    <table class="author-table">
 
-                {% for a in book.authors_info %}
-                    {% if a.role == "main" %}
-                        {% set _ = main_authors.append(a.name) %}
-                    {% else %}
-                        {% set _ = co_authors.append(a.name) %}
-                    {% endif %}
-                {% endfor %}
-
-                <div class="author-box">
-
-                    {% if main_authors|length > 0 %}
-                        <p><strong>Tác giả CB:</strong> {{ main_authors | join(', ') }}</p>
-                    {% endif %}
-
-                    {% if co_authors|length > 0 %}
-                        <p><strong>Tác giả:</strong> {{ co_authors | join(', ') }}</p>
-                    {% endif %}
-
-                    {% if main_authors|length == 0 and co_authors|length == 0 %}
                         {% for a in book.authors_info %}
-                            <p><strong>Tác giả:</strong> {{ a.name }}</p>
-                        {% endfor %}
-                    {% endif %}
+                            {% if a and a.name %}
+                            <tr>
+                                <td class="author-role">
+                                    {% if a.role == "supervisor" %}
+                                        Giảng viên hướng dẫn
+                                    {% elif a.role == "contributor" %}
+                                        Đồng tác giả
+                                    {% else %}
+                                        Tác giả
+                                    {% endif %}
+                                </td>
 
-                </div>
+                                <td class="author-name">
+                                    <a href="/author/{{ a.name | urlencode }}"
+                                    class="author-link"
+                                    data-name="{{ a.name }}">
+                                        {{ a.name }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+
+                    </table>
 
                 {% else %}
-                <div class="empty-box">Chưa có thông tin tác giả.</div>
+                    <div class="empty-box">Chưa có thông tin tác giả.</div>
                 {% endif %}
 
             </div>
@@ -168,7 +167,46 @@
     <!-- GRAPH -->
     <div class="section-card">
         <h3>🔗 Đồ thị tri thức</h3>
-        <div id="graph"></div>
+        <!-- 🔥 LEGEND -->
+        <div class="graph-legend">
+
+            <div class="legend-item">
+                <span class="legend-dot book"></span> Tài liệu
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot author"></span> Tác giả
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot topic"></span> Chủ đề
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot keyword"></span> Từ khóa
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot publisher"></span> Nhà xuất bản
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot related"></span> Tài liệu liên quan
+            </div>
+
+        </div>
+            <div id="graph"></div>
     </div>
 
+
+    <div id="authorPreview" class="author-preview hidden">
+    <div class="preview-header">
+        <h3 id="previewName"></h3>
+        <span class="preview-close" onclick="closePreview()">×</span>
+    </div>
+
+    <div id="previewList" class="preview-list"></div>
+
+    <a id="viewAllBtn" class="preview-more">Xem tất cả →</a>
+</div>
 </div>

@@ -17,17 +17,50 @@ def normalize(text: str) -> str:
     return text
 
 
-def clean(x):
-    if not x:
+def clean(value):
+    if not value:
         return None
-    return x.strip()
+    return value.strip()
+
+
+def extract_qa_title(q: str, intent: str | None):
+    if not q or not intent:
+        return None
+
+    patterns_by_intent = {
+        "ask_author": [
+            r"(?:ai la tac gia(?: cua)?|tac gia(?: cua)?|ai viet(?: cua)?|ai viet)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
+        ],
+        "ask_year": [
+            r"(?:nam xuat ban cua|nam cua|bao nhieu nam cua)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
+        ],
+        "ask_subject": [
+            r"(?:chu de cua|linh vuc cua)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
+        ],
+        "ask_publisher": [
+            r"(?:nha xuat ban cua|ai xuat ban|xuat ban boi ai)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
+        ],
+        "ask_university": [
+            r"(?:truong cua|luan van cua truong nao|duoc thuc hien tai truong nao|nop tai truong nao)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
+        ],
+    }
+
+    for pattern in patterns_by_intent.get(intent, []):
+        match = re.search(pattern, q, flags=re.IGNORECASE)
+        if match:
+            title = match.group(1).strip(" ?!.,:;\"'")
+            for suffix in ["la ai", "la gi", "o dau", "la truong nao", "la nha xuat ban nao"]:
+                if title.endswith(suffix):
+                    title = title[: -len(suffix)].strip(" ?!.,:;\"'")
+            return title or None
+
+    return None
 
 
 # =========================
-# NLP PARSER (IMPROVED)
+# NLP PARSER
 # =========================
 def parse_nl_query(query: str):
-
     raw = clean(query) or ""
     q = normalize(raw)
 
@@ -37,7 +70,9 @@ def parse_nl_query(query: str):
         "subject": None,
         "publisher": None,
         "university": None,
-        "year": None
+        "year": None,
+        "category": None,
+        "intent": None,
     }
 
     # ===== TYPE =====
@@ -48,12 +83,39 @@ def parse_nl_query(query: str):
     elif "luan van" in q:
         filters["doc_type"] = "Thesis"
 
-    # ===== YEAR =====
+    # ===== CATEGORY =====
+    if "giao trinh" in q:
+        filters["category"] = "Giao trinh"
+    elif "tham khao" in q:
+        filters["category"] = "Tham khao"
+
+    # ===== INTENT =====
+    if "tac gia" in q or "ai viet" in q:
+        filters["intent"] = "ask_author"
+    elif any(phrase in q for phrase in ["nam xuat ban cua", "nam cua", "bao nhieu nam cua"]):
+        filters["intent"] = "ask_year"
+    elif "chu de cua" in q or "linh vuc cua" in q:
+        filters["intent"] = "ask_subject"
+    elif any(phrase in q for phrase in ["nha xuat ban cua", "ai xuat ban", "xuat ban boi ai"]):
+        filters["intent"] = "ask_publisher"
+    elif any(phrase in q for phrase in ["truong cua", "luan van cua truong nao", "duoc thuc hien tai truong nao", "nop tai truong nao"]):
+        filters["intent"] = "ask_university"
+
+    # ===== YEAR FILTER =====
     year_match = re.search(r"\b(19|20)\d{2}\b", q)
     if year_match:
         filters["year"] = int(year_match.group())
 
-    # ===== AUTHOR (fix greedy bug) =====
+    # ===== TITLE FOR QA =====
+    title_candidate = extract_qa_title(q, filters["intent"])
+    if title_candidate:
+        filters["subject"] = title_candidate
+
+    # QA questions should stop here so entity extraction does not pollute filters.
+    if filters["intent"]:
+        return filters
+
+    # ===== AUTHOR =====
     author_match = re.search(r"(?:cua|tac gia|viet boi)\s+([a-zA-Z\s]+)", q)
     if author_match:
         filters["author"] = author_match.group(1).strip()
@@ -68,26 +130,22 @@ def parse_nl_query(query: str):
     if uni_match:
         filters["university"] = uni_match.group(1).strip()
 
-    # ===== SUBJECT (SMART CLEAN) =====
+    # ===== SUBJECT =====
     temp = q
-
     remove_words = [
         "sach", "bai bao", "luan van",
+        "giao trinh", "tham khao",
         "cua", "tac gia", "viet boi",
         "nha xuat ban", "xuat ban boi",
-        "truong", "truong dai hoc"
+        "truong", "truong dai hoc", "nam",
     ]
 
-    for w in remove_words:
-        temp = temp.replace(w, "")
+    for word in remove_words:
+        temp = temp.replace(word, "")
 
-    # remove year
     temp = re.sub(r"\b(19|20)\d{2}\b", "", temp)
-
-    # clean multiple spaces
     temp = re.sub(r"\s+", " ", temp).strip()
 
-    # tránh subject = author
     if temp and temp != filters["author"]:
         filters["subject"] = temp
 
@@ -98,16 +156,19 @@ def parse_nl_query(query: str):
 # MAIN SEARCH (HYBRID)
 # =========================
 def search_documents(query="", filters=None, limit=20):
-
     filters = filters or {}
-
-    # NLP parse
     parsed = parse_nl_query(query)
 
-    # merge filters (ưu tiên user input)
     final_filters = {}
-
-    for key in ["doc_type", "author", "subject", "publisher", "university", "year"]:
+    for key in [
+        "doc_type",
+        "author",
+        "subject",
+        "publisher",
+        "university",
+        "year",
+        "category",
+    ]:
         final_filters[key] = filters.get(key) or parsed.get(key)
 
     return hybrid_search(query, final_filters, limit)

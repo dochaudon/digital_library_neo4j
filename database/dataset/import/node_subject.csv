@@ -1,0 +1,310 @@
+id,name
+S1,Food-Beverage
+S2,Customer service
+S3,Adaptive antennas
+S4,Electrospray ionization mass spectrometry
+S5,Chemical reactions
+S6,Intermediates (Chemistry)
+S7,Wireless communication systems
+S8,Antennas (Electronics)
+S9,Wearable computers- Design and construction
+S10,Economics
+S11,Mass spectrometry
+S12,Biomolecules- Analysis
+S13,Spectrum Analysis
+S14,"Learning, Psychology of"
+S15,Written communication
+S16,Reading
+S17,Information technology
+S18,Project management
+S19,High throughput screening (Drug development)
+S20,Organic compounds
+S21,Report writing
+S22,Conflict of interests
+S23,Investment analysis
+S24,Education
+S25,Educational tests and measurements
+S26,Business logistics
+S27,Industrial procurement
+S28,Strategic planning
+S29,Data warehousing
+S30,Public relations
+S31,Real property
+S32,Production engineering
+S33,Manufacturing processes
+S34,Flexible manufacturing systems
+S35,Inclusive education
+S36,Mainstreaming in education
+S37,Diagnostic Imaging
+S38,Heart Diseases- Surgery
+S39,Cardiovascular Diseases
+S40,International finance
+S41,International trade
+S42,Internet marketing
+S43,Consumer behavior
+S44,Business communication
+S45,Chalcogenides
+S46,Nitrogen compounds
+S47,Chemistry
+S48,Brain- ffect of drugs on
+S49,Deceptive advertising
+S50,Medical misconceptions
+S51,Supervision of employees
+S52,Foreign exchange market
+S53,Investments
+S54,Rubber plantations
+S55,Vietnam- Politics and government
+S56,Medical Informatics
+S57,Drug Industry
+S58,Pharmaceutical industry
+S59,Food industry and trade
+S60,Water in agriculture
+S61,Agricultural biotechnology
+S62,Presentation graphics software
+S63,Visual communication
+S64,Information visualization
+S65,Computer networks
+S66,Oats
+S67,Oats- Processing
+S68,Communication in learning and scholarship
+S69,Research- Data processing
+S70,Options (Finance)
+S71,Futures
+S72,Cognitive science
+S73,Human-computer interaction
+S74,Artificial intelligence
+S75,Business intelligence
+S76,Big data
+S77,Data mining
+S78,Database management
+S79,Business planning
+S80,Solvation
+S81,Solvents
+S82,Centrifugal pumps
+S83,Stochastic processes
+S84,Stochastic models
+S85,Risk management
+S86,Architects and builders
+S87,Construction industry
+S88,Construction workers
+S89,Cloud computing- Industrial applications
+S90,Supply and demand- Management
+S91,Interpersonal communication
+S92,Selling
+S93,Phiên dịch và dịch thuật
+S94,Phiên dịch
+S95,Gian lận
+S96,Tâm lý học công nghiệp
+S97,Đạo đức kinh doanh
+S98,Châu Á- Quan hệ nước ngoài
+S99,Hoa Kỳ- Quan hệ nước ngoài
+S100,Chủ quyền
+S101,Quần đảo Hoàng Sa
+S102,Quần đảo Trường Sa
+S103,Thủy lợi- Lịch sử
+S104,Việt Nam- Lịch sử
+S105,Dịch thuật và phiên dịch
+S106,Phiên dịch- Lý thuyết
+S107,Triết học
+S108,Triết học và khoa học
+S109,Huế (Việt Nam)- Lịch sử
+S110,Triều nhà Nguyễn
+S111,Ca dao Việt Nam
+S112,Truyện thơ Việt Nam
+S113,Tục ngữ Việt Nam
+S114,Lý Quang Diệu- Phỏng vấn
+S115,Lý Quang Diệu- Quan điểm chính trị và xã hội
+S116,Tổng thống Singapore- Phỏng vấn
+S117,Ngôn ngữ lập trình Python
+S118,Tin học
+S119,Luật và pháp chế thực phẩm- Việt Nam
+S120,Tự động hóa
+S121,Điều khiển tự động
+S122,Phân tích công cụ
+S123,Hóa phân tích
+S124,Bao gói sản phẩm
+S125,Thực phẩm - Bao bì
+S126,Sinh lý học thực vật
+S127,Thành công trong kinh doanh
+S128,Bán hàng
+S129,Dinh dưỡng học
+S130,Marketing
+S131,Ảnh hưởng (Tâm lý học)
+S132,Khởi sự doanh nghiệp
+S133,Sinh hóa thực vật
+S134,Marketing internet
+S135,Xây dựng thương hiệu (Marketing)
+S136,Truyền thông xã hội
+S137,Thiết kế tuyến Clothoid
+S138,Động lực học công trình
+S139,Xây dựng đường ô tô
+S140,Kinh tế
+S141,Công nghệ thông tin
+S142,Xã hội
+S143,Thủ tục hành chính
+S144,Tâm lý học
+S145,Toán tối ưu
+S146,Trạm thủy điện
+S147,Thủy năng
+S148,Hệ thống thông tin di động
+S149,Mạng 6G
+S150,Tâm lý học xã hội
+S151,Phương pháp sơ đồ mạng (Xây dựng)
+S152,Công trình xây dựng- Thi công
+S153,Hệ thống chiếu sáng
+S154,Đường giao thông nông thôn- Việt Nam
+S155,Xã hội học
+S156,Toán ứng dụng
+S157,Tâm lí học giáo dục
+S158,Tâm lý học- Giáo trình
+S159,Văn thư
+S160,Quyền lực (Khoa học xã hội)
+S161,Chính trị học
+S162,Cấu trúc mạng máy tính
+S163,Truyền thông- Kỹ thuật
+S164,Truyền thông công nghiệp
+S165,Lịch sử ngoại giao- Việt Nam
+S166,Địa chất đại cương
+S167,Địa chất học- Giáo trình
+S168,Địa chất lịch sử
+S169,Điện tử công suất
+S170,Chính sách đối ngoại
+S171,Công nghệ hóa học
+S172,Hóa học hữu cơ
+S173,Thống kê đầu tư
+S174,Thủy văn học- Mô hình toán học
+S175,Màn hình tinh thể lỏng
+S176,Thực phẩm
+S177,Hóa sinh
+S178,Thực phẩm- Quản lý chất lượng
+S179,Luật Thực phẩm
+S180,Khách hàng - Nghiên cứu
+S181,Miễn dịch học
+S182,Dinh dưỡng nuôi trồng thủy sản
+S183,Nuôi trồng thủy sản
+S184,Tài chính doanh nghiệp
+S185,Phân tích tài chính
+S186,Cảng biển- Khai thác
+S187,Cảng biển- Quản lý
+S188,Cảng chuyên dụng
+S189,Hàng hải- Đánh giá
+S190,Hàng hải- Kiểm tra
+S191,Kế toán tài chính
+S192,Báo cáo tài chính
+S193,Tàu thủy
+S194,Tàu thủy- Thiết bị
+S195,Nuôi thương phẩm rong biển
+S196,Ươm giống rong biển
+S197,Rong biển
+S198,Sản xuất giống rong biển
+S199,Trồng rong biển
+S200,Quy hoạch nuôi trồng thủy sản
+S201,Phát triển nuôi trồng thủy sản
+S202,Vật liệu
+S203,Khoa học- Phương pháp nghiên cứu
+S204,Đóng tàu
+S205,Quản lý nuôi trồng thủy sản
+S206,Văn bản pháp luật
+S207,Động vật phù du- Thủy sinh học
+S208,Thực vật phù du- Thủy sinh học
+S209,Động vật giáp xác- Bài giảng
+S210,Động vật thân mềm- Bài giảng
+S211,Động cơ đốt trong- Môi chất
+S212,Động cơ đốt trong- Nhiên liệu
+S213,Càng- Hàng hóa
+S214,Đại lý tàu biển
+S215,Biển- Môi trường
+S216,Môi trường biển- Bảo vệ
+S217,Engineering- English
+S218,Hàng hài- Động cơ
+S219,Tàu thủy- Máy
+S220,Cơ điện tử- Bài giảng
+S221,Động cơ đốt trong
+S222,Hệ thống điều hòa không khí
+S223,Thiết bị lạnh
+S224,Hàng hải - Tiếng Anh
+S225,Tàu phi kim loại- Công nghệ đóng sửa
+S226,Nuôi trồng thủy sản- Nghiên cứu
+S227,Phương pháp nghiên cứu
+S228,Kỹ thuật tàu thủy
+S229,Tài chính- Tiền tệ
+S230,Pháp luật hàng hải
+S231,An toàn lao động
+S232,Nghiệp vụ thuyền viên
+S233,Kỹ thuật xây dựng
+S234,Kết cấu bê tông
+S235,Giao thông đô thị
+S236,Phần mềm VISSIM- Ứng dụng
+S237,Công trình chống động đất
+S238,Marketing dịch vụ công
+S239,Quản lý dịch vụ công
+S240,Destination management
+S241,Quản trị kinh doanh
+S242,Du lịch- Quản lý
+S243,Du lịch - Luật
+S244,Chuyển đổi số
+S245,Doanh nghiệp vừa và nhỏ
+S246,Hành chính công- Chất lượng
+S247,Lâm nghiệp
+S248,Nông nghiệp
+S249,Sản xuất hàng hóa
+S250,Công nghệ sinh học
+S251,Hàu- Kỹ thuật nuôi
+S252,Vắc xin- Công nghệ sản xuất
+S253,An toàn thực phẩm
+S254,Cá- Bệnh
+S255,Tôm he- Kỹ thuật nuôi
+S256,Tảo- Kỹ thuật trồng
+S257,Nông nghiệp- Chính sách
+S258,Nông nghiệp- Hiệu quả
+S259,Thuế- Quản lý
+S260,Thuế thu nhập doanh nghiệp
+S261,Thuế doanh nghiệp
+S262,Quản trị nhân sự
+S263,Hành chính công
+S264,Lao động- Kinh tế xã hội
+S265,Tôm sú- Thức ăn
+S266,Vi khuẩn- Đặc tính sinh học
+S267,Môi trường- Hoạt động xã hội
+S268,"Môi trường, Ảnh hưởng của con người đối với"
+S269,Ontology (Truy xuất thông tin)
+S270,Tổ chức dữ liệu- Mô hình
+S271,Cua- Đặc điểm sinh học
+S272,Cá chim vây vàng- Chất lượng
+S273,Cá- Bảo quản
+S274,Sấy- Hệ thống
+S275,Tôm thẻ chân trắng- Kỹ thuật nuôi
+S276,Tôm- Thức ăn
+S277,Cá tầm- Bảo quản
+S278,Cá tầm- Giống
+S279,Cá tai bồ- Kỹ thuật nuôi
+S280,Cá tầm- Đặc điểm sinh học
+S281,Nghề cá- Quản lý
+S282,Đánh cá- Kỹ thuật
+S283,Giao thông đô thị- Quản lý
+S284,Giao thông thông minh
+S285,Thị giác máy tính
+S286,Xử lý hình ảnh
+S287,Du lịch
+S288,Kinh tế- Phát triển chiến lược
+S289,Hàng hóa- Quản lý
+S290,Kiểm soát tài chính
+S291,Tài chính- Quản trị
+S292,Khách hàng- Nghiên cứu
+S293,Bảo hiểm phi nhân thọ
+S294,Ngân hàng và hoạt động ngân hàng
+S295,Hàng hóa- Lưu thông
+S296,Logistics (Hậu cần)
+S297,Đầu tư- Chính sách
+S298,Bảo hiểm xã hội tự nguyện
+S299,Marketing mix- Bảo hiểm
+S300,Tín dụng ngân hàng
+S301,Quản trị kinh doanh- Năng lực cạnh tranh
+S302,Quản trị chiến lược
+S303,Kháng sinh- Xác định hoạt lực
+S304,Hàn- Kỹ thuật
+S305,Thương mại điện tử
+S306,Website- Thiết kế
+S307,Cá- Đặc điểm sinh học
+S308,Vi khuẩn- Nghiên cứu
+S309,Vắc xin- Đánh giá

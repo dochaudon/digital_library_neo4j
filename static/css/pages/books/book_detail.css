@@ -219,58 +219,47 @@
 .graph-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px 18px;
+    gap: 15px;
+    margin-top: 15px;
+    font-size: 14px;
 }
 
 .legend-item {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 8px;
-    color: #374151;
-    font-size: 13px;
+    gap: 6px;
 }
 
-.legend-swatch {
+.legend-dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    display: inline-block;
 }
 
-.legend-swatch.book {
+/* 🔥 MATCH với màu graph */
+
+.legend-dot.book {
     background: #2563eb;
-    border-radius: 3px;
 }
 
-.legend-swatch.author {
+.legend-dot.author {
     background: #16a34a;
 }
 
-.legend-swatch.topic {
+.legend-dot.topic {
     background: #f59e0b;
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-    border-radius: 0;
 }
 
-.legend-swatch.keyword {
-    background: #8b5cf6;
-    border-radius: 0;
-    transform: rotate(45deg);
+.legend-dot.keyword {
+    background: #9333ea;
 }
 
-.legend-swatch.publisher {
+.legend-dot.publisher {
     background: #0ea5e9;
-    border-radius: 6px;
 }
 
-.legend-swatch.language {
-    background: #ec4899;
-    border-radius: 50%;
-}
-
-.legend-swatch.related {
-    background: #64748b;
-    border-radius: 50%;
+.legend-dot.related {
+    background: #6b7280;
 }
 
 #graph {
@@ -284,6 +273,114 @@
     margin-top: 10px;
     color: #6b7280;
     font-size: 13px;
+}
+
+.author-preview {
+    position: fixed;
+    top: 20%;
+    right: 20px;
+    width: 300px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    padding: 15px;
+    z-index: 999;
+}
+
+.hidden {
+    display: none;
+}
+
+.author-preview {
+    position: fixed;
+    top: 120px;
+    right: 30px;
+    width: 340px;
+
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+
+    border-radius: 16px;
+    padding: 16px;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+
+    z-index: 9999;
+
+    animation: fadeIn 0.25s ease;
+}
+
+/* HEADER */
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.preview-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* CLOSE BTN */
+.preview-close {
+    cursor: pointer;
+    font-size: 20px;
+    color: #999;
+}
+
+.preview-close:hover {
+    color: red;
+}
+
+/* LIST */
+.preview-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* ITEM */
+.preview-list div {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.preview-list a {
+    text-decoration: none;
+    color: #1d4ed8;
+    font-size: 14px;
+}
+
+.preview-list a:hover {
+    text-decoration: underline;
+}
+
+/* BUTTON */
+.preview-more {
+    display: block;
+    margin-top: 10px;
+    text-align: right;
+    font-weight: 500;
+    color: #2563eb;
+}
+.author-preview {
+    pointer-events: auto;   /* 🔥 CHO PHÉP CLICK */
+}
+
+#graph {
+    pointer-events: auto;
+}
+/* ANIMATION */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 @media (max-width: 900px) {

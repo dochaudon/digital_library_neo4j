@@ -1,0 +1,27 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+<div class="category-container">
+
+    <div class="header">
+        <h2>📂 Categories</h2>
+        <a href="/admin/categories/create" class="btn-add">➕ Add</a>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="categoryTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/category.js') }}"></script>
+{% endblock %}

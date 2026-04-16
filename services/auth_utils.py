@@ -4,7 +4,7 @@ bcrypt = Bcrypt()
 
 
 # =========================
-# INIT (OPTIONAL)
+# INIT
 # =========================
 def init_bcrypt(app):
     bcrypt.init_app(app)
@@ -15,13 +15,16 @@ def init_bcrypt(app):
 # =========================
 def hash_password(password):
     if not password:
-        return None
+        raise ValueError("Password is required")
 
     try:
+        # 🔥 rounds mặc định tốt, có thể chỉnh nếu cần
         hashed = bcrypt.generate_password_hash(password)
-        return hashed.decode('utf-8')
-    except Exception:
-        return None
+        return hashed.decode("utf-8")
+
+    except Exception as e:
+        print("HASH ERROR:", e)
+        raise
 
 
 # =========================
@@ -32,6 +35,12 @@ def check_password(hashed_password, password):
         return False
 
     try:
+        # 🔥 đảm bảo hashed là string
+        if isinstance(hashed_password, bytes):
+            hashed_password = hashed_password.decode("utf-8")
+
         return bcrypt.check_password_hash(hashed_password, password)
-    except Exception:
+
+    except Exception as e:
+        print("CHECK PASSWORD ERROR:", e)
         return False

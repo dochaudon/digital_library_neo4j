@@ -1,0 +1,51 @@
+﻿{% extends "library/layouts/base.html" %}
+
+{% block title %}Hoi dap | Thu Vien So{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/qa/index.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="qa-chat-page">
+    <div class="chat-shell">
+        <div class="chat-header">
+            <div>
+                <span class="chat-kicker">Library Q&amp;A</span>
+                <h1>Hoi dap tai lieu theo dang hoi thoai</h1>
+                <p>Dat cau hoi bang tieng Viet, he thong se tra loi va goi y tai lieu ngay trong khung chat.</p>
+            </div>
+        </div>
+
+        <div class="chat-suggestions">
+            <button type="button" class="chat-chip">ai la tac gia cua sach machine learning</button>
+            <button type="button" class="chat-chip">nam xuat ban cua bai bao graph analytics</button>
+            <button type="button" class="chat-chip">chu de cua luan van tri tue nhan tao</button>
+            <button type="button" class="chat-chip">nha xuat ban cua sach data mining</button>
+        </div>
+
+        <div class="chat-container">
+            <div id="chatBox" class="chat-box">
+                <div class="chat-message bot intro">
+                    <div class="message-bubble">
+                        <p class="message-text">Xin chao, ban co the hoi ve tac gia, nam, chu de, nha xuat ban, truong hoac tim tai lieu trong thu vien so.</p>
+                    </div>
+                </div>
+            </div>
+
+            <form id="chatForm" class="chat-input">
+                <textarea
+                    id="questionInput"
+                    placeholder="Nhap cau hoi, vi du: ai la tac gia cua sach X"
+                    rows="2"
+                ></textarea>
+                <button type="submit" id="sendButton">Gui</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/library/pages/qa.js') }}"></script>
+{% endblock %}

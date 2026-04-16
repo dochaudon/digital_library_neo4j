@@ -135,3 +135,12 @@ body {
     text-align: center;
     padding: 10px;
 }
+.menu a.active {
+    background-color: #2563eb;
+    color: #fff;
+    border-radius: 6px;
+}
+
+.menu a.active i {
+    color: #fff;
+}

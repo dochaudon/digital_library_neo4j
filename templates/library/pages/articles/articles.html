@@ -25,23 +25,43 @@
 
                 <div class="article-content">
 
+                    <!-- TITLE -->
                     <a href="{{ url_for('main.article_detail', id=a.id) }}" 
                        class="article-title"
                        title="{{ a.title }}">
                         {{ a.title }}
                     </a>
 
+                    <!-- AUTHOR (🔥 FIX) -->
                     <p class="article-author">
-                        👨‍🏫 {{ a.authors | join(', ') }}
+                        Tác giả:
+
+                        {% set valid_authors = [] %}
+                        {% if a.authors %}
+                            {% for author in a.authors %}
+                                {% if author %}
+                                    {% set _ = valid_authors.append(author) %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        {% if valid_authors|length > 0 %}
+                            {% for author in valid_authors %}
+                                <a href="{{ url_for('main.search', author=author) }}">
+                                    {{ author }}
+                                </a>{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+
                     </p>
 
-                    <p class="article-journal">
-                        📚 {{ a.journal or 'N/A' }}
-                    </p>
+                    <!-- JOURNAL -->
 
+                    <!-- FOOTER -->
                     <div class="article-footer">
-                        <span>📅 {{ a.year }}</span>
-                        <span class="doi">DOI: {{ a.doi or 'N/A' }}</span>
+                        <span>📅 {{ a.year or 'N/A' }}</span>
                     </div>
 
                 </div>

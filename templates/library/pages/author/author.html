@@ -1,0 +1,79 @@
+{% extends 'library/layouts/base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/library/pages/author/author.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<section class="author-page">
+
+    <!-- 🔥 AUTHOR HEADER -->
+    <div class="author-header">
+        <div class="author-avatar">
+            {{ author_name[0] }}
+        </div>
+
+        <div class="author-info">
+            <h2>{{ author_name }}</h2>
+            <p>{{ documents|length }} tài liệu</p>
+        </div>
+    </div>
+
+    <!-- 🔥 DOCUMENT LIST -->
+    <div class="author-docs">
+
+        {% for doc in documents %}
+        <div class="doc-card">
+
+            <div class="doc-left">
+                <span class="doc-icon">
+                    {% if doc.type == "Book" %}📘
+                    {% elif doc.type == "Article" %}📰
+                    {% elif doc.type == "Thesis" %}🎓
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="doc-content">
+                <a href="
+                    {% if doc.type == 'Book' %}
+                        /book/{{ doc.id }}
+                    {% elif doc.type == 'Article' %}
+                        /article/{{ doc.id }}
+                    {% elif doc.type == 'Thesis' %}
+                        /thesis/{{ doc.id }}
+                    {% else %}
+                        /book/{{ doc.id }}
+                    {% endif %}
+                    " class="doc-title">
+                    {{ doc.title }}
+                </a>
+
+                <div class="doc-meta">
+                    <span class="doc-year">📅 {{ doc.year }}</span>
+
+                    <span class="doc-type 
+                        {% if doc.type == 'Book' %}type-book
+                        {% elif doc.type == 'Article' %}type-article
+                        {% elif doc.type == 'Thesis' %}type-thesis
+                        {% endif %}
+                    ">
+                        {{ doc.type }}
+                    </span>
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="pagination-wrapper">
+        {% include 'library/components/pagination.html' %}
+    </div>
+
+</section>
+
+{% endblock %}

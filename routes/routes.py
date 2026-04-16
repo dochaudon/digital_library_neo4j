@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, redirect
+from flask import Blueprint, render_template, request, redirect, jsonify
 from services.search_service import search_documents, get_latest
 from services.graph_service import get_graph_data
 from services.suggest_service import suggest_documents
-
+from services.author_service import get_author_documents_service
+from services.qa_service import get_qa_response
 from services.book_service import (
     create_book_service,
     get_books_service,
@@ -92,6 +93,23 @@ def search():
         total_pages=total_pages,
         sort=sort
     )
+
+
+# =========================
+# QA PAGE
+# =========================
+@main.route("/qa")
+def qa_page():
+    return render_template("library/pages/qa/index.html")
+
+
+@main.route("/api/qa", methods=["POST"])
+def qa_api():
+    data = request.get_json() or {}
+    question = (data.get("question") or "").strip()
+    history = data.get("history") or []
+
+    return jsonify(get_qa_response(question, history=history))
 
 
 # =========================
@@ -198,58 +216,62 @@ def suggest():
 
 
 # =========================
-# ADMIN BOOK
+# ADMIN DASHBOARD
 # =========================
-@main.route("/admin/books")
-def admin_books():
+@main.route("/admin/dashboard")
+def admin_dashboard():
+
+    total_books = count_books_service()
+    total_articles = count_articles_service()
+    total_thesis = count_thesis_service()
+
+    return render_template(
+        "admin/pages/dashboard.html",
+        total_books=total_books,
+        total_articles=total_articles,
+        total_thesis=total_thesis
+    )
+
+
+@main.route("/author/<name>")
+def author_page(name):
+
     page = int(request.args.get("page", 1))
-    limit = 10
+    limit = 5
 
-    books = get_books_service(page, limit)
-    total = count_books_service()
+    data = get_author_documents_service(name, page, limit)
 
-    total_pages = (total // limit) + (1 if total % limit else 0)
+    documents = data["documents"]
 
-    return render_template("admin/pages/books/list.html",
-                           books=books, page=page,
-                           total_pages=total_pages, limit=limit)
+    # 🔥 CHUẨN HÓA URL THEO TYPE
+    for doc in documents:
+        doc_type = doc.get("type")
 
+        if doc_type == "Book":
+            doc["url"] = f"/book/{doc['id']}"
+        elif doc_type == "Article":
+            doc["url"] = f"/article/{doc['id']}"
+        elif doc_type == "Thesis":
+            doc["url"] = f"/thesis/{doc['id']}"
+        else:
+            # fallback (tránh lỗi)
+            doc["url"] = f"/book/{doc['id']}"
 
-@main.route("/admin/books/create", methods=["GET", "POST"])
-def create_book():
-    if request.method == "POST":
-        data = {
-            "title": request.form["title"],
-            "year": int(request.form["year"]),
-            "isbn": request.form["isbn"],
-            "pages": int(request.form["pages"]),
-            "abstract": request.form["abstract"]
-        }
-        create_book_service(data)
-        return redirect("/admin/books")
+    return render_template(
+        "library/pages/author/author.html",
+        author_name=name,
+        documents=documents,
+        page=page,
+        total_pages=data["total_pages"]
+    )
 
-    return render_template("admin/pages/books/create.html")
+@main.route("/api/author_preview")
+def author_preview():
+    name = request.args.get("name")
 
+    data = get_author_documents_service(name, page=1, limit=5)
 
-@main.route("/admin/books/edit/<id>", methods=["GET", "POST"])
-def edit_book(id):
-    book = get_book_detail_service(id)
-
-    if request.method == "POST":
-        data = {
-            "title": request.form["title"],
-            "year": int(request.form["year"]),
-            "isbn": request.form["isbn"],
-            "pages": int(request.form["pages"]),
-            "abstract": request.form["abstract"]
-        }
-        update_book_service(id, data)
-        return redirect("/admin/books")
-
-    return render_template("admin/pages/books/edit.html", book=book)
-
-
-@main.route("/admin/books/delete/<id>")
-def delete_book_route(id):
-    delete_book_service(id)
-    return redirect("/admin/books")
+    return {
+        "name": name,
+        "documents": data["documents"]
+    }

@@ -330,3 +330,48 @@
     background: #0ea5e9;
     border-radius: 6px;
 }
+.graph-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+/* 🔥 MATCH với màu graph */
+
+.legend-dot.book {
+    background: #2563eb;
+}
+
+.legend-dot.author {
+    background: #16a34a;
+}
+
+.legend-dot.topic {
+    background: #f59e0b;
+}
+
+.legend-dot.keyword {
+    background: #9333ea;
+}
+
+.legend-dot.publisher {
+    background: #0ea5e9;
+}
+
+.legend-dot.related {
+    background: #6b7280;
+}

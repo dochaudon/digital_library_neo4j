@@ -21,7 +21,6 @@
 
             <h3>🔎 Bộ lọc</h3>
 
-            <!-- TYPE (giữ lại nếu bạn vẫn muốn UI, không dùng backend) -->
             <div class="filter-group">
                 <p><strong>Loại tài liệu</strong></p>
                 <label><input type="checkbox" value="Book" class="filter-type"> Sách</label>
@@ -29,7 +28,6 @@
                 <label><input type="checkbox" value="Thesis" class="filter-type"> Luận văn</label>
             </div>
 
-            <!-- SORT -->
             <div class="filter-group">
                 <p><strong>Sắp xếp</strong></p>
                 <select id="sort-select">
@@ -51,8 +49,10 @@
             <div id="results-list">
 
                 {% for doc in results %}
-                <div class="result-card" data-type="{{ doc.type }}" data-year="{{ doc.year }}"
-                    data-title="{{ doc.title }}">
+                <div class="result-card"
+                     data-type="{{ doc.type }}"
+                     data-year="{{ doc.year }}"
+                     data-title="{{ doc.title }}">
 
                     <div class="result-icon">📄</div>
 
@@ -67,7 +67,8 @@
                         </span>
 
                         <!-- TITLE -->
-                        <a class="result-title" href="{% if doc.type == 'Book' %}
+                        <a class="result-title"
+                           href="{% if doc.type == 'Book' %}
                                     {{ url_for('main.book_detail', id=doc.id) }}
                                  {% elif doc.type == 'Article' %}
                                     {{ url_for('main.article_detail', id=doc.id) }}
@@ -79,17 +80,36 @@
 
                         <!-- META -->
                         <p class="result-meta">
+
+                            {% set valid_authors = [] %}
                             {% if doc.authors %}
-                            {{ doc.authors | join(', ') }}
-                            {% elif doc.publisher %}
-                            {{ doc.publisher }}
-                            {% elif doc.university %}
-                            {{ doc.university }}
-                            {% else %}
-                            N/A
+                                {% for a in doc.authors %}
+                                    {% if a %}
+                                        {% set _ = valid_authors.append(a) %}
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
+
+                            {% if valid_authors|length > 0 %}
+                                {% for a in valid_authors %}
+                                    <a href="{{ url_for('main.search', author=a) }}">
+                                        {{ a }}
+                                    </a>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+
+                            {% elif doc.publisher %}
+                                {{ doc.publisher }}
+
+                            {% elif doc.university %}
+                                {{ doc.university }}
+
+                            {% else %}
+                                N/A
+                            {% endif %}
+
                         </p>
 
+                        <!-- YEAR -->
                         <p class="result-year">📅 {{ doc.year or 'N/A' }}</p>
 
                     </div>
@@ -99,7 +119,7 @@
 
             </div>
 
-            <!-- ===== PAGINATION (🔥 THÊM Ở ĐÂY) ===== -->
+            <!-- PAGINATION -->
             <div class="mt-20">
                 {% include 'library/components/pagination.html' %}
             </div>

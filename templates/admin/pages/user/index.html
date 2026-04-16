@@ -1,0 +1,29 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+<div class="user-container">
+
+    <div class="header">
+        <h2>👤 Users Management</h2>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="userTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/user.js') }}"></script>
+{% endblock %}

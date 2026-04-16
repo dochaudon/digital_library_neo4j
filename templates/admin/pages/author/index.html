@@ -1,0 +1,31 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/author/index.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="author-container">
+
+    <div class="header">
+        <h2>👤 Authors</h2>
+        <a href="/admin/authors/create" class="btn-add">➕ Add</a>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="authorTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/author.js') }}"></script>
+{% endblock %}
