@@ -25,6 +25,11 @@
             🎓 Luận văn
         </a>
 
+        <a href="{{ url_for('main.qa_page') }}"
+           class="{% if request.endpoint == 'main.qa_page' %}active{% endif %}">
+            🤖 Hỏi đáp
+        </a>
+
 
     </div>
 </nav>

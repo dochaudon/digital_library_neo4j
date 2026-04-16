@@ -1,0 +1,22 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+<div class="form-container">
+
+    <h2>Institution</h2>
+
+    <input type="hidden" id="instId">
+
+    <input type="text" id="name" placeholder="Institution name">
+
+    <select id="type">
+        <option value="Publisher">Publisher</option>
+        <option value="University">University</option>
+    </select>
+
+    <button onclick="saveInstitution()">Save</button>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/institution_form.js') }}"></script>
+{% endblock %}

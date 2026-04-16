@@ -1,19 +1,87 @@
 <aside class="sidebar" id="sidebar">
 
     <ul class="menu">
-        <li><a href="/admin"><i class="fa fa-home"></i> Dashboard</a></li>
 
+        <!-- ================= DASHBOARD ================= -->
+        <li>
+            <a href="/admin/dashboard"
+               class="{% if request.path.startswith('/admin/dashboard') %}active{% endif %}">
+                <i class="fa fa-home"></i> Dashboard
+            </a>
+        </li>
+
+        <!-- ================= DOCUMENT ================= -->
         <li class="menu-title">Quản lý tài liệu</li>
-        <li><a href="/admin/books"><i class="fa fa-book"></i> Books</a></li>
-        <li><a href="/admin/articles"><i class="fa fa-newspaper"></i> Articles</a></li>
-        <li><a href="/admin/thesis"><i class="fa fa-graduation-cap"></i> Thesis</a></li>
 
-        <li class="menu-title">Khác</li>
-        <li><a href="/admin/authors"><i class="fa fa-user"></i> Authors</a></li>
-        <li><a href="/admin/topics"><i class="fa fa-tags"></i> Topics</a></li>
+        <li>
+            <a href="/admin/documents/page"
+               class="{% if request.path.startswith('/admin/documents') %}active{% endif %}">
+                <i class="fa fa-database"></i> Documents
+            </a>
+        </li>
+
+        <!-- ================= ENTITY ================= -->
+        <li class="menu-title">Thực thể</li>
+
+        <li>
+            <a href="/admin/authors/page"
+               class="{% if request.path.startswith('/admin/authors') %}active{% endif %}">
+                <i class="fa fa-user"></i> Authors
+            </a>
+        </li>
+
+        <li>
+            <a href="/admin/subjects/page"
+               class="{% if request.path.startswith('/admin/subjects') %}active{% endif %}">
+                <i class="fa fa-book"></i> Subjects
+            </a>
+        </li>
+
+        <li>
+            <a href="/admin/keywords/page"
+               class="{% if request.path.startswith('/admin/keywords') %}active{% endif %}">
+                <i class="fa fa-key"></i> Keywords
+            </a>
+        </li>
+
+        <li>
+            <a href="/admin/categories/page"
+               class="{% if request.path.startswith('/admin/categories') %}active{% endif %}">
+                <i class="fa fa-folder"></i> Categories
+            </a>
+        </li>
+
+        <!-- ================= PUBLISH ================= -->
+        <li class="menu-title">Xuất bản</li>
+
+        <li>
+            <a href="/admin/journals/page"
+               class="{% if request.path.startswith('/admin/journals') %}active{% endif %}">
+                <i class="fa fa-newspaper"></i> Journals
+            </a>
+        </li>
+
+        <li>
+            <a href="/admin/institutions/page"
+               class="{% if request.path.startswith('/admin/institutions') %}active{% endif %}">
+                <i class="fa fa-building"></i> Institutions
+            </a>
+        </li>
+
+        <li>
+            <a href="/admin/languages/page"
+               class="{% if request.path.startswith('/admin/languages') %}active{% endif %}">
+                <i class="fa fa-globe"></i> Languages
+            </a>
+        </li>
+        <li>
+            <a href="/admin/users/page">
+                <i class="fa fa-users"></i> Users
+            </a>
+        </li>
     </ul>
 
-    <!-- NÚT BÊN DƯỚI -->
+    <!-- ================= FOOTER ================= -->
     <div class="sidebar-footer">
         <a href="/" class="back-home">
             <i class="fa fa-arrow-left"></i> Trang chủ

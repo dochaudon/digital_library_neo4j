@@ -149,3 +149,4 @@ def get_related_documents(doc_id, limit=10):
         "id": doc_id,
         "limit": limit
     })
+

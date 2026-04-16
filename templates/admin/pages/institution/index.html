@@ -1,0 +1,28 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+<div class="institution-container">
+
+    <div class="header">
+        <h2>🏢 Institutions</h2>
+        <a href="/admin/institutions/create" class="btn-add">➕ Add</a>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="institutionTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/institution.js') }}"></script>
+{% endblock %}

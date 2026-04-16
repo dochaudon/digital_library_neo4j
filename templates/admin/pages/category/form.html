@@ -1,0 +1,18 @@
+
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+<div class="form-container">
+
+    <h2>Category</h2>
+
+    <input type="hidden" id="categoryId">
+
+    <input type="text" id="name" placeholder="Category name">
+
+    <button onclick="saveCategory()">Save</button>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/category_form.js') }}"></script>
+{% endblock %}

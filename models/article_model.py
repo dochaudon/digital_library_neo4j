@@ -8,9 +8,7 @@ def get_article_detail(article_id):
     query = """
     MATCH (a:Article {id:$id})
 
-    OPTIONAL MATCH (a)-[:HAS_AUTHOR]->(au:Author)
-    OPTIONAL MATCH (a)-[:HAS_SUBJECT]->(s:Subject)
-    OPTIONAL MATCH (a)-[:HAS_KEYWORD]->(k:Keyword)
+    OPTIONAL MATCH (a)-[r:HAS_AUTHOR]->(au:Author)
     OPTIONAL MATCH (a)-[:IN_LANGUAGE]->(l:Language)
     OPTIONAL MATCH (a)-[:PUBLISHED_IN]->(j:Journal)
 
@@ -20,12 +18,14 @@ def get_article_detail(article_id):
         a.year AS year,
         a.doi AS doi,
         a.abstract AS abstract,
+        a.pages AS pages,
 
-        collect(DISTINCT au.name) AS authors,
-        collect(DISTINCT s.name) AS subjects,
-        collect(DISTINCT k.name) AS keywords,
+        collect(DISTINCT {
+            name: au.name,
+            role: r.role
+        }) AS authors_info,
+
         collect(DISTINCT l.name) AS languages,
-
         head(collect(DISTINCT j.name)) AS journal
     """
 
@@ -42,7 +42,6 @@ def create_article(data):
         id: $id,
         title: $title,
         year: $year,
-        doi: $doi,
         abstract: $abstract
     })
     RETURN a

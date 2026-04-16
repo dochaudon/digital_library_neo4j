@@ -18,7 +18,7 @@
 
         <!-- LEFT -->
         <div class="left-panel">
-            <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" class="pdf-image" alt="PDF">
+            <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" class="pdf-image">
         </div>
 
         <!-- RIGHT -->
@@ -34,102 +34,150 @@
             <!-- DESC -->
             <div id="desc" class="tab-content active">
                 <table class="doc-table">
+
                     <tr>
                         <td>Nhan đề</td>
                         <td>{{ thesis.title }}</td>
                     </tr>
+
                     <tr>
                         <td>Năm</td>
                         <td>{{ thesis.year or 'N/A' }}</td>
                     </tr>
-                    <tr>
-                        <td>Bằng cấp</td>
-                        <td>{{ thesis.degree or 'N/A' }}</td>
-                    </tr>
+
                     <tr>
                         <td>Trường</td>
                         <td>{{ thesis.university or 'N/A' }}</td>
                     </tr>
+
                     <tr>
                         <td>Số trang</td>
                         <td>{{ thesis.pages or 'N/A' }}</td>
                     </tr>
+
+                    <!-- SUBJECT -->
+                    <tr>
+                        <td>Chủ đề</td>
+                        <td>
+                            {% if thesis.subjects %}
+                                {% for s in thesis.subjects %}
+                                    <a href="{{ url_for('main.search', query=s) }}">{{ s }}</a>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %} N/A {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- KEYWORD -->
+                    <tr>
+                        <td>Từ khóa</td>
+                        <td>
+                            {% if thesis.keywords %}
+                                {% for k in thesis.keywords %}
+                                    <a href="{{ url_for('main.search', query=k) }}">{{ k }}</a>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %} N/A {% endif %}
+                        </td>
+                    </tr>
+
                 </table>
             </div>
 
             <!-- AUTHOR -->
             <div id="author" class="tab-content">
-                {% if thesis.authors %}
-                <ul>
-                    {% for a in thesis.authors %}
-                    <li>
-                        <a href="{{ url_for('main.search', author=a) }}">{{ a }}</a>
-                    </li>
+
+                {% if thesis.authors_info %}
+                <table class="author-table">
+                    {% for a in thesis.authors_info %}
+                        {% if a.name %}
+                        <tr>
+                            <td class="author-role">
+                                {% if a.role == "supervisor" %}
+                                    🎓 Giảng viên hướng dẫn
+                                {% elif a.role == "contributor" %}
+                                    🤝 Đồng tác giả
+                                {% else %}
+                                    👤 Tác giả
+                                {% endif %}
+                            </td>
+                            <td class="author-name">
+                                <a href="{{ url_for('main.search', author=a.name) }}">{{ a.name }}</a>
+                            </td>
+                        </tr>
+                        {% endif %}
                     {% endfor %}
-                </ul>
+                </table>
                 {% else %}
-                <div class="empty-box">Chưa có tác giả</div>
+                    <div class="empty-box">Chưa có tác giả</div>
                 {% endif %}
+
             </div>
 
             <!-- PDF -->
             <div id="pdf" class="tab-content">
                 {% if thesis.file_url %}
                 <div class="pdf-actions">
-                    <button class="pdf-btn" onclick="togglePdfViewer()">Xem PDF</button>
-                    <a class="pdf-link" href="{{ thesis.file_url }}" target="_blank">Mở tab mới</a>
+                    <button onclick="togglePdfViewer()">Xem PDF</button>
+                    <a href="{{ thesis.file_url }}" target="_blank">Mở tab mới</a>
                 </div>
 
-                <div id="pdf-viewer" class="pdf-viewer hidden">
+                <div id="pdf-viewer" class="hidden">
                     <iframe src="{{ thesis.file_url }}"></iframe>
                 </div>
                 {% else %}
-                <div class="empty-box">Chưa có tài liệu số</div>
+                <div class="empty-box">Chưa có tài liệu</div>
                 {% endif %}
             </div>
 
         </div>
     </div>
 
-    <!-- ABSTRACT -->
-    <div class="section-card">
-        <div class="section-title">
-            <span class="section-icon">📄</span>
-            <h3>Tóm tắt</h3>
-        </div>
-        <p class="abstract-text">{{ thesis.abstract or "Chưa có mô tả" }}</p>
-    </div>
-
     <!-- GRAPH -->
     <div class="section-card">
         <div class="section-title">
-            <span class="section-icon">🔗</span>
+            <span>🔗</span>
             <h3>Đồ thị tri thức</h3>
         </div>
+        <div class="graph-legend">
 
-        <div class="graph-toolbar">
-            <div class="graph-legend">
-                <span class="legend-item"><span class="legend-swatch thesis"></span>Luận văn</span>
-                <span class="legend-item"><span class="legend-swatch author"></span>Tác giả</span>
-                <span class="legend-item"><span class="legend-swatch topic"></span>Chủ đề</span>
-                <span class="legend-item"><span class="legend-swatch keyword"></span>Từ khóa</span>
-                <span class="legend-item"><span class="legend-swatch university"></span>Trường</span>
-                <span class="legend-item"><span class="legend-swatch language"></span>Ngôn ngữ</span>
-                <span class="legend-item"><span class="legend-swatch related"></span>Liên quan</span>
+            <div class="legend-item">
+                <span class="legend-dot book"></span> Tài liệu
             </div>
-        </div>
 
+            <div class="legend-item">
+                <span class="legend-dot author"></span> Tác giả
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot topic"></span> Chủ đề
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot keyword"></span> Từ khóa
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot publisher"></span> Nhà xuất bản
+            </div>
+
+            <div class="legend-item">
+                <span class="legend-dot related"></span> Tài liệu liên quan
+            </div>
+
+        </div>
+    </div>
         <div id="graph"></div>
-        <div class="graph-note">Click vào node để tìm kiếm</div>
     </div>
 
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+    // 🔥 GIỮ NGUYÊN CÁCH CŨ (ĐANG CHẠY)
     const graphData = JSON.parse('{{ graph_data | tojson | safe }}');
 </script>
+
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <script src="{{ url_for('static', filename='js/pages/thesis_detail.js') }}"></script>
 {% endblock %}

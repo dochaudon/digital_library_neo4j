@@ -1,0 +1,119 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/document/form.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/pages/document/form.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+
+<section class="document-form-page">
+
+    <!-- HEADER -->
+    <h2 class="form-title">➕ Create Document</h2>
+
+    <!-- TYPE SELECT -->
+    <div class="form-switch">
+        <button class="type-btn active" data-type="book">Book</button>
+        <button class="type-btn" data-type="article">Article</button>
+        <button class="type-btn" data-type="thesis">Thesis</button>
+    </div>
+
+    <!-- ================= BOOK FORM ================= -->
+    <form class="doc-form" id="form-book">
+
+        <input type="hidden" name="type" value="Book">
+
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" name="title">
+        </div>
+
+        <div class="form-group">
+            <label>Year</label>
+            <input type="number" name="year">
+        </div>
+
+        <div class="form-group">
+            <label>Pages</label>
+            <input type="text" name="pages">
+        </div>
+
+        <div class="form-group">
+            <label>Publisher</label>
+            <input type="text" name="publisher">
+        </div>
+
+        <div class="form-group">
+            <label>Authors</label>
+            <input type="text" name="authors">
+        </div>
+
+        <button class="submit-btn">Save Book</button>
+    </form>
+
+
+    <!-- ================= ARTICLE FORM ================= -->
+    <form class="doc-form hidden" id="form-article">
+
+        <input type="hidden" name="type" value="Article">
+
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" name="title">
+        </div>
+
+        <div class="form-group">
+            <label>Year</label>
+            <input type="number" name="year">
+        </div>
+
+        <div class="form-group">
+            <label>Journal</label>
+            <input type="text" name="journal">
+        </div>
+
+
+        <div class="form-group">
+            <label>Authors</label>
+            <input type="text" name="authors">
+        </div>
+
+        <button class="submit-btn">Save Article</button>
+    </form>
+
+
+    <!-- ================= THESIS FORM ================= -->
+    <form class="doc-form hidden" id="form-thesis">
+
+        <input type="hidden" name="type" value="Thesis">
+
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" name="title">
+        </div>
+
+        <div class="form-group">
+            <label>Year</label>
+            <input type="number" name="year">
+        </div>
+
+        <div class="form-group">
+            <label>University</label>
+            <input type="text" name="university">
+        </div>
+
+        <div class="form-group">
+            <label>Supervisor</label>
+            <input type="text" name="supervisor">
+        </div>
+
+        <button class="submit-btn">Save Thesis</button>
+    </form>
+
+</section>
+
+{% endblock %}

@@ -8,7 +8,7 @@ def get_book_detail(book_id):
     query = """
     MATCH (b:Book {id:$id})
 
-    OPTIONAL MATCH (b)-[:HAS_AUTHOR]->(a:Author)
+    OPTIONAL MATCH (b)-[r:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (b)-[:HAS_SUBJECT]->(s:Subject)
     OPTIONAL MATCH (b)-[:HAS_KEYWORD]->(k:Keyword)
     OPTIONAL MATCH (b)-[:IN_LANGUAGE]->(l:Language)
@@ -23,7 +23,14 @@ def get_book_detail(book_id):
         b.abstract AS abstract,
         b.file_url AS file_url,
 
-        collect(DISTINCT a.name) AS authors,
+        // 🔥 FIX QUAN TRỌNG
+        collect(DISTINCT CASE 
+            WHEN a IS NOT NULL THEN {
+                name: a.name,
+                role: coalesce(r.role, "author")
+            }
+        END) AS authors_info,
+
         collect(DISTINCT s.name) AS subjects,
         collect(DISTINCT k.name) AS keywords,
         collect(DISTINCT l.name) AS languages,
@@ -33,7 +40,6 @@ def get_book_detail(book_id):
 
     result = neo4j_conn.query(query, {"id": book_id})
     return result[0] if result else None
-
 
 # =========================
 # CREATE

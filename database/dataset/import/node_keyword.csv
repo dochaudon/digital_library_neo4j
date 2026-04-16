@@ -1,0 +1,310 @@
+id,name
+K1,Food-Beverage
+K2,Customer service
+K3,Adaptive antennas
+K4,Electrospray ionization mass spectrometry
+K5,Chemical reactions
+K6,Intermediates (Chemistry)
+K7,Wireless communication systems
+K8,Antennas (Electronics)
+K9,Wearable computers- Design and construction
+K10,Economics
+K11,Mass spectrometry
+K12,Biomolecules- Analysis
+K13,Spectrum Analysis
+K14,"Learning, Psychology of"
+K15,Written communication
+K16,Reading
+K17,Information technology
+K18,Project management
+K19,High throughput screening (Drug development)
+K20,Organic compounds
+K21,Report writing
+K22,Conflict of interests
+K23,Investment analysis
+K24,Education
+K25,Educational tests and measurements
+K26,Business logistics
+K27,Industrial procurement
+K28,Strategic planning
+K29,Data warehousing
+K30,Public relations
+K31,Real property
+K32,Production engineering
+K33,Manufacturing processes
+K34,Flexible manufacturing systems
+K35,Inclusive education
+K36,Mainstreaming in education
+K37,Diagnostic Imaging
+K38,Heart Diseases- Surgery
+K39,Cardiovascular Diseases
+K40,International finance
+K41,International trade
+K42,Internet marketing
+K43,Consumer behavior
+K44,Business communication
+K45,Chalcogenides
+K46,Nitrogen compounds
+K47,Chemistry
+K48,Brain- ffect of drugs on
+K49,Deceptive advertising
+K50,Medical misconceptions
+K51,Supervision of employees
+K52,Foreign exchange market
+K53,Investments
+K54,Rubber plantations
+K55,Vietnam- Politics and government
+K56,Medical Informatics
+K57,Drug Industry
+K58,Pharmaceutical industry
+K59,Food industry and trade
+K60,Water in agriculture
+K61,Agricultural biotechnology
+K62,Presentation graphics software
+K63,Visual communication
+K64,Information visualization
+K65,Computer networks
+K66,Oats
+K67,Oats- Processing
+K68,Communication in learning and scholarship
+K69,Research- Data processing
+K70,Options (Finance)
+K71,Futures
+K72,Cognitive science
+K73,Human-computer interaction
+K74,Artificial intelligence
+K75,Business intelligence
+K76,Big data
+K77,Data mining
+K78,Database management
+K79,Business planning
+K80,Solvation
+K81,Solvents
+K82,Centrifugal pumps
+K83,Stochastic processes
+K84,Stochastic models
+K85,Risk management
+K86,Architects and builders
+K87,Construction industry
+K88,Construction workers
+K89,Cloud computing- Industrial applications
+K90,Supply and demand- Management
+K91,Interpersonal communication
+K92,Selling
+K93,Phiên dịch và dịch thuật
+K94,Phiên dịch
+K95,Gian lận
+K96,Tâm lý học công nghiệp
+K97,Đạo đức kinh doanh
+K98,Châu Á- Quan hệ nước ngoài
+K99,Hoa Kỳ- Quan hệ nước ngoài
+K100,Chủ quyền
+K101,Quần đảo Hoàng Sa
+K102,Quần đảo Trường Sa
+K103,Thủy lợi- Lịch sử
+K104,Việt Nam- Lịch sử
+K105,Dịch thuật và phiên dịch
+K106,Phiên dịch- Lý thuyết
+K107,Triết học
+K108,Triết học và khoa học
+K109,Huế (Việt Nam)- Lịch sử
+K110,Triều nhà Nguyễn
+K111,Ca dao Việt Nam
+K112,Truyện thơ Việt Nam
+K113,Tục ngữ Việt Nam
+K114,Lý Quang Diệu- Phỏng vấn
+K115,Lý Quang Diệu- Quan điểm chính trị và xã hội
+K116,Tổng thống Singapore- Phỏng vấn
+K117,Ngôn ngữ lập trình Python
+K118,Tin học
+K119,Luật và pháp chế thực phẩm- Việt Nam
+K120,Tự động hóa
+K121,Điều khiển tự động
+K122,Phân tích công cụ
+K123,Hóa phân tích
+K124,Bao gói sản phẩm
+K125,Thực phẩm - Bao bì
+K126,Sinh lý học thực vật
+K127,Thành công trong kinh doanh
+K128,Bán hàng
+K129,Dinh dưỡng học
+K130,Marketing
+K131,Ảnh hưởng (Tâm lý học)
+K132,Khởi sự doanh nghiệp
+K133,Sinh hóa thực vật
+K134,Marketing internet
+K135,Xây dựng thương hiệu (Marketing)
+K136,Truyền thông xã hội
+K137,Thiết kế tuyến Clothoid
+K138,Động lực học công trình
+K139,Xây dựng đường ô tô
+K140,Kinh tế
+K141,Công nghệ thông tin
+K142,Xã hội
+K143,Thủ tục hành chính
+K144,Tâm lý học
+K145,Toán tối ưu
+K146,Trạm thủy điện
+K147,Thủy năng
+K148,Hệ thống thông tin di động
+K149,Mạng 6G
+K150,Tâm lý học xã hội
+K151,Phương pháp sơ đồ mạng (Xây dựng)
+K152,Công trình xây dựng- Thi công
+K153,Hệ thống chiếu sáng
+K154,Đường giao thông nông thôn- Việt Nam
+K155,Xã hội học
+K156,Toán ứng dụng
+K157,Tâm lí học giáo dục
+K158,Tâm lý học- Giáo trình
+K159,Văn thư
+K160,Quyền lực (Khoa học xã hội)
+K161,Chính trị học
+K162,Cấu trúc mạng máy tính
+K163,Truyền thông- Kỹ thuật
+K164,Truyền thông công nghiệp
+K165,Lịch sử ngoại giao- Việt Nam
+K166,Địa chất đại cương
+K167,Địa chất học- Giáo trình
+K168,Địa chất lịch sử
+K169,Điện tử công suất
+K170,Chính sách đối ngoại
+K171,Công nghệ hóa học
+K172,Hóa học hữu cơ
+K173,Thống kê đầu tư
+K174,Thủy văn học- Mô hình toán học
+K175,Màn hình tinh thể lỏng
+K176,Thực phẩm
+K177,Hóa sinh
+K178,Thực phẩm- Quản lý chất lượng
+K179,Luật Thực phẩm
+K180,Khách hàng - Nghiên cứu
+K181,Miễn dịch học
+K182,Dinh dưỡng nuôi trồng thủy sản
+K183,Nuôi trồng thủy sản
+K184,Tài chính doanh nghiệp
+K185,Phân tích tài chính
+K186,Cảng biển- Khai thác
+K187,Cảng biển- Quản lý
+K188,Cảng chuyên dụng
+K189,Hàng hải- Đánh giá
+K190,Hàng hải- Kiểm tra
+K191,Kế toán tài chính
+K192,Báo cáo tài chính
+K193,Tàu thủy
+K194,Tàu thủy- Thiết bị
+K195,Nuôi thương phẩm rong biển
+K196,Ươm giống rong biển
+K197,Rong biển
+K198,Sản xuất giống rong biển
+K199,Trồng rong biển
+K200,Quy hoạch nuôi trồng thủy sản
+K201,Phát triển nuôi trồng thủy sản
+K202,Vật liệu
+K203,Khoa học- Phương pháp nghiên cứu
+K204,Đóng tàu
+K205,Quản lý nuôi trồng thủy sản
+K206,Văn bản pháp luật
+K207,Động vật phù du- Thủy sinh học
+K208,Thực vật phù du- Thủy sinh học
+K209,Động vật giáp xác- Bài giảng
+K210,Động vật thân mềm- Bài giảng
+K211,Động cơ đốt trong- Môi chất
+K212,Động cơ đốt trong- Nhiên liệu
+K213,Càng- Hàng hóa
+K214,Đại lý tàu biển
+K215,Biển- Môi trường
+K216,Môi trường biển- Bảo vệ
+K217,Engineering- English
+K218,Hàng hài- Động cơ
+K219,Tàu thủy- Máy
+K220,Cơ điện tử- Bài giảng
+K221,Động cơ đốt trong
+K222,Hệ thống điều hòa không khí
+K223,Thiết bị lạnh
+K224,Hàng hải - Tiếng Anh
+K225,Tàu phi kim loại- Công nghệ đóng sửa
+K226,Nuôi trồng thủy sản- Nghiên cứu
+K227,Phương pháp nghiên cứu
+K228,Kỹ thuật tàu thủy
+K229,Tài chính- Tiền tệ
+K230,Pháp luật hàng hải
+K231,An toàn lao động
+K232,Nghiệp vụ thuyền viên
+K233,Kỹ thuật xây dựng
+K234,Kết cấu bê tông
+K235,Giao thông đô thị
+K236,Phần mềm VISSIM- Ứng dụng
+K237,Công trình chống động đất
+K238,Marketing dịch vụ công
+K239,Quản lý dịch vụ công
+K240,Destination management
+K241,Quản trị kinh doanh
+K242,Du lịch- Quản lý
+K243,Du lịch - Luật
+K244,Chuyển đổi số
+K245,Doanh nghiệp vừa và nhỏ
+K246,Hành chính công- Chất lượng
+K247,Lâm nghiệp
+K248,Nông nghiệp
+K249,Sản xuất hàng hóa
+K250,Công nghệ sinh học
+K251,Hàu- Kỹ thuật nuôi
+K252,Vắc xin- Công nghệ sản xuất
+K253,An toàn thực phẩm
+K254,Cá- Bệnh
+K255,Tôm he- Kỹ thuật nuôi
+K256,Tảo- Kỹ thuật trồng
+K257,Nông nghiệp- Chính sách
+K258,Nông nghiệp- Hiệu quả
+K259,Thuế- Quản lý
+K260,Thuế thu nhập doanh nghiệp
+K261,Thuế doanh nghiệp
+K262,Quản trị nhân sự
+K263,Hành chính công
+K264,Lao động- Kinh tế xã hội
+K265,Tôm sú- Thức ăn
+K266,Vi khuẩn- Đặc tính sinh học
+K267,Môi trường- Hoạt động xã hội
+K268,"Môi trường, Ảnh hưởng của con người đối với"
+K269,Ontology (Truy xuất thông tin)
+K270,Tổ chức dữ liệu- Mô hình
+K271,Cua- Đặc điểm sinh học
+K272,Cá chim vây vàng- Chất lượng
+K273,Cá- Bảo quản
+K274,Sấy- Hệ thống
+K275,Tôm thẻ chân trắng- Kỹ thuật nuôi
+K276,Tôm- Thức ăn
+K277,Cá tầm- Bảo quản
+K278,Cá tầm- Giống
+K279,Cá tai bồ- Kỹ thuật nuôi
+K280,Cá tầm- Đặc điểm sinh học
+K281,Nghề cá- Quản lý
+K282,Đánh cá- Kỹ thuật
+K283,Giao thông đô thị- Quản lý
+K284,Giao thông thông minh
+K285,Thị giác máy tính
+K286,Xử lý hình ảnh
+K287,Du lịch
+K288,Kinh tế- Phát triển chiến lược
+K289,Hàng hóa- Quản lý
+K290,Kiểm soát tài chính
+K291,Tài chính- Quản trị
+K292,Khách hàng- Nghiên cứu
+K293,Bảo hiểm phi nhân thọ
+K294,Ngân hàng và hoạt động ngân hàng
+K295,Hàng hóa- Lưu thông
+K296,Logistics (Hậu cần)
+K297,Đầu tư- Chính sách
+K298,Bảo hiểm xã hội tự nguyện
+K299,Marketing mix- Bảo hiểm
+K300,Tín dụng ngân hàng
+K301,Quản trị kinh doanh- Năng lực cạnh tranh
+K302,Quản trị chiến lược
+K303,Kháng sinh- Xác định hoạt lực
+K304,Hàn- Kỹ thuật
+K305,Thương mại điện tử
+K306,Website- Thiết kế
+K307,Cá- Đặc điểm sinh học
+K308,Vi khuẩn- Nghiên cứu
+K309,Vắc xin- Đánh giá

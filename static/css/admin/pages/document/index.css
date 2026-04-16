@@ -1,0 +1,137 @@
+/* ===== PAGE ===== */
+.document-page {
+    padding: 20px;
+}
+
+/* ===== HEADER ===== */
+.document-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.document-title {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.document-add-btn {
+    background: #3b82f6;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.document-add-btn:hover {
+    background: #2563eb;
+}
+
+/* ===== TABLE WRAPPER ===== */
+.document-table-wrapper {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* ===== TABLE ===== */
+.document-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* HEADER */
+.document-table-head {
+    background: #1e293b;
+    color: white;
+}
+
+.document-table-head th {
+    padding: 12px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* BODY */
+.document-row {
+    border-bottom: 1px solid #eee;
+}
+
+.document-row:hover {
+    background: #f9fafb;
+}
+
+/* CELLS */
+.document-title-cell {
+    max-width: 500px;
+    padding: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.document-year,
+.document-type,
+.document-actions {
+    text-align: center;
+}
+
+/* ===== TYPE BADGE ===== */
+.type-badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.type-book {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.type-article {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.type-thesis {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+/* ===== ACTION ===== */
+.action-btn {
+    padding: 5px 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    margin: 0 3px;
+    font-size: 13px;
+}
+
+.edit-btn {
+    background: #facc15;
+    color: black;
+}
+
+.delete-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.edit-btn:hover {
+    background: #eab308;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+/* ===== PAGINATION ===== */
+.document-pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}

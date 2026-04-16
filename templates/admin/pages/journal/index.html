@@ -1,0 +1,27 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+<div class="journal-container">
+
+    <div class="header">
+        <h2>📖 Journals</h2>
+        <a href="/admin/journals/create" class="btn-add">➕ Add</a>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="journalTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/journal.js') }}"></script>
+{% endblock %}

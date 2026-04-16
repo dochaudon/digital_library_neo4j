@@ -28,14 +28,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const container = document.getElementById("graph");
 
-    // 🔥 phải tách riêng ra
     const nodes = new vis.DataSet(graphData.nodes);
     const edges = new vis.DataSet(graphData.edges);
 
     const data = { nodes, edges };
 
     const options = {
-
         nodes: {
             shape: "dot",
             size: 20,
@@ -53,115 +51,71 @@ document.addEventListener("DOMContentLoaded", function () {
         },
 
         groups: {
-
-            book: {
-                shape: "dot",
-                size: 30,
-                color: "#2563eb"
-            },
-
-            article: {   // 🔥 thêm cho article
-                shape: "dot",
-                size: 30,
-                color: "#2563eb"
-            },
-
-            author: {
-                shape: "dot",
-                color: "#16a34a"
-            },
-
-            topic: {
-                shape: "triangle",
-                color: "#f59e0b"
-            },
-
-            keyword: {
-                shape: "diamond",
-                color: "#9333ea"
-            },
-
-            publisher: {
-                shape: "dot",
-                color: "#0ea5e9"
-            },
-
-            language: {
-                shape: "dot",
-                color: "#ec4899"
-            },
-
-            related_book: {   // 🔥 FIX
-                shape: "dot",
-                color: "#6b7280"
-            },
-
-            related_article: { // 🔥 FIX
-                shape: "dot",
-                color: "#6b7280"
-            }
+            book: { size: 30, color: "#2563eb" },
+            article: { size: 30, color: "#2563eb" },
+            author: { color: "#16a34a" },
+            topic: { shape: "triangle", color: "#f59e0b" },
+            keyword: { shape: "diamond", color: "#9333ea" },
+            publisher: { color: "#0ea5e9" },
+            language: { color: "#ec4899" },
+            related_book: { color: "#6b7280" },
+            related_article: { color: "#6b7280" }
         },
 
-        physics: {
-            enabled: true,
-            stabilization: false
-        },
-
-        interaction: {
-            hover: true
-        }
+        physics: { enabled: true },
+        interaction: { hover: true }
     };
 
     const network = new vis.Network(container, data, options);
 
-    /* =========================
-       CLICK NODE (CHUẨN HÓA)
-    ========================= */
-
+    // 🔥 CLICK NODE
     network.on("click", (params) => {
 
         if (!params.nodes || params.nodes.length === 0) return;
 
-        const node = nodes.get(params.nodes[0]);  // 🔥 đúng
+        const node = nodes.get(params.nodes[0]);
         if (!node) return;
 
-        // ===== NODE TRUNG TÂM =====
-        if (node.kind === "book" || node.kind === "article") return;
+        console.log("CLICK:", node);
+
+        const type = (node.group || "").toLowerCase();
+
+        // ===== AUTHOR → POPUP =====
+        if (type === "author") {
+            const name = node.label;
+
+            fetch(`/api/author_preview?name=${encodeURIComponent(name)}`)
+                .then(res => res.json())
+                .then(data => {
+                    console.log("PREVIEW DATA:", data);
+                    showAuthorPreview(data);
+                });
+
+            return; // 🔥 QUAN TRỌNG
+        }
 
         // ===== RELATED BOOK =====
-        if (node.kind === "related_book") {
+        if (type === "related_book") {
             const id = String(node.id).replace("rel-", "");
             window.location.href = `/book/${encodeURIComponent(id)}`;
             return;
         }
 
         // ===== RELATED ARTICLE =====
-        if (node.kind === "related_article") {
+        if (type === "related_article") {
             const id = String(node.id).replace("rel-", "");
             window.location.href = `/article/${encodeURIComponent(id)}`;
             return;
         }
 
-        // ===== AUTHOR =====
-        if (node.kind === "author") {
-            window.location.href = `/search?author=${encodeURIComponent(node.label)}`;
-            return;
-        }
-
         // ===== TOPIC =====
-        if (node.kind === "topic") {
-            window.location.href = `/search?topic=${encodeURIComponent(node.label)}`;
+        if (type === "topic") {
+            window.location.href = `/search?query=${encodeURIComponent(node.label)}`;
             return;
         }
 
         // ===== PUBLISHER =====
-        if (node.kind === "publisher") {
-            window.location.href = `/search?publisher=${encodeURIComponent(node.label)}`;
-            return;
-        }
-
-        // ===== LANGUAGE =====
-        if (node.kind === "language") {
+        if (type === "publisher") {
             window.location.href = `/search?query=${encodeURIComponent(node.label)}`;
             return;
         }
@@ -169,135 +123,59 @@ document.addEventListener("DOMContentLoaded", function () {
         // ===== DEFAULT =====
         window.location.href = `/search?query=${encodeURIComponent(node.label)}`;
     });
-
 });
-document.addEventListener("DOMContentLoaded", function () {
 
-    if (!graphData || !graphData.nodes || graphData.nodes.length === 0) {
-        document.getElementById("graph").innerHTML = "Không có dữ liệu liên kết";
-        return;
-    }
+function showAuthorPreview(data) {
 
-    const container = document.getElementById("graph");
+    const box = document.getElementById("authorPreview");
+    const name = document.getElementById("previewName");
+    const list = document.getElementById("previewList");
+    const btn = document.getElementById("viewAllBtn");
 
-    const data = {
-        nodes: new vis.DataSet(graphData.nodes),
-        edges: new vis.DataSet(graphData.edges)
-    };
+    name.innerText = data.name;
+    list.innerHTML = "";
 
-    const options = {
+    data.documents.forEach(doc => {
 
-        nodes: {
-        shape: "dot",   // 🔥 QUAN TRỌNG
-        size: 20,
-        font: {
-            size: 14,
-            color: "#333",
-            vadjust: 10   // 🔥 đẩy chữ xuống dưới node
+        let url = "#";
+        let icon = "📄";
+        let typeClass = "";
+
+        // 🔥 PHÂN LOẠI
+        if (doc.type === "Book") {
+            url = `/book/${doc.id}`;
+            icon = "📘";
+            typeClass = "type-book";
         }
-        },
-        edges: {
-            width: 1.5,
-            color: "#aaa",
-            smooth: true
-        },
-
-        groups: {
-        book: {
-            shape: "dot",
-            size: 30,
-            color: "#2563eb"
-        },
-
-        author: {
-            shape: "dot",
-            color: "#16a34a"
-        },
-
-        topic: {
-            shape: "triangle",
-            color: "#f59e0b"
-        },
-
-        keyword: {
-            shape: "diamond",
-            color: "#9333ea"
-        },
-
-        publisher: {
-            shape: "dot",
-            color: "#0ea5e9"
-        },
-
-        language: {
-            shape: "dot",
-            color: "#ec4899"
-        },
-
-        related: {
-            shape: "dot",
-            color: "#6b7280"
+        else if (doc.type === "Article") {
+            url = `/article/${doc.id}`;
+            icon = "📰";
+            typeClass = "type-article";
         }
-        },
-
-        physics: {
-            enabled: true,
-            stabilization: false
-        },
-
-        interaction: {
-            hover: true
-        }
-    };
-
-    const network = new vis.Network(container, data, options);
-
-    // CLICK NODE
-    network.on("click", (params) => {
-
-        if (!params.nodes || params.nodes.length === 0) return;
-
-        const nodeId = params.nodes[0];
-        const node = data.nodes.get(nodeId); // 🔥 dùng data.nodes
-
-        if (!node) return;
-
-        // ===== BOOK (node trung tâm) =====
-        if (node.kind === "book") return;
-
-        // ===== RELATED BOOK =====
-        if (node.kind === "related_book") {
-            const relatedId = String(node.id).replace("rel-", "");
-            window.location.href = `/book/${encodeURIComponent(relatedId)}`;
-            return;
+        else if (doc.type === "Thesis") {
+            url = `/thesis/${doc.id}`;
+            icon = "🎓";
+            typeClass = "type-thesis";
         }
 
-        // ===== AUTHOR =====
-        if (node.kind === "author") {
-            window.location.href = `/search?author=${encodeURIComponent(node.label)}`;
-            return;
-        }
+        list.innerHTML += `
+            <div class="preview-item">
+                <a href="${url}">
+                    <span class="doc-icon">${icon}</span>
+                    <span class="doc-title">${doc.title}</span>
+                </a>
 
-        // ===== TOPIC =====
-        if (node.kind === "topic") {
-            window.location.href = `/search?topic=${encodeURIComponent(node.label)}`;
-            return;
-        }
-
-        // ===== PUBLISHER =====
-        if (node.kind === "publisher") {
-            window.location.href = `/search?publisher=${encodeURIComponent(node.label)}`;
-            return;
-        }
-
-        // ===== LANGUAGE =====
-        if (node.kind === "language") {
-            window.location.href = `/search?query=${encodeURIComponent(node.label)}`;
-            return;
-        }
-
-        // ===== DEFAULT =====
-        window.location.href = `/search?query=${encodeURIComponent(node.label)}`;
+                <span class="doc-type ${typeClass}">
+                    ${doc.type}
+                </span>
+            </div>
+        `;
     });
 
+    btn.href = `/author/${data.name}`;
+
+    box.classList.remove("hidden");
+}
+document.getElementById("authorPreview").addEventListener("click", function(e) {
+    e.stopPropagation(); // 🔥 CHẶN không cho graph nhận click
 });

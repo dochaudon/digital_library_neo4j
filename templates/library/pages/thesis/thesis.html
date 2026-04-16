@@ -25,23 +25,40 @@
 
                 <div class="thesis-content">
 
+                    <!-- TITLE -->
                     <a href="{{ url_for('main.thesis_detail', id=t.id) }}" 
                        class="thesis-title"
                        title="{{ t.title }}">
                         {{ t.title }}
                     </a>
 
+                    <!-- AUTHOR (🔥 FIX) -->
                     <p class="thesis-author">
-                        👨‍🏫 {{ t.authors | join(', ') }}
-                    </p>
+                        Tác giả:
 
-                    <p class="thesis-university">
-                        🏫 {{ t.university or 'N/A' }}
-                    </p>
+                        {% set valid_authors = [] %}
+                        {% if t.authors %}
+                            {% for a in t.authors %}
+                                {% if a %}
+                                    {% set _ = valid_authors.append(a) %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
 
+                        {% if valid_authors|length > 0 %}
+                            {% for a in valid_authors %}
+                                <a href="{{ url_for('main.search', author=a) }}">
+                                    {{ a }}
+                                </a>{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+
+                    </p>
+                    <!-- FOOTER -->
                     <div class="thesis-footer">
-                        <span>🎓 {{ t.degree or 'N/A' }}</span>
-                        <span>📅 {{ t.year }}</span>
+                        <span>📅 {{ t.year or 'N/A' }}</span>
                     </div>
 
                 </div>

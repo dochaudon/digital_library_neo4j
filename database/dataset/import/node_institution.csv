@@ -1,0 +1,122 @@
+id,name,type
+I1,Boston [etc.] :McGraw-Hill Higher Education,publisher
+I2,New York :McGraw-Hill,publisher
+I3,Weinheim :Wiley-VCH,publisher
+I4,Boston :Artech House,publisher
+I5,"Hoboken, NJ :John Wiley & Sons, Inc.",publisher
+I6,Weinheim :Wiley-VCH Verlag GmbH & Co. KGaA,publisher
+I7,Boca Raton :CRC Press,publisher
+I8,"Hoboken, NJ :Wiley",publisher
+I9,"Mahwah, N.J. :L. Erlbaum Associates",publisher
+I10,"Hoboken, N.J. :Wiley",publisher
+I11,"Hoboken, N.J. :Wiley-Interscience",publisher
+I12,Oxford :Oxford University Press,publisher
+I13,"Hoboken, NJ :Wiley",publisher
+I14,"Alexandria, Va. :Association for Supervision and Curriculum Development",publisher
+I15,"Ft. Lauderdale, FL :J. Ross Pub.",publisher
+I16,"New York, NY :Routledge",publisher
+I17,"Hershey, PA :Business Science Reference",publisher
+I18,Los Angeles :Sage,publisher
+I19,"Hoboken, NJ :Wiley-Blackwell",publisher
+I20,Ithaca :Cornell University Press,publisher
+I21,Hoboken :Wiley,publisher
+I22,"Hackensack, NJ :World Scientific",publisher
+I23,New York :Free Press,publisher
+I24,"Upper Saddle River, NJ :Prentice Hall",publisher
+I25,Chapel Hill :The University of North Carolina Press,publisher
+I26,"Hoboken, N.J. :Wiley-Interscience",publisher
+I27,"Hoboken, NJ :Wiley",publisher
+I28,"Hoboken, New Jersey :John Wiley & Sons, Inc.",publisher
+I29,Indianapolis :John Wiley and Sons,publisher
+I30,"St. Paul, Minn. :American Association of Cereal Chemists International",publisher
+I31,"Cambridge, Massachusetts :The MIT Press",publisher
+I32,"Hoboken, N.J. :Wiley Pub.",publisher
+I33,"Indianapolis, IN :Wiley",publisher
+I34,"Indianapolis :John Wiley & Sons, Inc.",publisher
+I35,"Hoboken, New Jersey :John Wiley & Sons, Inc.",publisher
+I36,"Hoboken, New Jersey :Wiley",publisher
+I37,"Hoboken, New Jersey :John Wiley and Sons, Inc.",publisher
+I38,"Hoboken, New Jersey :Wiley",publisher
+I39,"Burlington, MA :Elsevier",publisher
+I40,Oxford :Oxford University Press,publisher
+I41,"Abingdon, Oxon :Routledge, Taylor & Francis Group",publisher
+I42,"New York, NY :Routledge",publisher
+I43,London :Sage,publisher
+I44,"River Edge, N.J. :World Scientific",publisher
+I45,"Hoboken, New Jersey :John Wiley & Sons",publisher
+I46,New York :McGraw-Hill,publisher
+I47,"Vienna, VA :Management Concepts",publisher
+I48,"Southern Gate, Chichester, West Sussex, UK :Wiley",publisher
+I49,TP Hồ Chí Minh :Tổng hợp TP Hồ Chí Minh,publisher
+I50,Hà Nội :Công thương,publisher
+I51,TP Hồ Chí Minh :Trẻ,publisher
+I52,TP Hồ Chí Minh :Tổng hợp TP Hồ Chí Minh,publisher
+I53,TP Hồ Chí Minh :Tổng hợp TP Hồ Chí Minh,publisher
+I54,TP Hồ Chí Minh :Trẻ,publisher
+I55,Hà Nội :ĐH. Quốc gia Hà Nội,publisher
+I56,Hà Nội :La động,publisher
+I57,Hà Nội :Khoa học và Kỹ thuật,publisher
+I58,Hà Nội :Bách Khoa Hà Nội,publisher
+I59,Tp. HCM :ĐHQG Tp. HCM,publisher
+I60,Hà Nội :Giáo Dục,publisher
+I61,Hà Nội :Lao động,publisher
+I62,H. :Y học,publisher
+I63,Hà Nội :Thế giới,publisher
+I64,Hà Nội :Nxb. Nông Nghiệp,publisher
+I65,Hà Nội :Lao động,publisher
+I66,Hà Nội :Xây dựng,publisher
+I67,Hà Nội :Thông tin Truyền thông,publisher
+I68,Hà Nội :Nxb. Khoa học và Kỹ thuật,publisher
+I69,Tp.HCM :ĐH. Sư phạm Tp.HCM,publisher
+I70,Hà Nội :Bách khoa Hà Nội,publisher
+I71,Hà Nội :Xây dựng,publisher
+I72,Hà Nội :Thông tin và truyền thông,publisher
+I73,Hà Nội :Nxb. ĐHQG Tp.HCM,publisher
+I74,Hà Nội :Đại học Sư phạm,publisher
+I75,Hà Nội :Khoa học - công nghệ - truyền thông,publisher
+I76,Hà Nội :Tri thức,publisher
+I77,Hà Nội :Đại học Sư phạm,publisher
+I78,Thái Nguyên :Đại học Thái Nguyên,publisher
+I79,Hà Nội :Đại học sư phạm,publisher
+I80,Hà Nội :Đại học Kinh tế Quốc dân,publisher
+I81,Hà Nội :Đại học quốc gia Hà Nội,publisher
+I82,Hà Nội :Khoa học tự nhiên và công nghệ,publisher
+I83,Thái Nguyên :Đại học Thái Nguyên,publisher
+I84,Hà Nội :Đại học sư phạm,publisher
+I85,Tp.HCM :Nxb.ĐHQG,publisher
+I86,Hà Nội :Lý luận chính trị,publisher
+I87,Hà Nội :Đại học quốc gia Hà Nội,publisher
+I88,Hà Nội :Đại học Kinh tế Quốc dân,publisher
+I89,Hà Nội :Giao thông vận tải,publisher
+I90,Tp.HCM :ĐH QG Tp.HCM,publisher
+I91,Cần Thơ :Đại học Cần Thơ,publisher
+I92,Hà Nội :Nxb. Kinh tế - Tài chính,publisher
+I93,Hà Nội :Nxb.Y học,publisher
+I94,,publisher
+I95,Nha Trang :Đại học Nha Trang,publisher
+I96,Nha Trang :Đại học Nha Trang,publisher
+I97,Nha Trang :Đại học Nha Trang,publisher
+I98,Nha Trang :Đại học Nha Trang,publisher
+I99,Nha Trang :Đại học Nha Trang,publisher
+I100,,publisher
+I101,Nha Trang :Đại học Nha trang,publisher
+I102,Nha Trang :Đại học Nha Trang,publisher
+I103,Đại học Nha Trang,publisher
+I104,Nha Trang :Đại học Nha Trang,publisher
+I105,Nha Trang :Đại học Nha Trang,publisher
+I106,Nha Trang :Đại học Nha Trang,publisher
+I107,Nha Trang :Đại học Nha Trang,publisher
+I108,Hà Nội :Nông nghiệp,publisher
+I109,Hà Nội :Nông nghiệp,publisher
+I110,Hà Nội :Lao Động,publisher
+I111,Khánh Hòa :Đại học Nha Trang,publisher
+I112,Khánh Hòa :Đại học Nha Trang,publisher
+I113,Khánh Hòa :Đại học Nha Trang,publisher
+I114,Hà Nội :Khoa học và Kỹ thuật,publisher
+I115,H. :Khoa học và Kỹ thuật,publisher
+I116,H. :Khoa học và Kỹ Thuật,publisher
+I117,"Hà Nội :Đại học Kinh tế quốc dân,",publisher
+I118,"Nha Trang :Đại học Nha Trang,",publisher
+I119,Khánh Hòa :Đại học Nha Trang,publisher
+I120,Nha Trang :Đại học Nha Trang,publisher
+I121,,publisher

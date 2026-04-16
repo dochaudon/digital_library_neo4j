@@ -15,12 +15,19 @@ def clean(value):
 
 
 # =========================
+# NORMALIZE EMAIL
+# =========================
+def normalize_email(email):
+    return email.strip().lower() if email else None
+
+
+# =========================
 # REGISTER
 # =========================
 def register_user(data):
 
     username = clean(data.get("username"))
-    email = clean(data.get("email"))
+    email = normalize_email(data.get("email"))
     password = data.get("password")
 
     # validate
@@ -35,14 +42,20 @@ def register_user(data):
         "id": str(uuid.uuid4()),
         "username": username,
         "email": email,
-        "password": hash_password(password),
+        "password": hash_password(password),  # 🔥 hash ở đây
         "role": "user"
     }
 
     try:
-        create_user(user_data)
+        result = create_user(user_data)
+
+        if not result:
+            return {"error": "User creation failed"}
+
         return {"message": "Register success"}
-    except Exception:
+
+    except Exception as e:
+        print("REGISTER ERROR:", e)  # 🔥 debug
         return {"error": "Register failed"}
 
 
@@ -51,7 +64,7 @@ def register_user(data):
 # =========================
 def login_user(data):
 
-    email = clean(data.get("email"))
+    email = normalize_email(data.get("email"))
     password = data.get("password")
 
     # validate
@@ -66,12 +79,18 @@ def login_user(data):
     if not user.get("password"):
         return {"error": "Invalid user data"}
 
+    # 🔥 check password
     if not check_password(user["password"], password):
         return {"error": "Wrong password"}
 
+    # 🔥 check status
+    if user.get("status") != "active":
+        return {"error": "Account is inactive"}
+
     try:
         token = create_access_token(identity=user["id"])
-    except Exception:
+    except Exception as e:
+        print("TOKEN ERROR:", e)
         return {"error": "Token creation failed"}
 
     return {
