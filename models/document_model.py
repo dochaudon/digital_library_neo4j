@@ -1,6 +1,5 @@
 from database.neo4j_connection import neo4j_conn
 
-
 # =========================
 # COMMON TYPE RESOLVER
 # =========================
@@ -22,9 +21,8 @@ CASE
 END
 """
 
-
 # =========================
-# GET DOCUMENT BY ID
+# GET DOCUMENT DETAIL (UNIFIED)
 # =========================
 def get_document_by_id(doc_id):
     query = f"""
@@ -34,6 +32,7 @@ def get_document_by_id(doc_id):
     OPTIONAL MATCH (d)-[r:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
     OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
+    OPTIONAL MATCH (d)-[:IN_LANGUAGE]->(l:Language)
     OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Institution)
     OPTIONAL MATCH (d)-[:SUBMITTED_TO]->(u:Institution)
 
@@ -44,16 +43,22 @@ def get_document_by_id(doc_id):
         d.pages AS pages,
         d.abstract AS abstract,
         d.file_url AS file_url,
+        d.image_url AS image_url,  
 
         {TYPE_CASE} AS type,
 
-        collect(DISTINCT {{
-            name: a.name,
-            role: coalesce(r.role, "author")
-        }}) AS authors_info,
+        collect(DISTINCT a.name) AS authors,   
+
+        collect(DISTINCT CASE 
+            WHEN a IS NOT NULL THEN {{
+                name: a.name,
+                role: coalesce(r.role, "author")
+            }}
+        END) AS authors_info,
 
         collect(DISTINCT s.name) AS subjects,
         collect(DISTINCT k.name) AS keywords,
+        collect(DISTINCT l.name) AS languages,
 
         head(collect(DISTINCT p.name)) AS publisher,
         head(collect(DISTINCT u.name)) AS university
@@ -61,6 +66,8 @@ def get_document_by_id(doc_id):
 
     result = neo4j_conn.query(query, {"id": doc_id})
     return result[0] if result else None
+
+
 # =========================
 # GET ALL DOCUMENTS
 # =========================
@@ -69,11 +76,15 @@ def get_all_documents(skip=0, limit=20):
     MATCH (d)
     WHERE d:Book OR d:Article OR d:Thesis
 
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+
     RETURN
         d.id AS id,
         d.title AS title,
         d.year AS year,
-        {TYPE_CASE} AS type
+        d.image_url AS image_url,  
+        {TYPE_CASE} AS type,
+        collect(DISTINCT a.name) AS authors
 
     ORDER BY d.year DESC
     SKIP $skip LIMIT $limit
@@ -110,11 +121,15 @@ def get_documents_by_type(doc_type, skip=0, limit=20):
         ($type = "Article" AND d:Article) OR
         ($type = "Thesis" AND d:Thesis)
 
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+
     RETURN
         d.id AS id,
         d.title AS title,
         d.year AS year,
-        {TYPE_CASE} AS type
+        d.image_url AS image_url,   
+        {TYPE_CASE} AS type,
+        collect(DISTINCT a.name) AS authors
 
     ORDER BY d.year DESC
     SKIP $skip LIMIT $limit
@@ -128,20 +143,22 @@ def get_documents_by_type(doc_type, skip=0, limit=20):
 
 
 # =========================
-# GET RELATED DOCUMENTS
+# 🔥 RELATED DOCUMENTS
 # =========================
-def get_related_documents(doc_id, limit=10):
+def get_related_documents(doc_id, limit=5):
     query = f"""
-    MATCH (d {{id: $id}})-[:RELATED_TO]->(related)
-
-    WHERE related:Book OR related:Article OR related:Thesis
+    MATCH (d {{id: $id}})-[:HAS_SUBJECT]->(s)<-[:HAS_SUBJECT]-(related)
+    WHERE related <> d
+      AND (related:Book OR related:Article OR related:Thesis)
 
     RETURN
         related.id AS id,
         related.title AS title,
         related.year AS year,
+        related.image_url AS image_url, 
         {TYPE_CASE_RELATED} AS type
 
+    ORDER BY related.year DESC
     LIMIT $limit
     """
 
@@ -149,4 +166,3 @@ def get_related_documents(doc_id, limit=10):
         "id": doc_id,
         "limit": limit
     })
-

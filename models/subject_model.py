@@ -1,53 +1,93 @@
 from database.neo4j_connection import neo4j_conn
 import uuid
 
-
+# =========================
+# CREATE SUBJECT
+# =========================
 def create_subject(data):
+    name = data.get("name")
+
+    if not name:
+        return None
+
     cypher = """
     CREATE (s:Subject {
         id: $id,
         name: $name
     })
-    RETURN s.id AS id
+    RETURN s.id AS id, s.name AS name
     """
-    return neo4j_conn.query(cypher, {
+
+    result = neo4j_conn.query(cypher, {
         "id": str(uuid.uuid4()),
-        "name": data.get("name")
+        "name": name.strip()
     })
 
-
-def get_all_subjects():
-    cypher = """
-    MATCH (s:Subject)
-    RETURN s.id AS id, s.name AS name
-    ORDER BY s.name
-    """
-    return neo4j_conn.query(cypher)
-
-
-def get_subject_by_id(id):
-    cypher = """
-    MATCH (s:Subject {id: $id})
-    RETURN s.id AS id, s.name AS name
-    """
-    result = neo4j_conn.query(cypher, {"id": id})
     return result[0] if result else None
 
 
-def update_subject(id, data):
+# =========================
+# GET ALL SUBJECTS
+# =========================
+def get_all_subjects():
+    cypher = """
+    MATCH (s:Subject)
+    RETURN 
+        s.id AS id, 
+        s.name AS name
+    ORDER BY s.name
+    """
+
+    return neo4j_conn.query(cypher)
+
+
+# =========================
+# GET SUBJECT BY ID
+# =========================
+def get_subject_by_id(subject_id):
+    cypher = """
+    MATCH (s:Subject {id: $id})
+    RETURN 
+        s.id AS id, 
+        s.name AS name
+    """
+
+    result = neo4j_conn.query(cypher, {"id": subject_id})
+    return result[0] if result else None
+
+
+# =========================
+# UPDATE SUBJECT
+# =========================
+def update_subject(subject_id, data):
+    name = data.get("name")
+
+    if not name:
+        return None
+
     cypher = """
     MATCH (s:Subject {id: $id})
     SET s.name = $name
+    RETURN s.id AS id, s.name AS name
     """
-    neo4j_conn.query(cypher, {
-        "id": id,
-        "name": data.get("name")
+
+    result = neo4j_conn.query(cypher, {
+        "id": subject_id,
+        "name": name.strip()
     })
 
+    return result[0] if result else None
 
-def delete_subject(id):
+
+# =========================
+# DELETE SUBJECT
+# =========================
+def delete_subject(subject_id):
     cypher = """
     MATCH (s:Subject {id: $id})
     DETACH DELETE s
+    RETURN count(s) AS deleted
     """
-    neo4j_conn.query(cypher, {"id": id})
+
+    result = neo4j_conn.query(cypher, {"id": subject_id})
+    return result[0]["deleted"] if result else 0

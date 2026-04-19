@@ -1,17 +1,10 @@
 from database.neo4j_connection import neo4j_conn
 import uuid
 
-
 # =========================
 # CREATE USER
 # =========================
 def create_user(user_data):
-
-    # check email tồn tại
-    existing = find_user_by_email(user_data["email"])
-    if existing:
-        return None
-
     query = """
     CREATE (u:User {
         id: $id,
@@ -27,10 +20,10 @@ def create_user(user_data):
     """
 
     result = neo4j_conn.query(query, {
-        "id": str(uuid.uuid4()),
-        "username": user_data["username"],
-        "email": user_data["email"],
-        "password": user_data["password"],
+        "id": user_data.get("id") or str(uuid.uuid4()),
+        "username": user_data.get("username"),
+        "email": user_data.get("email"),
+        "password": user_data.get("password"),
         "role": user_data.get("role", "user")
     })
 
@@ -38,7 +31,7 @@ def create_user(user_data):
 
 
 # =========================
-# FIND BY EMAIL
+# FIND USER BY EMAIL
 # =========================
 def find_user_by_email(email):
     query = """
@@ -96,12 +89,13 @@ def get_user_by_id(user_id):
 def get_all_users():
     query = """
     MATCH (u:User)
-    RETURN u.id AS id,
-           u.username AS username,
-           u.email AS email,
-           u.role AS role,
-           u.status AS status,
-           u.created_at AS created_at
+    RETURN 
+        u.id AS id,
+        u.username AS username,
+        u.email AS email,
+        u.role AS role,
+        u.status AS status,
+        u.created_at AS created_at
     ORDER BY u.created_at DESC
     """
 
@@ -112,10 +106,10 @@ def get_all_users():
 # UPDATE USER
 # =========================
 def update_user(user_id, data):
-
     query = """
     MATCH (u:User {id: $id})
-    SET u.username = COALESCE($username, u.username),
+    SET 
+        u.username = COALESCE($username, u.username),
         u.role = COALESCE($role, u.role),
         u.status = COALESCE($status, u.status),
         u.updated_at = datetime()
@@ -138,7 +132,8 @@ def update_user(user_id, data):
 def change_password(user_id, hashed_password):
     query = """
     MATCH (u:User {id: $id})
-    SET u.password = $password,
+    SET 
+        u.password = $password,
         u.updated_at = datetime()
     RETURN u.id AS id
     """
@@ -157,13 +152,13 @@ def change_password(user_id, hashed_password):
 def deactivate_user(user_id):
     query = """
     MATCH (u:User {id: $id})
-    SET u.status = 'inactive',
+    SET 
+        u.status = 'inactive',
         u.updated_at = datetime()
     RETURN u.id AS id
     """
 
     result = neo4j_conn.query(query, {"id": user_id})
-
     return result[0]["id"] if result else None
 
 
@@ -178,5 +173,4 @@ def delete_user(user_id):
     """
 
     result = neo4j_conn.query(query, {"id": user_id})
-
     return result[0]["deleted"] if result else 0

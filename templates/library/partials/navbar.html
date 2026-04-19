@@ -2,34 +2,40 @@
     <div class="container nav-inner">
 
         <!-- HOME -->
-        <a href="{{ url_for('main.home') }}" 
+        <a href="{{ url_for('main.home') }}"
            class="{% if request.endpoint == 'main.home' %}active{% endif %}">
             🏠 Trang chủ
         </a>
 
         <!-- BOOK -->
-        <a href="{{ url_for('main.books_page') }}" 
-           class="{% if request.endpoint == 'main.books_page' %}active{% endif %}">
+        <a href="/documents?doc_type=Book"
+           class="{% if request.args.get('doc_type') == 'Book' %}active{% endif %}">
             📘 Sách
         </a>
 
         <!-- ARTICLE -->
-        <a href="{{ url_for('main.articles_page') }}" 
-           class="{% if request.endpoint == 'main.articles_page' %}active{% endif %}">
+        <a href="/documents?doc_type=Article"
+           class="{% if request.args.get('doc_type') == 'Article' %}active{% endif %}">
             📰 Bài báo
         </a>
 
         <!-- THESIS -->
-        <a href="{{ url_for('main.thesis_page') }}" 
-           class="{% if request.endpoint == 'main.thesis_page' %}active{% endif %}">
+        <a href="/documents?doc_type=Thesis"
+           class="{% if request.args.get('doc_type') == 'Thesis' %}active{% endif %}">
             🎓 Luận văn
         </a>
 
-        <a href="{{ url_for('main.qa_page') }}"
-           class="{% if request.endpoint == 'main.qa_page' %}active{% endif %}">
-            🤖 Hỏi đáp
+        <!-- ALL -->
+        <a href="{{ url_for('main.documents_page') }}"
+           class="{% if request.endpoint == 'main.documents_page' and not request.args.get('doc_type') %}active{% endif %}">
+            📚 Tất cả
         </a>
 
+        <!-- QA -->
+        <a href="{{ url_for('qa.qa_page') }}"
+           class="{% if request.endpoint == 'qa.qa_page' %}active{% endif %}">
+            🤖 Hỏi đáp
+        </a>
 
     </div>
 </nav>

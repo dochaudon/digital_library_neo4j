@@ -1,60 +1,40 @@
-<div class="document-card">
+<div class="doc-card-horizontal">
 
     <!-- IMAGE -->
-    <div class="doc-image">
-        <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" alt="pdf">
+    <div class="doc-thumb">
+        <img src="{{ doc.image_url if doc.image_url else '/static/images/pdf.png' }}"
+             onerror="this.src='/static/images/pdf.png'">
     </div>
 
-    <div class="doc-content">
-
-        <!-- TYPE + URL (🔥 gom logic lại 1 chỗ) -->
-        {% set detail_url = "#" %}
-        {% set type_label = "📄 Tài liệu" %}
-
-        {% if doc.type == "Book" %}
-            {% set detail_url = url_for('main.book_detail', id=doc.id) %}
-            {% set type_label = "📘 Sách" %}
-        {% elif doc.type == "Article" %}
-            {% set detail_url = url_for('main.article_detail', id=doc.id) %}
-            {% set type_label = "📰 Bài báo" %}
-        {% elif doc.type == "Thesis" %}
-            {% set detail_url = url_for('main.thesis_detail', id=doc.id) %}
-            {% set type_label = "🎓 Luận văn" %}
-        {% endif %}
-
-        <!-- TYPE BADGE -->
-        <span class="doc-type">
-            {{ type_label }}
-        </span>
+    <!-- CONTENT -->
+    <div class="doc-info">
 
         <!-- TITLE -->
-        <a href="{{ detail_url }}"
-           class="doc-title"
-           title="{{ doc.title }}">
+        <a href="/document/{{ doc.id }}" class="doc-title">
             {{ doc.title }}
         </a>
-        <!-- DEBUG -->
 
-        <p class="doc-meta">
-            {% if doc.authors and doc.authors|length > 0 %}
-                tác giả {{ doc.authors | join(', ') }}
-            {% elif doc.publisher %}
-                🏢 {{ doc.publisher }}
-            {% elif doc.university %}
-                🏫 {{ doc.university }}
+        <!-- TYPE -->
+        <div class="doc-type">
+            {{ doc.type }}
+        </div>
+
+        <!-- AUTHOR -->
+        <div class="doc-author">
+            {% if doc.authors %}
+                Tác giả:
+                {% for a in doc.authors %}
+                    <span>{{ a }}</span>{% if not loop.last %}, {% endif %}
+                {% endfor %}
             {% else %}
                 N/A
             {% endif %}
-        </p>
+        </div>
 
-        <p class="doc-year">
-            📅 
-            {% if doc.year is not none and doc.year != 0 %}
-                {{ doc.year }}
-            {% else %}
-                N/A
-            {% endif %}
-        </p>
+        <!-- YEAR -->
+        <div class="doc-year">
+            📅 {{ doc.year or 'N/A' }}
+        </div>
 
     </div>
 

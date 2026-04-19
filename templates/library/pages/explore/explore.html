@@ -1,0 +1,103 @@
+{% extends "library/layouts/base.html" %}
+
+{% block title %}Khám phá dữ liệu{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/pages/explore/explore.css">
+{% endblock %}
+
+{% block content %}
+
+<div class="explore-container">
+
+    <!-- HEADER -->
+    <div class="explore-header">
+        <h2>🔎 Explore Graph</h2>
+        <p>
+            Click node để xem nhanh • Double click để mở chi tiết
+        </p>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="explore-layout">
+
+        <!-- ================= LEFT PANEL ================= -->
+        <div id="explore-left" class="explore-left">
+
+            <!-- LOADING -->
+            <div class="explore-loading">
+                Đang tải dữ liệu...
+            </div>
+
+        </div>
+
+        <!-- ================= RIGHT PANEL ================= -->
+        <div class="explore-right">
+
+            <!-- GRAPH WRAPPER -->
+            <div class="graph-wrapper">
+
+                <!-- 🔥 LEGEND FULL -->
+                <div class="graph-legend">
+
+                    <div><span class="legend-box blue"></span> Book</div>
+                    <div><span class="legend-box green"></span> Article</div>
+                    <div><span class="legend-box purple triangle"></span> Thesis</div>
+
+                    <hr>
+
+                    <div><span class="legend-box lightgreen circle"></span> Author</div>
+                    <div><span class="legend-box orange diamond"></span> Subject</div>
+                    <div><span class="legend-box pink star"></span> Keyword</div>
+                    <div><span class="legend-box cyan hex"></span> Publisher</div>
+
+                </div>
+
+                <!-- GRAPH -->
+                <div id="explore-graph"></div>
+
+            </div>
+
+            <!-- NOTE -->
+            <div class="graph-note">
+                Click node để cập nhật dữ liệu • Double click để mở trang chi tiết
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= POPUP PREVIEW ================= -->
+<div id="graph-popup" class="graph-popup hidden">
+
+    <div class="popup-header">
+        <span id="popup-title">Preview</span>
+        <button onclick="closePopup()">×</button>
+    </div>
+
+    <div id="popup-content" class="popup-content"></div>
+
+    <div class="popup-footer">
+        <button id="popup-view-btn">Xem chi tiết</button>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    const ENTITY_TYPE = "{{ entity_type }}";
+    const ENTITY_ID = "{{ entity_id }}";
+</script>
+
+<!-- VIS NETWORK -->
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+<!-- EXPLORE JS -->
+<script src="{{ url_for('static', filename='js/library/pages/explore.js') }}"></script>
+
+{% endblock %}

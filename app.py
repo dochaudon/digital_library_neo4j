@@ -1,18 +1,25 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from routes.admin.document_routes import document_bp
-from routes.routes import main
-from routes.auth_routes import auth
-from routes.admin.author_routes import author_bp
+
+from routes.public.main_routes import main
+from routes.public.auth_routes import auth
+from routes.public.qa_routes import qa
+
+
+from routes.admin.document_admin import document_admin
+from routes.admin.metadata_admin import metadata_admin
+from routes.admin.user_admin import user_admin
+
+from routes.api.search_api import search_api
+from routes.api.graph_api import graph_api
+
 from services.auth_utils import init_bcrypt
-from services.init_admin import init_admin_account   # 🔥 thêm
-from routes.admin.subject_routes import subject_bp
-from routes.admin.keyword_routes import keyword_bp
-from routes.admin.journal_routes import journal_bp
-from routes.admin.category_routes import category_bp
-from routes.admin.institution_routes import institution_bp
-from routes.admin.language_routes import language_bp
-from routes.admin.user_admin_routes import user_admin_bp
+from services.init_admin import init_admin_account
+from routes.api.explore_api import explore_api
+from routes.public.explore_routes import explore_bp
+
+
+
 
 def create_app():
     app = Flask(__name__)
@@ -36,17 +43,21 @@ def create_app():
     # =========================
     # REGISTER BLUEPRINT
     # =========================
+    # PUBLIC
     app.register_blueprint(main)
     app.register_blueprint(auth)
-    app.register_blueprint(author_bp)
-    app.register_blueprint(document_bp)
-    app.register_blueprint(subject_bp)
-    app.register_blueprint(keyword_bp)
-    app.register_blueprint(category_bp)
-    app.register_blueprint(journal_bp)
-    app.register_blueprint(institution_bp)
-    app.register_blueprint(language_bp)
-    app.register_blueprint(user_admin_bp)
+    app.register_blueprint(qa)
+    app.register_blueprint(explore_bp)
+
+    # ADMIN
+    app.register_blueprint(document_admin)
+    app.register_blueprint(metadata_admin)
+    app.register_blueprint(user_admin)
+
+    # API
+    app.register_blueprint(search_api)
+    app.register_blueprint(graph_api)
+    app.register_blueprint(explore_api)
     # =========================
     # INIT ADMIN (🔥 QUAN TRỌNG)
     # =========================

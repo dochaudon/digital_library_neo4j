@@ -3,54 +3,46 @@
 {% block title %}Trang chủ{% endblock %}
 
 {% block extra_css %}
-
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/index.css') }}">
 {% endblock %}
 
 {% block content %}
 
 <!-- HERO -->
-
 <section class="hero-section">
     <div class="container">
 
-    <h1>🔍 Tìm kiếm ngữ nghĩa tài liệu</h1>
+        <h1>🔍 Tìm kiếm ngữ nghĩa tài liệu</h1>
 
-    <!-- SEARCH WRAPPER -->
-    <div class="search-wrapper">
+        <!-- SEARCH -->
+        <div class="search-wrapper">
 
-        <form action="{{ url_for('main.search') }}" method="get" class="hero-search">
-            <input type="text"
-                   name="query"
-                   id="search-input"
-                   placeholder="VD: sách AI của Andrew Ng, luận văn năm 2023..."
-                   autocomplete="off">
-            <button type="submit">Tìm kiếm</button>
-        </form>
+            <form action="{{ url_for('main.search') }}" method="get" class="hero-search">
+                <input type="text"
+                       name="query"
+                       id="search-input"
+                       placeholder="VD: sách AI của Andrew Ng, luận văn năm 2023..."
+                       autocomplete="off">
+                <button type="submit">Tìm kiếm</button>
+            </form>
 
-        <!-- DROPDOWN SUGGEST -->
-        <div id="suggest-box" class="suggest-box"></div>
+            <div id="suggest-box" class="suggest-box"></div>
+        </div>
+
+        <!-- QUICK SUGGEST -->
+        <div class="search-suggestions">
+            <span onclick="fillQuery(this)">bài báo về trí tuệ nhân tạo</span>
+            <span onclick="fillQuery(this)">sách AI của Andrew Ng</span>
+            <span onclick="fillQuery(this)">luận văn năm 2023</span>
+            <span onclick="fillQuery(this)">bài báo của đại học kinh tế quốc dân</span>
+        </div>
 
     </div>
-
-    <!-- GỢI Ý THÔNG MINH -->
-    <div class="search-suggestions">
-        <span onclick="fillQuery(this)">bài báo về trí tuệ nhân tạo</span>
-        <span onclick="fillQuery(this)">sách AI của Andrew Ng</span>
-        <span onclick="fillQuery(this)">luận văn năm 2023</span>
-        <span onclick="fillQuery(this)">bài báo của đại học kinh tế quốc dân</span>
-    </div>
-
-</div>
-
-
 </section>
 
 <!-- MAIN -->
-
 <section class="section full-width-section">
 
-```
 <div class="container">
 
     <!-- HEADER -->
@@ -69,13 +61,13 @@
             <div class="filter-box">
                 <p><strong>Loại tài liệu</strong></p>
                 <ul>
-                    <li><a href="/search?doc_type=Book">📘 Sách</a></li>
-                    <li><a href="/search?doc_type=Article">📄 Bài báo</a></li>
-                    <li><a href="/search?doc_type=Thesis">🎓 Luận văn</a></li>
+                    <li><a href="/documents?doc_type=Book">📘 Sách</a></li>
+                    <li><a href="/documents?doc_type=Article">📰 Bài báo</a></li>
+                    <li><a href="/documents?doc_type=Thesis">🎓 Luận văn</a></li>
                 </ul>
             </div>
 
-            <!-- QUICK SUBJECT -->
+            <!-- SUBJECT -->
             <div class="filter-box">
                 <p><strong>Chủ đề phổ biến</strong></p>
                 <ul>
@@ -103,9 +95,11 @@
 
             {% if documents %}
             <div class="document-grid">
+
                 {% for doc in documents %}
                     {% include 'library/partials/document_card.html' %}
                 {% endfor %}
+
             </div>
             {% else %}
             <div class="empty-state">
@@ -118,7 +112,6 @@
     </div>
 
 </div>
-```
 
 </section>
 
@@ -129,7 +122,7 @@
 <script src="{{ url_for('static', filename='js/home.js') }}"></script>
 
 <script>
-// click suggestion
+// autofill suggestion
 function fillQuery(el) {
     const input = document.getElementById("search-input");
     input.value = el.innerText;

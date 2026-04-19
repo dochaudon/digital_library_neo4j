@@ -16,16 +16,16 @@
 
     <div class="results-layout">
 
-        <!-- ===== FILTER SIDEBAR ===== -->
+        <!-- ===== SIDEBAR ===== -->
         <aside class="filter-container">
 
             <h3>🔎 Bộ lọc</h3>
 
             <div class="filter-group">
                 <p><strong>Loại tài liệu</strong></p>
-                <label><input type="checkbox" value="Book" class="filter-type"> Sách</label>
-                <label><input type="checkbox" value="Article" class="filter-type"> Bài báo</label>
-                <label><input type="checkbox" value="Thesis" class="filter-type"> Luận văn</label>
+                <label><input type="checkbox" value="Book" class="filter-type"> 📘 Sách</label>
+                <label><input type="checkbox" value="Article" class="filter-type"> 📰 Bài báo</label>
+                <label><input type="checkbox" value="Thesis" class="filter-type"> 🎓 Luận văn</label>
             </div>
 
             <div class="filter-group">
@@ -54,8 +54,13 @@
                      data-year="{{ doc.year }}"
                      data-title="{{ doc.title }}">
 
-                    <div class="result-icon">📄</div>
+                    <!-- IMAGE -->
+                    <div class="result-thumb">
+                        <img src="{{ doc.image_url if doc.image_url else '/static/images/pdf.png' }}"
+                             onerror="this.src='/static/images/pdf.png'">
+                    </div>
 
+                    <!-- CONTENT -->
                     <div class="result-content">
 
                         <!-- TYPE -->
@@ -63,46 +68,28 @@
                             {% if doc.type == "Book" %}📘 Sách
                             {% elif doc.type == "Article" %}📰 Bài báo
                             {% elif doc.type == "Thesis" %}🎓 Luận văn
-                            {% endif %}
+                            {% else %}📄 Tài liệu{% endif %}
                         </span>
 
                         <!-- TITLE -->
                         <a class="result-title"
-                           href="{% if doc.type == 'Book' %}
-                                    {{ url_for('main.book_detail', id=doc.id) }}
-                                 {% elif doc.type == 'Article' %}
-                                    {{ url_for('main.article_detail', id=doc.id) }}
-                                 {% else %}
-                                    {{ url_for('main.thesis_detail', id=doc.id) }}
-                                 {% endif %}">
+                           href="/document/{{ doc.id }}">
                             {{ doc.title }}
                         </a>
 
                         <!-- META -->
                         <p class="result-meta">
 
-                            {% set valid_authors = [] %}
                             {% if doc.authors %}
                                 {% for a in doc.authors %}
                                     {% if a %}
-                                        {% set _ = valid_authors.append(a) %}
+                                        <a href="/search?author={{ a }}">{{ a }}</a>{% if not loop.last %}, {% endif %}
                                     {% endif %}
                                 {% endfor %}
-                            {% endif %}
-
-                            {% if valid_authors|length > 0 %}
-                                {% for a in valid_authors %}
-                                    <a href="{{ url_for('main.search', author=a) }}">
-                                        {{ a }}
-                                    </a>{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-
                             {% elif doc.publisher %}
                                 {{ doc.publisher }}
-
                             {% elif doc.university %}
                                 {{ doc.university }}
-
                             {% else %}
                                 N/A
                             {% endif %}
