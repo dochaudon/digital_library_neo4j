@@ -9,14 +9,9 @@ from services.auth_utils import hash_password, check_password
 # CLEAN INPUT
 # =========================
 def clean(value):
-    if not value:
-        return None
-    return value.strip()
+    return value.strip() if value else None
 
 
-# =========================
-# NORMALIZE EMAIL
-# =========================
 def normalize_email(email):
     return email.strip().lower() if email else None
 
@@ -42,7 +37,7 @@ def register_user(data):
         "id": str(uuid.uuid4()),
         "username": username,
         "email": email,
-        "password": hash_password(password),  # 🔥 hash ở đây
+        "password": hash_password(password),
         "role": "user"
     }
 
@@ -55,7 +50,7 @@ def register_user(data):
         return {"message": "Register success"}
 
     except Exception as e:
-        print("REGISTER ERROR:", e)  # 🔥 debug
+        print("REGISTER ERROR:", e)
         return {"error": "Register failed"}
 
 
@@ -79,11 +74,11 @@ def login_user(data):
     if not user.get("password"):
         return {"error": "Invalid user data"}
 
-    # 🔥 check password
+    # check password
     if not check_password(user["password"], password):
         return {"error": "Wrong password"}
 
-    # 🔥 check status
+    # check status
     if user.get("status") != "active":
         return {"error": "Account is inactive"}
 

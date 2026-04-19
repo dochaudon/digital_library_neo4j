@@ -1,6 +1,6 @@
 ﻿{% extends "library/layouts/base.html" %}
 
-{% block title %}Hoi dap | Thu Vien So{% endblock %}
+{% block title %}Hỏi đáp | Thư viện số{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/qa/index.css') }}">
@@ -9,14 +9,17 @@
 {% block content %}
 <section class="qa-chat-page">
     <div class="chat-shell">
+
+        <!-- HEADER -->
         <div class="chat-header">
             <div>
-                <span class="chat-kicker">Library Q&amp;A</span>
-                <h1>Hoi dap tai lieu theo dang hoi thoai</h1>
-                <p>Dat cau hoi bang tieng Viet, he thong se tra loi va goi y tai lieu ngay trong khung chat.</p>
+                <span class="chat-kicker">Library Q&A</span>
+                <h1>Hỏi đáp tài liệu theo dạng hội thoại</h1>
+                <p>Đặt câu hỏi bằng tiếng Việt, hệ thống sẽ trả lời và gợi ý tài liệu ngay trong khung chat.</p>
             </div>
         </div>
 
+        <!-- SUGGESTIONS -->
         <div class="chat-suggestions">
             <button type="button" class="chat-chip">ai la tac gia cua sach machine learning</button>
             <button type="button" class="chat-chip">nam xuat ban cua bai bao graph analytics</button>
@@ -24,28 +27,35 @@
             <button type="button" class="chat-chip">nha xuat ban cua sach data mining</button>
         </div>
 
+        <!-- CHAT -->
         <div class="chat-container">
+
             <div id="chatBox" class="chat-box">
                 <div class="chat-message bot intro">
                     <div class="message-bubble">
-                        <p class="message-text">Xin chao, ban co the hoi ve tac gia, nam, chu de, nha xuat ban, truong hoac tim tai lieu trong thu vien so.</p>
+                        <p class="message-text">
+                            Xin chào 👋 Bạn có thể hỏi về tác giả, năm, chủ đề, nhà xuất bản, trường hoặc tìm tài liệu.
+                        </p>
                     </div>
                 </div>
             </div>
 
+            <!-- INPUT -->
             <form id="chatForm" class="chat-input">
                 <textarea
                     id="questionInput"
-                    placeholder="Nhap cau hoi, vi du: ai la tac gia cua sach X"
+                    placeholder="Nhập câu hỏi, ví dụ: ai là tác giả của sách X"
                     rows="2"
                 ></textarea>
-                <button type="submit" id="sendButton">Gui</button>
+
+                <button type="submit" id="sendButton">Gửi</button>
             </form>
+
         </div>
     </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/library/pages/qa.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pages/qa.js') }}"></script>
 {% endblock %}

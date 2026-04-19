@@ -1,56 +1,116 @@
-from models.graph_model import (
-    get_book_graph_data,
-    get_article_graph_data,
-    get_thesis_graph_data
-)
+from database.neo4j_connection import neo4j_conn
 
 
 # =========================
-# MAP TYPE → FUNCTION
+# GET GRAPH DATA (UNIFIED)
 # =========================
-GRAPH_FUNCTIONS = {
-    "book": get_book_graph_data,
-    "article": get_article_graph_data,
-    "thesis": get_thesis_graph_data
-}
-
-
-# =========================
-# MAIN GRAPH SERVICE
-# =========================
-def get_graph_data(doc_type, document_id):
-
-    if not doc_type or not document_id:
-        return {"nodes": [], "edges": []}
-
-    # normalize input
-    doc_type = doc_type.strip().lower()
-
-    graph_func = GRAPH_FUNCTIONS.get(doc_type)
-
-    if not graph_func:
-        return {"nodes": [], "edges": []}
-
-    try:
-        return graph_func(document_id)
-    except Exception:
-        return {"nodes": [], "edges": []}
-
-
-# =========================
-# AUTO DETECT TYPE
-# =========================
-def get_graph_auto(document_id):
+def get_graph_data(document_id):
 
     if not document_id:
         return {"nodes": [], "edges": []}
 
-    for func in GRAPH_FUNCTIONS.values():
-        try:
-            result = func(document_id)
-            if result.get("nodes"):
-                return result
-        except Exception:
-            continue
+    query = """
+    MATCH (d {id: $id})
 
-    return {"nodes": [], "edges": []}
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+    OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
+    OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
+    OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Institution)
+    OPTIONAL MATCH (d)-[:SUBMITTED_TO]->(u:Institution)
+
+    RETURN
+        d,
+        labels(d) AS labels,
+        collect(DISTINCT a) AS authors,
+        collect(DISTINCT s) AS subjects,
+        collect(DISTINCT k) AS keywords,
+        collect(DISTINCT p) AS publishers,
+        collect(DISTINCT u) AS universities
+    """
+
+    result = neo4j_conn.query(query, {"id": document_id})
+
+    if not result:
+        return {"nodes": [], "edges": []}
+
+    record = result[0]
+
+    nodes = []
+    edges = []
+
+    # dùng set để tránh trùng node
+    node_ids = set()
+
+    # =========================
+    # DETECT DOCUMENT TYPE
+    # =========================
+    d = record["d"]
+    labels = record["labels"]
+
+    doc_group = "book"  # default
+
+    if "Article" in labels:
+        doc_group = "article"
+    elif "Thesis" in labels:
+        doc_group = "thesis"
+
+    # =========================
+    # ADD DOCUMENT NODE (CENTER)
+    # =========================
+    nodes.append({
+        "id": d.get("id"),
+        "label": d.get("title"),
+        "group": doc_group
+    })
+
+    node_ids.add(d.get("id"))
+
+    # =========================
+    # HELPER FUNCTION
+    # =========================
+    def add_nodes_and_edges(items, group, rel_type):
+        for item in items:
+            if not item:
+                continue
+
+            node_id = item.get("id") or item.get("name")
+
+            if not node_id:
+                continue
+
+            # tránh trùng node
+            if node_id not in node_ids:
+                nodes.append({
+                    "id": node_id,
+                    "label": item.get("name"),
+                    "group": group
+                })
+                node_ids.add(node_id)
+
+            edges.append({
+                "from": d.get("id"),
+                "to": node_id,
+                "label": rel_type
+            })
+
+    # =========================
+    # ADD RELATIONS
+    # =========================
+    add_nodes_and_edges(record["authors"], "author", "HAS_AUTHOR")
+    add_nodes_and_edges(record["subjects"], "subject", "HAS_SUBJECT")
+    add_nodes_and_edges(record["keywords"], "keyword", "HAS_KEYWORD")
+    add_nodes_and_edges(record["publishers"], "publisher", "PUBLISHED_BY")
+    add_nodes_and_edges(record["universities"], "publisher", "SUBMITTED_TO")
+
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "center_id": d.get("id")   # 🔥 QUAN TRỌNG
+    }
+
+
+# =========================
+# AUTO WRAPPER
+# =========================
+def get_graph_auto(document_id):
+    return get_graph_data(document_id)

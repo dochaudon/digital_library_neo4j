@@ -1,181 +1,183 @@
-import re
-import unicodedata
+from database.neo4j_connection import neo4j_conn
 
-from models.hybrid_search_model import hybrid_search
-from models.search_model import get_latest_documents
+FULLTEXT_INDEX = "documentSearchIndex"
 
 
 # =========================
-# NORMALIZE
+# TYPE RESOLVER
 # =========================
-def normalize(text: str) -> str:
-    if not text:
-        return ""
-    text = text.lower().strip()
-    text = unicodedata.normalize("NFD", text)
-    text = "".join(c for c in text if unicodedata.category(c) != "Mn")
-    return text
-
-
-def clean(value):
-    if not value:
-        return None
-    return value.strip()
-
-
-def extract_qa_title(q: str, intent: str | None):
-    if not q or not intent:
-        return None
-
-    patterns_by_intent = {
-        "ask_author": [
-            r"(?:ai la tac gia(?: cua)?|tac gia(?: cua)?|ai viet(?: cua)?|ai viet)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
-        ],
-        "ask_year": [
-            r"(?:nam xuat ban cua|nam cua|bao nhieu nam cua)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
-        ],
-        "ask_subject": [
-            r"(?:chu de cua|linh vuc cua)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
-        ],
-        "ask_publisher": [
-            r"(?:nha xuat ban cua|ai xuat ban|xuat ban boi ai)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
-        ],
-        "ask_university": [
-            r"(?:truong cua|luan van cua truong nao|duoc thuc hien tai truong nao|nop tai truong nao)\s+(?:sach|bai bao|luan van|tai lieu)?\s*(.+)$",
-        ],
-    }
-
-    for pattern in patterns_by_intent.get(intent, []):
-        match = re.search(pattern, q, flags=re.IGNORECASE)
-        if match:
-            title = match.group(1).strip(" ?!.,:;\"'")
-            for suffix in ["la ai", "la gi", "o dau", "la truong nao", "la nha xuat ban nao"]:
-                if title.endswith(suffix):
-                    title = title[: -len(suffix)].strip(" ?!.,:;\"'")
-            return title or None
-
-    return None
+TYPE_CASE = """
+CASE
+    WHEN node:Book THEN "Book"
+    WHEN node:Article THEN "Article"
+    WHEN node:Thesis THEN "Thesis"
+    ELSE coalesce(node.type, "Document")
+END
+"""
 
 
 # =========================
-# NLP PARSER
+# FULLTEXT SEARCH
 # =========================
-def parse_nl_query(query: str):
-    raw = clean(query) or ""
-    q = normalize(raw)
+def search_fulltext(query, limit=20):
 
-    filters = {
-        "doc_type": None,
-        "author": None,
-        "subject": None,
-        "publisher": None,
-        "university": None,
-        "year": None,
-        "category": None,
-        "intent": None,
-    }
+    if not query:
+        return []
 
-    # ===== TYPE =====
-    if "sach" in q:
-        filters["doc_type"] = "Book"
-    elif "bai bao" in q:
-        filters["doc_type"] = "Article"
-    elif "luan van" in q:
-        filters["doc_type"] = "Thesis"
+    cypher = f"""
+    CALL db.index.fulltext.queryNodes($index, $query)
+    YIELD node, score
 
-    # ===== CATEGORY =====
-    if "giao trinh" in q:
-        filters["category"] = "Giao trinh"
-    elif "tham khao" in q:
-        filters["category"] = "Tham khao"
+    WHERE node:Book OR node:Article OR node:Thesis
 
-    # ===== INTENT =====
-    if "tac gia" in q or "ai viet" in q:
-        filters["intent"] = "ask_author"
-    elif any(phrase in q for phrase in ["nam xuat ban cua", "nam cua", "bao nhieu nam cua"]):
-        filters["intent"] = "ask_year"
-    elif "chu de cua" in q or "linh vuc cua" in q:
-        filters["intent"] = "ask_subject"
-    elif any(phrase in q for phrase in ["nha xuat ban cua", "ai xuat ban", "xuat ban boi ai"]):
-        filters["intent"] = "ask_publisher"
-    elif any(phrase in q for phrase in ["truong cua", "luan van cua truong nao", "duoc thuc hien tai truong nao", "nop tai truong nao"]):
-        filters["intent"] = "ask_university"
+    OPTIONAL MATCH (node)-[:HAS_AUTHOR]->(a:Author)
 
-    # ===== YEAR FILTER =====
-    year_match = re.search(r"\b(19|20)\d{2}\b", q)
-    if year_match:
-        filters["year"] = int(year_match.group())
+    RETURN
+        node.id AS id,
+        node.title AS title,
+        node.year AS year,
+        {TYPE_CASE} AS type,
+        collect(DISTINCT a.name) AS authors,
+        score AS score,
+        'fulltext' AS source
 
-    # ===== TITLE FOR QA =====
-    title_candidate = extract_qa_title(q, filters["intent"])
-    if title_candidate:
-        filters["subject"] = title_candidate
+    ORDER BY score DESC
+    LIMIT $limit
+    """
 
-    # QA questions should stop here so entity extraction does not pollute filters.
-    if filters["intent"]:
-        return filters
-
-    # ===== AUTHOR =====
-    author_match = re.search(r"(?:cua|tac gia|viet boi)\s+([a-zA-Z\s]+)", q)
-    if author_match:
-        filters["author"] = author_match.group(1).strip()
-
-    # ===== PUBLISHER =====
-    pub_match = re.search(r"(?:nha xuat ban|xuat ban boi)\s+([a-zA-Z\s]+)", q)
-    if pub_match:
-        filters["publisher"] = pub_match.group(1).strip()
-
-    # ===== UNIVERSITY =====
-    uni_match = re.search(r"(?:truong dai hoc|truong)\s+([a-zA-Z\s]+)", q)
-    if uni_match:
-        filters["university"] = uni_match.group(1).strip()
-
-    # ===== SUBJECT =====
-    temp = q
-    remove_words = [
-        "sach", "bai bao", "luan van",
-        "giao trinh", "tham khao",
-        "cua", "tac gia", "viet boi",
-        "nha xuat ban", "xuat ban boi",
-        "truong", "truong dai hoc", "nam",
-    ]
-
-    for word in remove_words:
-        temp = temp.replace(word, "")
-
-    temp = re.sub(r"\b(19|20)\d{2}\b", "", temp)
-    temp = re.sub(r"\s+", " ", temp).strip()
-
-    if temp and temp != filters["author"]:
-        filters["subject"] = temp
-
-    return filters
+    return neo4j_conn.query(cypher, {
+        "index": FULLTEXT_INDEX,
+        "query": query,
+        "limit": limit
+    })
 
 
 # =========================
-# MAIN SEARCH (HYBRID)
+# GRAPH SEARCH (FILTER)
+# =========================
+def search_graph(filters, limit=20):
+
+    if not any(filters.values()):
+        return []
+
+    cypher = """
+    MATCH (d)
+    WHERE d:Book OR d:Article OR d:Thesis
+
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+    OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
+
+    WITH d,
+         collect(DISTINCT a.name) AS authors,
+         collect(DISTINCT s.name) AS subjects
+
+    WHERE
+        ($doc_type IS NULL OR
+            ($doc_type = "Book" AND d:Book) OR
+            ($doc_type = "Article" AND d:Article) OR
+            ($doc_type = "Thesis" AND d:Thesis)
+        )
+
+        AND ($author IS NULL OR
+            ANY(x IN authors WHERE toLower(x) CONTAINS toLower($author)))
+
+        AND ($subject IS NULL OR
+            ANY(x IN subjects WHERE toLower(x) CONTAINS toLower($subject)))
+
+        AND ($year IS NULL OR d.year = $year)
+
+    RETURN
+        d.id AS id,
+        d.title AS title,
+        d.year AS year,
+        CASE
+            WHEN d:Book THEN "Book"
+            WHEN d:Article THEN "Article"
+            WHEN d:Thesis THEN "Thesis"
+        END AS type,
+        authors,
+        1 AS score,
+        'graph' AS source
+
+    ORDER BY d.year DESC
+    LIMIT $limit
+    """
+
+    return neo4j_conn.query(cypher, {
+        "doc_type": filters.get("doc_type"),
+        "author": filters.get("author"),
+        "subject": filters.get("subject"),
+        "year": filters.get("year"),
+        "limit": limit
+    })
+
+
+# =========================
+# 🔥 HYBRID SEARCH (CORE)
+# =========================
+def hybrid_search(query="", filters=None, limit=20):
+
+    filters = filters or {}
+
+    results_fulltext = search_fulltext(query, limit)
+    results_graph = search_graph(filters, limit)
+
+    # =========================
+    # MERGE + REMOVE DUPLICATE
+    # =========================
+    merged = {}
+
+    for item in results_fulltext:
+        merged[item["id"]] = item
+
+    for item in results_graph:
+        if item["id"] in merged:
+            # boost score nếu có cả graph + fulltext
+            merged[item["id"]]["score"] += 1
+        else:
+            merged[item["id"]] = item
+
+    # =========================
+    # SORT
+    # =========================
+    results = list(merged.values())
+
+    results.sort(key=lambda x: (-x.get("score", 0), - (x.get("year") or 0)))
+
+    return results[:limit]
+
+
+# =========================
+# MAIN SEARCH (PUBLIC)
 # =========================
 def search_documents(query="", filters=None, limit=20):
-    filters = filters or {}
-    parsed = parse_nl_query(query)
-
-    final_filters = {}
-    for key in [
-        "doc_type",
-        "author",
-        "subject",
-        "publisher",
-        "university",
-        "year",
-        "category",
-    ]:
-        final_filters[key] = filters.get(key) or parsed.get(key)
-
-    return hybrid_search(query, final_filters, limit)
+    return hybrid_search(query, filters, limit)
 
 
 # =========================
 # LATEST DOCUMENTS
 # =========================
-def get_latest(limit=20):
-    return get_latest_documents(limit)
+def get_latest_documents(limit=20):
+    query = """
+    MATCH (d)
+    WHERE d:Book OR d:Article OR d:Thesis
+
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+
+    RETURN
+        d.id AS id,
+        d.title AS title,
+        d.year AS year,
+        d.image_url AS image_url,  
+        CASE
+            WHEN d:Book THEN "Book"
+            WHEN d:Article THEN "Article"
+            WHEN d:Thesis THEN "Thesis"
+        END AS type,
+        collect(DISTINCT a.name) AS authors
+
+    ORDER BY d.year DESC
+    LIMIT $limit
+    """
+
+    return neo4j_conn.query(query, {"limit": limit})

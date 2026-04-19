@@ -17,9 +17,16 @@
             <h4>🔗 Liên kết</h4>
             <ul>
                 <li><a href="{{ url_for('main.home') }}">🏠 Trang chủ</a></li>
-                <li><a href="{{ url_for('main.books_page') }}">📘 Sách</a></li>
-                <li><a href="{{ url_for('main.articles_page') }}">📰 Bài báo</a></li>
-                <li><a href="{{ url_for('main.thesis_page') }}">🎓 Luận văn</a></li>
+
+                <li><a href="/documents">📚 Tất cả tài liệu</a></li>
+
+                <li><a href="/documents?doc_type=Book">📘 Sách</a></li>
+
+                <li><a href="/documents?doc_type=Article">📰 Bài báo</a></li>
+
+                <li><a href="/documents?doc_type=Thesis">🎓 Luận văn</a></li>
+
+                <li><a href="{{ url_for('qa.qa_page') }}">🤖 Hỏi đáp</a></li>
             </ul>
         </div>
 

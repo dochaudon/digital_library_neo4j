@@ -1,0 +1,93 @@
+{% extends "library/layouts/base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/document/document.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="books-wrapper">
+
+        <div class="books-header">
+            <h2>📚 Danh sách tài liệu</h2>
+        </div>
+
+        <div class="books-list">
+
+            {% for d in documents %}
+            <div class="book-item">
+
+                <!-- IMAGE -->
+                <div class="book-img">
+                    <img src="{{ d.image_url if d.image_url else '/static/images/pdf.png' }}"
+                        onerror="this.onerror=null;this.src='/static/images/pdf.jpg';">
+                </div>
+
+                <div class="book-content">
+
+                    <!-- TITLE -->
+                    <a href="/document/{{ d.id }}"
+                       class="book-title"
+                       title="{{ d.title }}">
+                        {{ d.title }}
+                    </a>
+
+                    <!-- TYPE -->
+                    <p class="book-type">
+                        {{ d.type }}
+                    </p>
+
+                    <!-- AUTHOR -->
+                    <p class="book-author">
+                        Tác giả:
+
+                        {% if d.authors %}
+                            {% for a in d.authors %}
+                                {% if a %}
+                                    <a href="/search?author={{ a }}">
+                                        {{ a }}
+                                    </a>{% if not loop.last %}, {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+
+                    <!-- SUBJECT -->
+                    {% if d.subjects %}
+                    <p class="book-subject">
+                        Chủ đề:
+                        {% for s in d.subjects %}
+                            <a href="/search?subject={{ s }}">
+                                {{ s }}
+                            </a>{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+
+                    <!-- FOOTER -->
+                    <div class="book-footer">
+                        <span>📅 {{ d.year or 'N/A' }}</span>
+                    </div>
+
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    {% include 'library/components/pagination.html' %}
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/document.js') }}"></script>
+{% endblock %}

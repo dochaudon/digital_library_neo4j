@@ -1,53 +1,93 @@
 from database.neo4j_connection import neo4j_conn
 import uuid
 
-
+# =========================
+# CREATE LANGUAGE
+# =========================
 def create_language(data):
+    name = data.get("name")
+
+    if not name:
+        return None
+
     cypher = """
     CREATE (l:Language {
         id: $id,
         name: $name
     })
-    RETURN l.id AS id
+    RETURN l.id AS id, l.name AS name
     """
-    return neo4j_conn.query(cypher, {
+
+    result = neo4j_conn.query(cypher, {
         "id": str(uuid.uuid4()),
-        "name": data.get("name")
+        "name": name.strip()
     })
 
-
-def get_all_languages():
-    cypher = """
-    MATCH (l:Language)
-    RETURN l.id AS id, l.name AS name
-    ORDER BY l.name
-    """
-    return neo4j_conn.query(cypher)
-
-
-def get_language_by_id(id):
-    cypher = """
-    MATCH (l:Language {id: $id})
-    RETURN l.id AS id, l.name AS name
-    """
-    result = neo4j_conn.query(cypher, {"id": id})
     return result[0] if result else None
 
 
-def update_language(id, data):
+# =========================
+# GET ALL LANGUAGES
+# =========================
+def get_all_languages():
+    cypher = """
+    MATCH (l:Language)
+    RETURN 
+        l.id AS id, 
+        l.name AS name
+    ORDER BY l.name
+    """
+
+    return neo4j_conn.query(cypher)
+
+
+# =========================
+# GET LANGUAGE BY ID
+# =========================
+def get_language_by_id(language_id):
+    cypher = """
+    MATCH (l:Language {id: $id})
+    RETURN 
+        l.id AS id, 
+        l.name AS name
+    """
+
+    result = neo4j_conn.query(cypher, {"id": language_id})
+    return result[0] if result else None
+
+
+# =========================
+# UPDATE LANGUAGE
+# =========================
+def update_language(language_id, data):
+    name = data.get("name")
+
+    if not name:
+        return None
+
     cypher = """
     MATCH (l:Language {id: $id})
     SET l.name = $name
+    RETURN l.id AS id, l.name AS name
     """
-    neo4j_conn.query(cypher, {
-        "id": id,
-        "name": data.get("name")
+
+    result = neo4j_conn.query(cypher, {
+        "id": language_id,
+        "name": name.strip()
     })
 
+    return result[0] if result else None
 
-def delete_language(id):
+
+# =========================
+# DELETE LANGUAGE
+# =========================
+def delete_language(language_id):
     cypher = """
     MATCH (l:Language {id: $id})
     DETACH DELETE l
+    RETURN count(l) AS deleted
     """
-    neo4j_conn.query(cypher, {"id": id})
+
+    result = neo4j_conn.query(cypher, {"id": language_id})
+    return result[0]["deleted"] if result else 0
