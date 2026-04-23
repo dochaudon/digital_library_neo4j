@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 
-from services.search_service import search_documents
+from services.search_service import search_documents, suggest_documents
 
 
 search_api = Blueprint("search_api", __name__, url_prefix="/api/search")
@@ -64,4 +64,13 @@ def search():
         "total": total,
         "total_pages": total_pages,
         "results": results
+    })
+@search_api.route("/suggest")
+def suggest():
+    query = request.args.get("q", "")
+
+    results = suggest_documents(query)
+
+    return jsonify({
+        "results": results   # 🔥 PHẢI CÓ KEY NÀY
     })

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, render_template, redirect
-
+from services.graph_service import get_document_graph_service
 from services.document_service import (
     create_document_service,
     update_document_service,
@@ -98,3 +98,14 @@ def delete(id):
     except Exception as e:
         print("DELETE ERROR:", e)
         return "Delete failed", 500
+
+@document_admin.route("/view/<id>")
+def view_page(id):
+    document = get_document_detail_service(id)
+    graph_data = get_document_graph_service(id)
+
+    return render_template(
+        "admin/pages/document/detail.html",
+        document=document,
+        graph_data=graph_data
+    )

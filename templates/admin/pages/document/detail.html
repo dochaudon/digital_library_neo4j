@@ -1,0 +1,167 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/document/document_detail.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="doc-header">
+    <h2>{{ document.title }}</h2>
+
+    <div class="admin-actions">
+        <a href="/admin/documents/edit/{{ document.id }}" class="btn btn-warning">✏️ Sửa</a>
+        <a href="/admin/documents/delete/{{ document.id }}" class="btn btn-danger">🗑️ Xóa</a>
+        <a href="/document/{{ document.id }}" target="_blank" class="btn btn-info">👁️ Xem user</a>
+    </div>
+
+    {% if document.type %}
+        <span class="doc-type-link">{{ document.type }}</span>
+    {% endif %}
+</div>
+
+<div class="detail-layout">
+
+    <!-- LEFT -->
+    <div class="left-panel">
+
+        {% if document.image_url %}
+            <img src="{{ document.image_url }}"
+                 class="pdf-image"
+                 onerror="this.src='/static/images/pdf.png'">
+        {% else %}
+            <img src="/static/images/pdf.png" class="pdf-image">
+        {% endif %}
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-panel">
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab(event, 'info')">Thông tin</button>
+            <button class="tab-btn" onclick="openTab(event, 'pdf')">PDF</button>
+            <button class="tab-btn" onclick="openTab(event, 'graph')">Graph</button>
+        </div>
+
+        <!-- INFO -->
+        <div id="info" class="tab-content active">
+
+            <table class="doc-table">
+
+                {% if document.year %}
+                <tr><td>Năm</td><td>{{ document.year }}</td></tr>
+                {% endif %}
+
+                {% if document.authors %}
+                <tr><td>Tác giả</td><td>{{ document.authors | join(', ') }}</td></tr>
+                {% endif %}
+
+                {% if document.subjects %}
+                <tr><td>Chủ đề</td><td>{{ document.subjects | join(', ') }}</td></tr>
+                {% endif %}
+
+                {% if document.publisher %}
+                <tr><td>Nhà xuất bản</td><td>{{ document.publisher }}</td></tr>
+                {% endif %}
+
+                {% if document.university %}
+                <tr><td>Trường</td><td>{{ document.university }}</td></tr>
+                {% endif %}
+
+                {% if document.pages %}
+                <tr><td>Số trang</td><td>{{ document.pages }}</td></tr>
+                {% endif %}
+
+            </table>
+
+            {% if document.abstract %}
+            <div class="section-card">
+                <div class="section-title">
+                    <h3>Tóm tắt</h3>
+                </div>
+                <div class="abstract-text">
+                    {{ document.abstract }}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- PDF -->
+        <div id="pdf" class="tab-content">
+
+            {% if document.file_url %}
+                <div class="pdf-actions">
+                    <a href="{{ document.file_url }}" target="_blank" class="pdf-link">
+                        📥 Tải xuống
+                    </a>
+                </div>
+
+                <div class="pdf-viewer">
+                    <iframe src="{{ document.file_url }}"></iframe>
+                </div>
+            {% else %}
+                <div class="empty-box">Không có file PDF</div>
+            {% endif %}
+
+        </div>
+
+        <!-- GRAPH -->
+        <div id="graph" class="tab-content">
+
+            <div class="graph-wrapper">
+
+                <div class="graph-legend">
+                    <div><span class="legend-box blue"></span> Book</div>
+                    <div><span class="legend-box green"></span> Article</div>
+                    <div><span class="legend-box purple triangle"></span> Thesis</div>
+
+                    <hr>
+
+                    <div><span class="legend-box lightgreen circle"></span> Author</div>
+                    <div><span class="legend-box orange diamond"></span> Subject</div>
+                    <div><span class="legend-box pink star"></span> Keyword</div>
+                    <div><span class="legend-box cyan hex"></span> Publisher</div>
+                </div>
+
+                <div id="graph-network"></div>
+
+            </div>
+
+            <div class="graph-note">
+                Click để xem nhanh • Double click để khám phá nâng cao
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- POPUP -->
+<div id="graph-popup" class="graph-popup hidden">
+    <div class="popup-header">
+        <span id="popup-title">Preview</span>
+        <button onclick="closePopup()">×</button>
+    </div>
+
+    <div id="popup-content" class="popup-content"></div>
+
+    <div class="popup-footer">
+        <button id="popup-view-btn">Xem chi tiết</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    const graphData = JSON.parse('{{ graph_data | tojson | safe }}');
+</script>
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="{{ url_for('static', filename='js/library/pages/document_detail.js') }}"></script>
+
+{% endblock %}

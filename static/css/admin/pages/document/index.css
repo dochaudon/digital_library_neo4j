@@ -135,3 +135,116 @@
     display: flex;
     justify-content: center;
 }
+.doc-container {
+    padding: 20px;
+}
+
+/* HEADER */
+.doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.doc-header h2 {
+    margin: 0;
+}
+
+.doc-count {
+    color: #777;
+    font-size: 14px;
+}
+
+/* BUTTON */
+.btn-add {
+    background: #2563eb;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+/* SEARCH */
+.doc-search input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+/* TABLE CARD */
+.doc-table-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* TABLE */
+.doc-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.doc-table th {
+    text-align: left;
+    padding: 12px;
+    color: #666;
+}
+
+.doc-table td {
+    padding: 12px;
+    border-top: 1px solid #eee;
+}
+
+/* TITLE */
+.title-main {
+    font-weight: 600;
+}
+
+.title-sub {
+    font-size: 12px;
+    color: #999;
+}
+
+/* BADGE */
+.badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+.badge-book {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.badge-article {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.badge-thesis {
+    background: #fce7f3;
+    color: #be185d;
+}
+
+/* ACTION */
+.actions a {
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+.btn-edit {
+    color: #2563eb;
+}
+
+.btn-delete {
+    color: red;
+}
+.btn-view {
+    color: #16a34a;
+    margin-right: 8px;
+}

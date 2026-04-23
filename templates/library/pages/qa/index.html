@@ -14,48 +14,74 @@
         <div class="chat-header">
             <div>
                 <span class="chat-kicker">Library Q&A</span>
-                <h1>Hỏi đáp tài liệu theo dạng hội thoại</h1>
-                <p>Đặt câu hỏi bằng tiếng Việt, hệ thống sẽ trả lời và gợi ý tài liệu ngay trong khung chat.</p>
+                <h1>Hỏi đáp tài liệu thông minh</h1>
+                <p>
+                    Hỏi bằng ngôn ngữ tự nhiên — hệ thống sẽ phân tích, tìm kiếm và trả lời như một trợ lý AI 📚
+                </p>
             </div>
         </div>
 
         <!-- SUGGESTIONS -->
         <div class="chat-suggestions">
-            <button type="button" class="chat-chip">ai la tac gia cua sach machine learning</button>
-            <button type="button" class="chat-chip">nam xuat ban cua bai bao graph analytics</button>
-            <button type="button" class="chat-chip">chu de cua luan van tri tue nhan tao</button>
-            <button type="button" class="chat-chip">nha xuat ban cua sach data mining</button>
+            <button type="button" class="chat-chip">ai là tác giả của Giáo trình giảng dạy bậc đại học: Hành vi người tiêu dùng - Định hướng ứng dụng</button>
+            <button type="button" class="chat-chip">sách thuộc chủ đề Kinh Tế</button>
         </div>
 
         <!-- CHAT -->
         <div class="chat-container">
 
+            <!-- CHAT BOX -->
             <div id="chatBox" class="chat-box">
+
+                <!-- INTRO MESSAGE -->
                 <div class="chat-message bot intro">
+                    <div class="message-avatar bot-avatar"></div>
+
                     <div class="message-bubble">
                         <p class="message-text">
-                            Xin chào 👋 Bạn có thể hỏi về tác giả, năm, chủ đề, nhà xuất bản, trường hoặc tìm tài liệu.
+                            Xin chào 👋
+                            Mình có thể giúp bạn tìm tài liệu, xem tác giả, năm xuất bản hoặc gợi ý tài liệu liên quan.
                         </p>
                     </div>
                 </div>
+
             </div>
 
             <!-- INPUT -->
             <form id="chatForm" class="chat-input">
-                <textarea
-                    id="questionInput"
-                    placeholder="Nhập câu hỏi, ví dụ: ai là tác giả của sách X"
-                    rows="2"
-                ></textarea>
 
-                <button type="submit" id="sendButton">Gửi</button>
+                <div class="input-wrapper">
+                    <textarea
+                        id="questionInput"
+                        placeholder="Nhập câu hỏi... (Shift + Enter để xuống dòng)"
+                        rows="2"
+                    ></textarea>
+
+                    <!-- quick actions -->
+                    <div class="input-actions">
+                        <span class="input-hint">Enter để gửi</span>
+                    </div>
+                </div>
+
+                <button type="submit" id="sendButton">
+                    <span class="send-text">Gửi</span>
+                </button>
+
             </form>
 
         </div>
+
+        <!-- FOOTER -->
+        <div class="chat-footer">
+            <p>
+                ⚡ Trả lời dựa trên dữ liệu trong hệ thống • Không sử dụng thông tin bên ngoài
+            </p>
+        </div>
+
     </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/pages/qa.js') }}"></script>
+<script src="{{ url_for('static', filename='js/library/pages/qa.js') }}"></script>
 {% endblock %}

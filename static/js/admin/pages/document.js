@@ -33,3 +33,12 @@ async function deleteDoc(id) {
 
     loadDocuments();
 }
+document.getElementById("searchInput").addEventListener("input", function () {
+    const keyword = this.value.toLowerCase();
+    const rows = document.querySelectorAll("#docTableBody tr");
+
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(keyword) ? "" : "none";
+    });
+});

@@ -19,6 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
 // =========================
 async function loadEntity(type, id, page = 1) {
 
+    type = type?.toLowerCase();
+
     currentType = type;
     currentId = id;
 
@@ -40,31 +42,46 @@ async function loadLeft(type, id, page = 1) {
     const res = await fetch(`/api/entity/${type}/${id}?page=${page}`);
     const data = await res.json();
 
+    const entityType = data.type?.toLowerCase();
+
     let html = "";
 
-    if (data.type === "author" || data.type === "subject") {
+    // ===== ENTITY LIST =====
+    if (["author", "subject", "keyword", "publisher"].includes(entityType)) {
 
-        html += `<h3>${data.type === "author" ? "📚 Tài liệu của tác giả" : "📂 Tài liệu theo chủ đề"}</h3>`;
+        const titleMap = {
+            author: "📚 Tài liệu của tác giả",
+            subject: "📂 Tài liệu theo chủ đề",
+            keyword: "🏷️ Tài liệu theo từ khóa",
+            publisher: "🏢 Tài liệu theo nhà xuất bản"
+        };
 
-        data.documents.forEach(d => {
-            html += `
-                <div class="item-card"
-                     onclick="loadEntity('document','${d.id}')">
-                    <div class="item-title">${truncate(d.title)}</div>
-                    <div class="item-meta">📅 ${d.year || "N/A"}</div>
-                </div>
-            `;
-        });
+        html += `<h3>${titleMap[entityType] || "Tài liệu liên quan"}</h3>`;
+
+        if (!data.documents || data.documents.length === 0) {
+            html += `<p>Không có tài liệu</p>`;
+        } else {
+            data.documents.forEach(d => {
+                html += `
+                    <div class="item-card"
+                         onclick="loadEntity('document','${d.id}')">
+                        <div class="item-title">${truncate(d.title)}</div>
+                        <div class="item-meta">📅 ${d.year || "N/A"}</div>
+                    </div>
+                `;
+            });
+        }
 
         html += renderPagination(type, id, data.page, data.total);
     }
 
-    else if (data.type === "document") {
+    // ===== DOCUMENT =====
+    else if (entityType === "document") {
 
         const d = data.data;
 
         html += `
-            <h3>${d.title}</h3>
+            <h3>${d.title || "N/A"}</h3>
             <p>📅 ${d.year || "N/A"}</p>
             <p>👤 ${d.authors?.join(", ") || "N/A"}</p>
             <p>📂 ${d.subjects?.join(", ") || "N/A"}</p>
@@ -99,31 +116,32 @@ function renderGraph(graphData) {
     const container = document.getElementById("explore-graph");
 
     const centerId = graphData.center_id;
-
-    const radius = 180; // khoảng cách vòng tròn
+    const radius = 180;
 
     const mappedNodes = graphData.nodes.map((n, index) => {
 
-        // 🎯 NODE TRUNG TÂM
+        const group = n.group?.toLowerCase();
+
         if (n.id === centerId) {
             return {
                 ...n,
+                group,
                 x: 0,
                 y: 0,
                 fixed: true,
-                label: getLabel(n)
+                label: getLabel({ ...n, group })
             };
         }
 
-        // 🎯 NODE XUNG QUANH (vòng tròn)
         const angle = (2 * Math.PI * index) / graphData.nodes.length;
 
         return {
             ...n,
+            group,
             x: radius * Math.cos(angle),
             y: radius * Math.sin(angle),
             fixed: true,
-            label: getLabel(n)
+            label: getLabel({ ...n, group })
         };
     });
 
@@ -133,14 +151,10 @@ function renderGraph(graphData) {
     const data = { nodes, edges };
 
     const options = {
-
         nodes: {
             shape: "dot",
             size: 18,
-            font: {
-                size: 13,
-                vadjust: 25
-            }
+            font: { size: 13, vadjust: 25 }
         },
 
         edges: {
@@ -150,16 +164,16 @@ function renderGraph(graphData) {
         },
 
         groups: {
-            book: { shape: "dot", size: 22, color: "#2563eb" },
-            article: { shape: "dot", size: 22, color: "#16a34a" },
-            thesis: { shape: "dot", size: 24, color: "#9333ea" },
-            author: { shape: "dot", size: 18, color: "#22c55e" },
+            book: { size: 22, color: "#2563eb" },
+            article: { size: 22, color: "#16a34a" },
+            thesis: { size: 24, color: "#9333ea" },
+            author: { size: 18, color: "#22c55e" },
             subject: { shape: "diamond", size: 20, color: "#f59e0b" },
             keyword: { shape: "star", size: 20, color: "#ec4899" },
             publisher: { shape: "hexagon", size: 20, color: "#0ea5e9" }
         },
 
-        physics: false // 🔥 TẮT physics để giữ layout
+        physics: false
     };
 
     if (!network) {
@@ -172,40 +186,37 @@ function renderGraph(graphData) {
         network.setData(data);
     }
 
-    // 🔥 luôn fit
     setTimeout(() => {
-        network.fit({
-            animation: true
-        });
+        network.fit({ animation: true });
     }, 100);
 }
+
+
+// =========================
+// LABEL FIX
+// =========================
 function getLabel(node) {
 
-    if (node.group === "author") {
+    const group = node.group?.toLowerCase();
+
+    if (group === "author") {
         return node.name || node.label;
     }
 
-    if (["book", "article", "thesis"].includes(node.group)) {
+    if (["book", "article", "thesis"].includes(group)) {
         return truncate(node.title || node.label);
     }
 
-    if (node.group === "subject") {
-        return node.name || node.label;
-    }
-
-    if (node.group === "keyword") {
-        return node.name || node.label;
-    }
-
-    if (node.group === "publisher") {
+    if (["subject", "keyword", "publisher"].includes(group)) {
         return node.name || node.label;
     }
 
     return node.label;
 }
 
+
 // =========================
-// CLICK NODE
+// CLICK NODE (POPUP)
 // =========================
 async function onNodeClick(params) {
 
@@ -214,7 +225,7 @@ async function onNodeClick(params) {
     const node = nodes.get(params.nodes[0]);
     if (!node) return;
 
-    const type = node.group;
+    const type = node.group?.toLowerCase();
     const id = node.id;
 
     const popup = document.getElementById("graph-popup");
@@ -224,6 +235,7 @@ async function onNodeClick(params) {
     const contentEl = document.getElementById("popup-content");
     const btn = document.getElementById("popup-view-btn");
 
+    // ===== DOCUMENT =====
     if (["book", "article", "thesis"].includes(type)) {
 
         titleEl.innerText = "Thông tin tài liệu";
@@ -250,6 +262,7 @@ async function onNodeClick(params) {
         return;
     }
 
+    // ===== ENTITY =====
     titleEl.innerText = "Tài liệu liên quan";
     contentEl.innerHTML = "Đang tải...";
     btn.style.display = "none";
@@ -259,7 +272,7 @@ async function onNodeClick(params) {
 
     let html = "";
 
-    if (data.documents) {
+    if (data.documents && data.documents.length > 0) {
         data.documents.forEach(d => {
             html += `
                 <div class="popup-item"
@@ -286,7 +299,9 @@ function onNodeDoubleClick(params) {
     const node = nodes.get(params.nodes[0]);
     if (!node) return;
 
-    window.location.href = `/explore/${node.group}/${node.id}`;
+    const type = node.group?.toLowerCase();
+
+    window.location.href = `/explore/${type}/${node.id}`;
 }
 
 
@@ -303,7 +318,7 @@ function closePopup() {
 // =========================
 function renderPagination(type, id, page, total) {
 
-    const totalPages = Math.ceil(total / 10);
+    const totalPages = Math.ceil((total || 0) / 10);
     if (totalPages <= 1) return "";
 
     let html = `<div class="pagination">`;

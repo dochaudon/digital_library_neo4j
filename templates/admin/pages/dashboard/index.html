@@ -1,0 +1,34 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/dashboard.css') }}">
+
+<div class="admin-dashboard">
+
+    <h1 class="dashboard-title">📊 Admin Dashboard</h1>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <h3>📚 Sách</h3>
+            <p class="stat-number">{{ total_books }}</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>📄 Bài báo</h3>
+            <p class="stat-number">{{ total_articles }}</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>🎓 Luận văn</h3>
+            <p class="stat-number">{{ total_thesis }}</p>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/admin/pages/dashboard.js') }}"></script>
+
+{% endblock %}
