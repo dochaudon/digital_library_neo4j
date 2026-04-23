@@ -1,35 +1,30 @@
 from flask import Blueprint, request, jsonify, render_template
 
 from services.metadata_service import (
-    # AUTHOR
     create_author_service,
     get_authors_service,
     get_author_detail_service,
     update_author_service,
     delete_author_service,
 
-    # SUBJECT
     create_subject_service,
     get_subjects_service,
     get_subject_detail_service,
     update_subject_service,
     delete_subject_service,
 
-    # KEYWORD
     create_keyword_service,
     get_keywords_service,
     get_keyword_detail_service,
     update_keyword_service,
     delete_keyword_service,
 
-    # CATEGORY
     create_category_service,
     get_categories_service,
     get_category_detail_service,
     update_category_service,
     delete_category_service,
 
-    # INSTITUTION
     create_institution_service,
     get_institutions_service,
     get_institution_detail_service,
@@ -38,29 +33,37 @@ from services.metadata_service import (
 )
 
 
-metadata_admin = Blueprint("metadata_admin", __name__, url_prefix="/admin/metadata")
+metadata_admin = Blueprint("metadata_admin", __name__, url_prefix="/admin")
+
+
+# =====================================================
+# 🔥 DASHBOARD (THÊM VÀO ĐÂY)
+# =====================================================
+@metadata_admin.route("/dashboard")
+def dashboard():
+    return render_template("admin/pages/dashboard/index.html")
 
 
 # =====================================================
 # 🔥 GENERIC PAGE ROUTE
 # =====================================================
-@metadata_admin.route("/<entity>/page")
+@metadata_admin.route("/metadata/<entity>/page")
 def list_page(entity):
     return render_template(f"admin/pages/{entity}/index.html")
 
 
-@metadata_admin.route("/<entity>/create")
+@metadata_admin.route("/metadata/<entity>/create")
 def create_page(entity):
     return render_template(f"admin/pages/{entity}/form.html")
 
 
-@metadata_admin.route("/<entity>/edit/<id>")
+@metadata_admin.route("/metadata/<entity>/edit/<id>")
 def edit_page(entity, id):
     return render_template(f"admin/pages/{entity}/form.html")
 
 
 # =====================================================
-# 🔥 GENERIC API HANDLER
+# 🔥 SERVICE MAP
 # =====================================================
 def get_service(entity):
     return {
@@ -105,27 +108,34 @@ def get_service(entity):
 # =====================================================
 # LIST
 # =====================================================
-@metadata_admin.route("/<entity>", methods=["GET"])
+@metadata_admin.route("/metadata/<entity>", methods=["GET"])
 def list_items(entity):
     service = get_service(entity)
+    if not service:
+        return jsonify({"error": "Invalid entity"}), 400
     return jsonify(service["get"]())
 
 
 # =====================================================
 # DETAIL
 # =====================================================
-@metadata_admin.route("/<entity>/<id>", methods=["GET"])
+@metadata_admin.route("/metadata/<entity>/<id>", methods=["GET"])
 def detail(entity, id):
     service = get_service(entity)
+    if not service:
+        return jsonify({"error": "Invalid entity"}), 400
     return jsonify(service["get_one"](id))
 
 
 # =====================================================
 # CREATE
 # =====================================================
-@metadata_admin.route("/<entity>", methods=["POST"])
+@metadata_admin.route("/metadata/<entity>", methods=["POST"])
 def create(entity):
     service = get_service(entity)
+    if not service:
+        return jsonify({"error": "Invalid entity"}), 400
+
     data = request.get_json()
     item_id = service["create"](data)
     return jsonify({"message": "Created", "id": item_id})
@@ -134,9 +144,12 @@ def create(entity):
 # =====================================================
 # UPDATE
 # =====================================================
-@metadata_admin.route("/<entity>/<id>", methods=["PUT"])
+@metadata_admin.route("/metadata/<entity>/<id>", methods=["PUT"])
 def update(entity, id):
     service = get_service(entity)
+    if not service:
+        return jsonify({"error": "Invalid entity"}), 400
+
     data = request.get_json()
     service["update"](id, data)
     return jsonify({"message": "Updated"})
@@ -145,8 +158,11 @@ def update(entity, id):
 # =====================================================
 # DELETE
 # =====================================================
-@metadata_admin.route("/<entity>/<id>", methods=["DELETE"])
+@metadata_admin.route("/metadata/<entity>/<id>", methods=["DELETE"])
 def delete(entity, id):
     service = get_service(entity)
+    if not service:
+        return jsonify({"error": "Invalid entity"}), 400
+
     service["delete"](id)
     return jsonify({"message": "Deleted"})

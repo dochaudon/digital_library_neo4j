@@ -37,80 +37,87 @@ def get_graph_data(document_id):
 
     nodes = []
     edges = []
-
-    # dùng set để tránh trùng node
     node_ids = set()
+
+    d = record.get("d") or {}
+    labels = record.get("labels") or []
 
     # =========================
     # DETECT DOCUMENT TYPE
     # =========================
-    d = record["d"]
-    labels = record["labels"]
-
-    doc_group = "book"  # default
+    doc_group = "book"
 
     if "Article" in labels:
         doc_group = "article"
     elif "Thesis" in labels:
         doc_group = "thesis"
 
+    doc_id = d.get("id")
+    doc_title = d.get("title") or "Unknown"
+
     # =========================
-    # ADD DOCUMENT NODE (CENTER)
+    # ADD DOCUMENT NODE
     # =========================
     nodes.append({
-        "id": d.get("id"),
-        "label": d.get("title"),
+        "id": doc_id,
+        "label": doc_title,
         "group": doc_group
     })
 
-    node_ids.add(d.get("id"))
+    node_ids.add(doc_id)
 
     # =========================
-    # HELPER FUNCTION
+    # HELPER FUNCTION (FIXED)
     # =========================
     def add_nodes_and_edges(items, group, rel_type):
+        if not items:
+            return
+
         for item in items:
             if not item:
                 continue
 
-            node_id = item.get("id") or item.get("name")
+            name = item.get("name") or item.get("title") or "Unknown"
 
-            if not node_id:
-                continue
+            # 🔥 FIX DUPLICATE NODE
+            node_id = item.get("id") or f"{group}_{name}"
 
-            # tránh trùng node
             if node_id not in node_ids:
                 nodes.append({
                     "id": node_id,
-                    "label": item.get("name"),
+                    "label": name,
                     "group": group
                 })
                 node_ids.add(node_id)
 
             edges.append({
-                "from": d.get("id"),
+                "from": doc_id,
                 "to": node_id,
                 "label": rel_type
             })
 
     # =========================
-    # ADD RELATIONS
+    # ADD RELATIONS (FIXED)
     # =========================
-    add_nodes_and_edges(record["authors"], "author", "HAS_AUTHOR")
-    add_nodes_and_edges(record["subjects"], "subject", "HAS_SUBJECT")
-    add_nodes_and_edges(record["keywords"], "keyword", "HAS_KEYWORD")
-    add_nodes_and_edges(record["publishers"], "publisher", "PUBLISHED_BY")
-    add_nodes_and_edges(record["universities"], "publisher", "SUBMITTED_TO")
+    add_nodes_and_edges(record.get("authors"), "author", "HAS_AUTHOR")
+    add_nodes_and_edges(record.get("subjects"), "subject", "HAS_SUBJECT")
+    add_nodes_and_edges(record.get("keywords"), "keyword", "HAS_KEYWORD")
+    add_nodes_and_edges(record.get("publishers"), "publisher", "PUBLISHED_BY")
+    add_nodes_and_edges(record.get("universities"), "university", "SUBMITTED_TO")  # 🔥 FIX
 
     return {
         "nodes": nodes,
         "edges": edges,
-        "center_id": d.get("id")   # 🔥 QUAN TRỌNG
+        "center_id": doc_id
     }
 
 
 # =========================
-# AUTO WRAPPER
+# WRAPPER (GIỮ CHUẨN SERVICE)
 # =========================
+def get_document_graph_service(document_id):
+    return get_graph_data(document_id)
+
+
 def get_graph_auto(document_id):
     return get_graph_data(document_id)

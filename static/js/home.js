@@ -1,52 +1,79 @@
 const input = document.getElementById("search-input");
 const box = document.getElementById("suggest-box");
 
+let debounceTimer = null;
+
 // ===== SUGGEST =====
-input.addEventListener("input", async function () {
+input.addEventListener("input", function () {
 
     const q = this.value.trim();
 
-    if (!q) {
-        box.style.display = "none";
-        return;
-    }
+    // clear timer cũ
+    clearTimeout(debounceTimer);
 
-    const res = await fetch(`/suggest?q=${q}`);
-    const data = await res.json();
+    // debounce (tránh spam API)
+    debounceTimer = setTimeout(async () => {
 
-    box.innerHTML = "";
+        if (!q || q.length < 2) {
+            box.style.display = "none";
+            box.innerHTML = "";
+            return;
+        }
 
-    if (!data.results.length) {
-        box.style.display = "none";
-        return;
-    }
+        try {
+            const res = await fetch(`/api/search/suggest?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
 
-    data.results.forEach(item => {
+            box.innerHTML = "";
 
-        const div = document.createElement("div");
-        div.classList.add("suggest-item");
-
-        div.innerHTML = `
-            <span class="suggest-icon">${getIcon(item.type)}</span>
-            <span>${item.title}</span>
-        `;
-
-        // 👉 CLICK → đi thẳng detail
-        div.onclick = () => {
-            if (item.type === "Book") {
-                window.location.href = `/book/${item.id}`;
-            } else if (item.type === "Article") {
-                window.location.href = `/article/${item.id}`;
-            } else {
-                window.location.href = `/thesis/${item.id}`;
+            if (!data.results || !data.results.length) {
+                box.style.display = "none";
+                return;
             }
-        };
 
-        box.appendChild(div);
-    });
+            data.results.forEach(item => {
 
-    box.style.display = "block";
+                const div = document.createElement("div");
+                div.classList.add("suggest-item");
+
+                div.innerHTML = `
+                    <span class="suggest-icon">${getIcon(item.type)}</span>
+                    <span>${highlightText(item.title, q)}</span>
+                `;
+
+                // 👉 CLICK → đi detail
+                div.onclick = () => {
+                    if (item.type === "Book") {
+                        window.location.href = `/book/${item.id}`;
+                    } else if (item.type === "Article") {
+                        window.location.href = `/article/${item.id}`;
+                    } else {
+                        window.location.href = `/thesis/${item.id}`;
+                    }
+                };
+
+                box.appendChild(div);
+            });
+
+            box.style.display = "block";
+
+        } catch (err) {
+            console.error("Suggest error:", err);
+            box.style.display = "none";
+        }
+
+    }, 300); // delay 300ms
 });
+
+
+// ===== HIGHLIGHT TEXT =====
+function highlightText(text, keyword) {
+    if (!keyword) return text;
+
+    const regex = new RegExp(`(${keyword})`, "gi");
+    return text.replace(regex, "<b>$1</b>");
+}
+
 
 // ===== ICON =====
 function getIcon(type) {
@@ -56,6 +83,7 @@ function getIcon(type) {
     return "📄";
 }
 
+
 // ===== CLICK OUTSIDE =====
 document.addEventListener("click", (e) => {
     if (!e.target.closest(".search-wrapper")) {
@@ -63,12 +91,22 @@ document.addEventListener("click", (e) => {
     }
 });
 
-// ===== SAMPLE CLICK (🔥 FIX QUAN TRỌNG) =====
+
+// ===== ENTER SEARCH =====
+input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        const value = input.value.trim();
+        if (value) {
+            window.location.href = `/search?query=${encodeURIComponent(value)}`;
+        }
+    }
+});
+
+
+// ===== SAMPLE CLICK (QUICK SUGGEST) =====
 document.querySelectorAll(".search-suggestions span").forEach(el => {
     el.onclick = () => {
         const value = el.innerText;
-
-        // 👉 redirect luôn (giống Google)
         window.location.href = `/search?query=${encodeURIComponent(value)}`;
     };
 });

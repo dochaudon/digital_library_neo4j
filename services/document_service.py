@@ -9,6 +9,9 @@ from models.document_model import (
 import uuid
 from database.neo4j_connection import neo4j_conn
 
+# 🔥 NEW IMPORT
+from services.embedding_service import create_embedding, build_document_text
+
 
 # =========================
 # GET LIST (PAGINATION)
@@ -16,11 +19,9 @@ from database.neo4j_connection import neo4j_conn
 def get_documents_service(page=1, limit=20, doc_type=None):
     skip = (page - 1) * limit
 
-    # 🔥 nếu có filter → dùng theo type
     if doc_type:
         return get_documents_by_type(doc_type, skip, limit)
 
-    # 🔥 không thì lấy tất cả
     return get_all_documents(skip, limit)
 
 
@@ -60,14 +61,14 @@ def get_documents_by_type_service(doc_type, page=1, limit=20):
 
 
 # =========================
-# 🔥 RELATED DOCUMENTS (IMPORTANT)
+# RELATED DOCUMENTS
 # =========================
 def get_related_documents_service(doc_id, limit=5):
     return get_related_documents(doc_id, limit)
 
 
 # =========================
-# CREATE DOCUMENT (CORE)
+# CREATE DOCUMENT
 # =========================
 def create_document_service(data):
     doc_id = str(uuid.uuid4())
@@ -78,6 +79,13 @@ def create_document_service(data):
 
     label = doc_type
 
+    # 🔥 EMBEDDING
+    doc_text = build_document_text(
+        data.get("title"),
+        data.get("abstract")
+    )
+    embedding = create_embedding(doc_text)
+
     query = f"""
     CREATE (d:{label} {{
         id: $id,
@@ -85,7 +93,8 @@ def create_document_service(data):
         year: $year,
         pages: $pages,
         abstract: $abstract,
-        file_url: $file_url
+        file_url: $file_url,
+        embedding: $embedding
     }})
     RETURN d
     """
@@ -97,13 +106,12 @@ def create_document_service(data):
         "pages": data.get("pages"),
         "abstract": data.get("abstract"),
         "file_url": data.get("file_url"),
+        "embedding": embedding
     }
 
     neo4j_conn.query(query, params)
 
-    # =========================
     # AUTHOR
-    # =========================
     for name in data.get("authors", []):
         neo4j_conn.query("""
         MERGE (a:Author {name:$name})
@@ -112,9 +120,7 @@ def create_document_service(data):
         MERGE (d)-[:HAS_AUTHOR]->(a)
         """, {"name": name.strip(), "id": doc_id})
 
-    # =========================
     # SUBJECT
-    # =========================
     for name in data.get("subjects", []):
         neo4j_conn.query("""
         MERGE (s:Subject {name:$name})
@@ -123,9 +129,7 @@ def create_document_service(data):
         MERGE (d)-[:HAS_SUBJECT]->(s)
         """, {"name": name.strip(), "id": doc_id})
 
-    # =========================
     # KEYWORD
-    # =========================
     for name in data.get("keywords", []):
         neo4j_conn.query("""
         MERGE (k:Keyword {name:$name})
@@ -142,6 +146,13 @@ def create_document_service(data):
 # =========================
 def update_document_service(doc_id, data):
 
+    # 🔥 RE-EMBEDDING
+    doc_text = build_document_text(
+        data.get("title"),
+        data.get("abstract")
+    )
+    embedding = create_embedding(doc_text)
+
     query = """
     MATCH (d {id:$id})
     SET 
@@ -149,7 +160,8 @@ def update_document_service(doc_id, data):
         d.year = $year,
         d.pages = $pages,
         d.abstract = $abstract,
-        d.file_url = $file_url
+        d.file_url = $file_url,
+        d.embedding = $embedding
     RETURN d
     """
 
@@ -160,19 +172,16 @@ def update_document_service(doc_id, data):
         "pages": data.get("pages"),
         "abstract": data.get("abstract"),
         "file_url": data.get("file_url"),
+        "embedding": embedding
     })
 
-    # =========================
-    # RESET RELATIONSHIPS
-    # =========================
+    # RESET RELATION
     neo4j_conn.query("""
     MATCH (d {id:$id})-[r:HAS_AUTHOR|HAS_SUBJECT|HAS_KEYWORD]->()
     DELETE r
     """, {"id": doc_id})
 
-    # =========================
-    # RE-ADD AUTHOR
-    # =========================
+    # RE-ADD
     for name in data.get("authors", []):
         neo4j_conn.query("""
         MERGE (a:Author {name:$name})
@@ -181,9 +190,6 @@ def update_document_service(doc_id, data):
         MERGE (d)-[:HAS_AUTHOR]->(a)
         """, {"name": name.strip(), "id": doc_id})
 
-    # =========================
-    # RE-ADD SUBJECT
-    # =========================
     for name in data.get("subjects", []):
         neo4j_conn.query("""
         MERGE (s:Subject {name:$name})
@@ -192,9 +198,6 @@ def update_document_service(doc_id, data):
         MERGE (d)-[:HAS_SUBJECT]->(s)
         """, {"name": name.strip(), "id": doc_id})
 
-    # =========================
-    # RE-ADD KEYWORD
-    # =========================
     for name in data.get("keywords", []):
         neo4j_conn.query("""
         MERGE (k:Keyword {name:$name})

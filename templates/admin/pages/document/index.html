@@ -4,66 +4,71 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/document/index.css') }}">
 {% endblock %}
 
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/admin/pages/document/index.js') }}"></script>
-{% endblock %}
-
 {% block content %}
 
-<section class="document-page">
+<section class="doc-container">
 
     <!-- HEADER -->
-    <header class="document-header">
-        <h2 class="document-title">📚 Document Management</h2>
+    <div class="doc-header">
+        <div>
+            <h2>📚 Quản Lý Tài Liệu</h2>
+            <p class="doc-count">Tổng số: {{ documents|length }} tài liệu</p>
+        </div>
 
-        <a href="/admin/documents/create" class="document-add-btn">
-            ➕ Add Document
+        <a href="/admin/documents/create" class="btn-add">
+            + Thêm Tài Liệu
         </a>
-    </header>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="doc-search">
+        <input type="text" placeholder="Tìm kiếm tài liệu..." id="searchInput">
+    </div>
 
     <!-- TABLE -->
-    <section class="document-table-wrapper">
+    <div class="doc-table-card">
+        <table class="doc-table">
 
-        <table class="document-table">
-
-            <thead class="document-table-head">
+            <thead>
                 <tr>
-                    <th class="col-title">Title</th>
-                    <th class="col-year">Year</th>
-                    <th class="col-type">Type</th>
-                    <th class="col-action">Action</th>
+                    <th>Tiêu đề</th>
+                    <th>Tác giả</th>
+                    <th>Năm</th>
+                    <th>Loại</th>
+                    <th>Thao tác</th>
                 </tr>
             </thead>
 
-            <tbody class="document-table-body">
+            <tbody id="docTableBody">
             {% for doc in documents %}
-                <tr class="document-row">
+                <tr>
 
-                    <td class="document-title-cell" title="{{ doc.title }}">
-                        {{ doc.title }}
+                    <!-- TITLE -->
+                    <td class="title-cell">
+                        <div class="title-main">{{ doc.title }}</div>
+                        <div class="title-sub">ID: {{ doc.id }}</div>
                     </td>
 
-                    <td class="document-year">
-                        {{ doc.year }}
+                    <!-- AUTHOR -->
+                    <td>
+                        {{ doc.authors|join(', ') if doc.authors else '—' }}
                     </td>
 
-                    <td class="document-type">
-                        <span class="type-badge type-{{ doc.type|lower }}">
+                    <!-- YEAR -->
+                    <td>{{ doc.year }}</td>
+
+                    <!-- TYPE -->
+                    <td>
+                        <span class="badge badge-{{ doc.type|lower }}">
                             {{ doc.type }}
                         </span>
                     </td>
 
-                    <td class="document-actions">
-                        <a href="/admin/documents/edit/{{ doc.id }}"
-                           class="action-btn edit-btn">
-                           ✏️
-                        </a>
-
-                        <a href="/admin/documents/delete/{{ doc.id }}"
-                           class="action-btn delete-btn"
-                           data-id="{{ doc.id }}">
-                           🗑
-                        </a>
+                    <!-- ACTION -->
+                    <td class="actions">
+                        <a href="/admin/documents/view/{{ doc.id }}" class="btn-view">Xem</a>
+                        <a href="/admin/documents/edit/{{ doc.id }}" class="btn-edit">Sửa</a>
+                        <a href="/admin/documents/delete/{{ doc.id }}" class="btn-delete">Xóa</a>
                     </td>
 
                 </tr>
@@ -71,13 +76,11 @@
             </tbody>
 
         </table>
-
-    </section>
-
-    <!-- PAGINATION -->
-    <section class="document-pagination">
-        {% include "admin/components/pagination.html" %}
-    </section>
+        <!-- PAGINATION -->
+        <div class="doc-pagination">
+            {% include "admin/components/pagination.html" %}
+        </div>
+    </div>
 
 </section>
 

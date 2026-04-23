@@ -19,10 +19,31 @@ def qa_page():
 # =========================
 @qa.route("/api", methods=["POST"])
 def qa_api():
-    data = request.get_json() or {}
+    try:
+        data = request.get_json() or {}
 
-    question = (data.get("question") or "").strip()
+        question = (data.get("question") or "").strip()
 
-    result = get_qa_response(question)
+        # 👉 validate input
+        if not question:
+            return jsonify({
+                "answer": "Bạn chưa nhập câu hỏi. Hãy thử nhập nội dung bạn muốn tìm nhé.",
+                "documents": []
+            }), 200
 
-    return jsonify(result)
+        # 👉 gọi service
+        result = get_qa_response(question)
+
+        # 👉 đảm bảo luôn có format đúng
+        return jsonify({
+            "answer": result.get("answer", "Mình chưa có câu trả lời phù hợp."),
+            "documents": result.get("documents", [])
+        }), 200
+
+    except Exception as e:
+        print("QA ERROR:", e)
+
+        return jsonify({
+            "answer": "Có lỗi xảy ra khi xử lý câu hỏi. Bạn thử lại nhé.",
+            "documents": []
+        }), 500

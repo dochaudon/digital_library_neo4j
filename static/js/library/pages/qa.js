@@ -6,227 +6,227 @@ const suggestionButtons = document.querySelectorAll(".chat-chip");
 
 const conversationHistory = [];
 
-function escapeHtml(value) {
-    return String(value ?? "")
+// =========================
+// UTILS
+// =========================
+function escapeHtml(text) {
+    return String(text || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+        .replace(/>/g, "&gt;");
 }
 
-function scrollChatToBottom() {
+function scrollToBottom() {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function addMessage(content, type) {
+// =========================
+// MARKDOWN
+// =========================
+function renderMarkdown(text) {
+    return text
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/`(.*?)`/g, "<code>$1</code>");
+}
+
+// =========================
+// HIGHLIGHT
+// =========================
+function highlight(text, keyword) {
+    if (!keyword) return text;
+    const regex = new RegExp(`(${keyword})`, "gi");
+    return text.replace(regex, "<mark>$1</mark>");
+}
+
+// =========================
+// MESSAGE
+// =========================
+function createMessage(content, type) {
     const wrapper = document.createElement("div");
     wrapper.className = `chat-message ${type}`;
+
+    const avatar = document.createElement("div");
+    avatar.className = `message-avatar ${type === "user" ? "user-avatar" : "bot-avatar"}`;
 
     const bubble = document.createElement("div");
     bubble.className = "message-bubble";
     bubble.innerHTML = content;
 
-    wrapper.appendChild(bubble);
-    chatBox.appendChild(wrapper);
-    scrollChatToBottom();
-}
-
-function buildCitationHtml(citations) {
-    if (!citations || citations.length === 0) {
-        return "";
+    if (type === "user") {
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(avatar);
+    } else {
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(bubble);
     }
 
-    const items = citations.map((citation) => {
-        const label = escapeHtml(citation.label || "Nguon");
-        const title = escapeHtml(citation.title || "");
-        const detail = escapeHtml(citation.detail || "");
-        const url = citation.url ? escapeHtml(citation.url) : "";
+    chatBox.appendChild(wrapper);
+    scrollToBottom();
 
-        if (url) {
-            return `
-                <li class="citation-item">
-                    <a href="${url}" class="citation-link">
-                        <span class="citation-label">${label}</span>
-                        <span class="citation-title">${title}</span>
-                    </a>
-                    ${detail ? `<span class="citation-detail">${detail}</span>` : ""}
-                </li>
-            `;
-        }
-
-        return `
-            <li class="citation-item">
-                <span class="citation-label">${label}</span>
-                <span class="citation-title">${title}</span>
-                ${detail ? `<span class="citation-detail">${detail}</span>` : ""}
-            </li>
-        `;
-    }).join("");
-
-    return `
-        <div class="message-citations">
-            <p class="citation-heading">Nguon du lieu</p>
-            <ul class="citation-list">${items}</ul>
-        </div>
-    `;
+    return bubble;
 }
 
+// =========================
+// TYPING EFFECT
+// =========================
+async function typeText(element, text, speed = 15) {
+    element.innerHTML = "";
+
+    for (let i = 0; i < text.length; i++) {
+        element.innerHTML += text[i];
+        await new Promise(r => setTimeout(r, speed));
+        scrollToBottom();
+    }
+}
+
+// =========================
+// BOT RESPONSE (typing)
+// =========================
+async function addBotResponse(text, docs, keyword) {
+
+    text = renderMarkdown(text);
+    text = highlight(text, keyword);
+
+    const bubble = createMessage(`<p class="message-text"></p>`, "bot");
+    const textEl = bubble.querySelector(".message-text");
+
+    await typeText(textEl, text);
+
+    // render documents
+    if (docs && docs.length) {
+        renderDocuments(docs);
+    }
+}
+
+// =========================
+// USER MESSAGE
+// =========================
 function addUserMessage(text) {
-    addMessage(`<p class="message-text">${escapeHtml(text)}</p>`, "user");
+    createMessage(`<p class="message-text">${escapeHtml(text)}</p>`, "user");
 }
 
-function addBotMessage(text) {
-    addMessage(`<p class="message-text">${escapeHtml(text)}</p>`, "bot");
-}
-
-function addBotResponse(text, citations) {
-    const citationHtml = buildCitationHtml(citations);
-    addMessage(
-        `<p class="message-text">${escapeHtml(text)}</p>${citationHtml}`,
-        "bot"
-    );
-}
-
-function addTypingMessage() {
-    const wrapper = document.createElement("div");
-    wrapper.className = "chat-message bot";
-    wrapper.id = "typing-message";
-    wrapper.innerHTML = `
-        <div class="message-bubble">
-            <p class="message-text">Dang phan tich cau hoi...</p>
-        </div>
-    `;
-    chatBox.appendChild(wrapper);
-    scrollChatToBottom();
-}
-
-function removeTypingMessage() {
-    const typing = document.getElementById("typing-message");
-    if (typing) {
-        typing.remove();
-    }
-}
-
-function getDocumentUrl(doc) {
-    if (doc.url) {
-        return doc.url;
-    }
-
-    const type = String(doc.type || "").toLowerCase();
-    return `/${encodeURIComponent(type)}/${encodeURIComponent(doc.id)}`;
-}
-
-function getTypeLabel(type) {
-    if (type === "Book") return "Sach";
-    if (type === "Article") return "Bai bao";
-    if (type === "Thesis") return "Luan van";
-    return "Tai lieu";
-}
-
+// =========================
+// DOCUMENT LIST
+// =========================
 function renderDocuments(docs) {
-    if (!docs || docs.length === 0) {
-        return;
-    }
 
     let html = "<div class='chat-docs'>";
 
-    docs.forEach((doc) => {
-        const meta = doc.year ? ` <span class="doc-year">(${escapeHtml(doc.year)})</span>` : "";
-
+    docs.slice(0, 3).forEach(doc => {
         html += `
-            <a class="chat-doc-item" href="${escapeHtml(getDocumentUrl(doc))}">
-                <span class="doc-type">${escapeHtml(getTypeLabel(doc.type))}</span>
-                <span class="doc-title">${escapeHtml(doc.title || "Khong co tieu de")}</span>${meta}
+            <a class="chat-doc-item" href="/document/${doc.id}">
+                <span class="doc-type">${doc.type || "Document"}</span>
+                <span class="doc-title">${doc.title}</span>
+                ${doc.year ? `<span class="doc-year">(${doc.year})</span>` : ""}
             </a>
         `;
     });
 
     html += "</div>";
-    addMessage(html, "bot");
+
+    createMessage(html, "bot");
 }
 
-function setLoadingState(isLoading) {
-    sendButton.disabled = isLoading;
-    sendButton.textContent = isLoading ? "Dang gui..." : "Gửi";
+// =========================
+// LOADING
+// =========================
+function addLoading() {
+    const bubble = createMessage(
+        `<p class="message-text">Đang suy nghĩ...</p>`,
+        "bot"
+    );
+    bubble.id = "loading-msg";
 }
 
-function pushHistory(role, content, documents = []) {
-    conversationHistory.push({ role, content, documents });
+function removeLoading() {
+    const loading = document.getElementById("loading-msg");
+    if (loading) loading.parentElement.remove();
+}
 
-    if (conversationHistory.length > 8) {
-        conversationHistory.splice(0, conversationHistory.length - 8);
+// =========================
+// HISTORY
+// =========================
+function pushHistory(role, content) {
+    conversationHistory.push({ role, content });
+
+    if (conversationHistory.length > 10) {
+        conversationHistory.shift();
     }
 }
 
+// =========================
+// SEND
+// =========================
 async function sendQuestion() {
-    const q = questionInput.value.trim();
-    if (!q) {
-        questionInput.focus();
-        return;
-    }
 
-    addUserMessage(q);
-    pushHistory("user", q, []);
+    const question = questionInput.value.trim();
+    if (!question) return;
+
+    addUserMessage(question);
+    pushHistory("user", question);
 
     questionInput.value = "";
     questionInput.style.height = "auto";
-    setLoadingState(true);
-    addTypingMessage();
+
+    addLoading();
+    sendButton.disabled = true;
 
     try {
-        const response = await fetch("/api/qa", {
+        const res = await fetch("/qa/api", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({
-                question: q,
+                question: question,
                 history: conversationHistory
             })
         });
 
-        const data = await response.json();
-        removeTypingMessage();
+        const data = await res.json();
 
-        const answer = data.answer || "Khong co cau tra loi.";
-        const documents = data.documents || [];
-        const citations = data.citations || [];
+        removeLoading();
 
-        addBotResponse(answer, citations);
-        renderDocuments(documents);
-        pushHistory("assistant", answer, documents);
-    } catch (error) {
-        removeTypingMessage();
-        const message = "Da xay ra loi khi truy van du lieu. Vui long thu lai.";
-        addBotMessage(message);
-        pushHistory("assistant", message, []);
-    } finally {
-        setLoadingState(false);
-        questionInput.focus();
+        const answer = data.answer || "Không có câu trả lời.";
+        const docs = data.documents || [];
+
+        await addBotResponse(answer, docs, question);
+
+        pushHistory("assistant", answer);
+
+    } catch (err) {
+        removeLoading();
+        createMessage("Có lỗi xảy ra 😢", "bot");
     }
+
+    sendButton.disabled = false;
+    questionInput.focus();
 }
 
-chatForm.addEventListener("submit", (event) => {
-    event.preventDefault();
+// =========================
+// EVENTS
+// =========================
+chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
     sendQuestion();
 });
 
-questionInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
+questionInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
         sendQuestion();
     }
 });
 
 questionInput.addEventListener("input", () => {
     questionInput.style.height = "auto";
-    questionInput.style.height = `${Math.min(questionInput.scrollHeight, 180)}px`;
+    questionInput.style.height = Math.min(questionInput.scrollHeight, 180) + "px";
 });
 
-suggestionButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-        questionInput.value = button.textContent.trim();
+// suggestion
+suggestionButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        questionInput.value = btn.textContent.trim();
         questionInput.focus();
     });
 });
-
-scrollChatToBottom();
