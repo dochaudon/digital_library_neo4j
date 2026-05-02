@@ -1,19 +1,70 @@
-.user-container {
+.doc-container {
     padding: 20px;
 }
 
-.card {
-    background: #fff;
-    padding: 15px;
-    border-radius: 10px;
+.doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
-table {
+.doc-header h2 {
+    margin: 0;
+}
+
+.doc-count {
+    color: #777;
+    font-size: 14px;
+}
+
+.doc-table-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.doc-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-th, td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
+.doc-table th {
+    background: #f3f4f6;
+    padding: 12px;
+    text-align: left;
+}
+
+.doc-table td {
+    padding: 12px;
+    border-top: 1px solid #eee;
+}
+
+.actions a {
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+.btn-delete {
+    color: red;
+}
+
+.btn-toggle {
+    color: #2563eb;
+}
+
+.status {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.status.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status.inactive {
+    background: #fee2e2;
+    color: #991b1b;
 }

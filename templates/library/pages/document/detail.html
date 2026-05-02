@@ -19,13 +19,12 @@
     <!-- ================= LEFT ================= -->
     <div class="left-panel">
 
-        {% if document.image_url %}
-            <img src="{{ document.image_url }}"
-                 class="pdf-image"
-                 onerror="this.src='/static/images/pdf.png'">
-        {% else %}
-            <img src="/static/images/pdf.png" class="pdf-image">
-        {% endif %}
+        <img 
+            src="{{ document.image_url or url_for('static', filename='images/pdf.jpg') }}"
+            data-fallback="{{ url_for('static', filename='images/pdf.png') }}"
+            class="pdf-image"
+            onerror="this.onerror=null; this.src=this.dataset.fallback;"
+        >
 
     </div>
 
@@ -45,14 +44,36 @@
             <table class="doc-table">
 
                 {% if document.year %}
-                <tr><td>Năm</td><td>{{ document.year }}</td></tr>
+                <tr>
+                    <td>Năm</td>
+                    <td>{{ document.year }}</td>
+                </tr>
                 {% endif %}
 
-                {% if document.authors %}
-                <tr>
-                    <td>Tác giả</td>
-                    <td>{{ document.authors | join(', ') }}</td>
-                </tr>
+                <!-- 🔥 AUTHOR SECTION (FINAL - ONE ROW PER PERSON) -->
+                {% set role_labels = {
+                    "author": "Tác giả",
+                    "contributor": "Đồng tác giả",
+                    "supervisor": "Giảng viên hướng dẫn",
+                    "editor": "Chủ biên"
+                } %}
+
+                {% if document.author_groups %}
+                    {% for role, people in document.author_groups.items() %}
+                        {% for p in people %}
+
+                        <tr>
+                            <td>{{ role_labels.get(role, role) }}</td>
+                            <td>
+                                {{ p.name }}
+                                {% if p.institution %}
+                                    ({{ p.institution }})
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+                    {% endfor %}
                 {% endif %}
 
                 {% if document.subjects %}
@@ -79,7 +100,8 @@
                 {% if document.pages %}
                 <tr>
                     <td>Số trang</td>
-                    <td>{{ document.pages }}</td></tr>
+                    <td>{{ document.pages }}</td>
+                </tr>
                 {% endif %}
 
             </table>
@@ -121,9 +143,7 @@
 
             <div class="graph-wrapper">
 
-                <!-- ===== LEGEND ===== -->
                 <div class="graph-legend">
-
                     <div><span class="legend-box blue"></span> Book</div>
                     <div><span class="legend-box green"></span> Article</div>
                     <div><span class="legend-box purple triangle"></span> Thesis</div>
@@ -134,10 +154,8 @@
                     <div><span class="legend-box orange diamond"></span> Subject</div>
                     <div><span class="legend-box pink star"></span> Keyword</div>
                     <div><span class="legend-box cyan hex"></span> Publisher</div>
-
                 </div>
 
-                <!-- GRAPH -->
                 <div id="graph-network"></div>
 
             </div>

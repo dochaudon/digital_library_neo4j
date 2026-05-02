@@ -1,15 +1,29 @@
 {% extends 'admin/layouts/base_admin.html' %}
 
-{% block content %}
-<div class="journal-container">
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/journal/index.css') }}">
+{% endblock %}
 
-    <div class="header">
-        <h2>📖 Journals</h2>
-        <a href="/admin/journals/create" class="btn-add">➕ Add</a>
+{% block content %}
+
+<section class="doc-container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div>
+            <h2>📖 Journals</h2>
+            <p class="doc-count">Total: {{ journals|length }} journals</p>
+        </div>
+
+        <a href="/admin/journals/create" class="btn-add">
+            ➕ Add
+        </a>
     </div>
 
-    <div class="card">
-        <table>
+    <!-- TABLE -->
+    <div class="doc-table-card">
+        <table class="doc-table">
+
             <thead>
                 <tr>
                     <th>Name</th>
@@ -17,11 +31,34 @@
                 </tr>
             </thead>
 
-            <tbody id="journalTable"></tbody>
+            <tbody>
+                {% if journals %}
+                    {% for j in journals %}
+                    <tr>
+                        <td>{{ j.name }}</td>
+                        <td class="actions">
+                            <a href="/admin/journals/delete/{{ j.id }}"
+                               class="btn-delete"
+                               onclick="return confirm('Delete journal?')">
+                               Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="2">No data</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+
         </table>
+
+        <!-- PAGINATION -->
+        {% include "admin/components/pagination.html" %}
+
     </div>
 
-</div>
+</section>
 
-<script src="{{ url_for('static', filename='js/admin/pages/journal.js') }}"></script>
 {% endblock %}

@@ -1,15 +1,29 @@
 {% extends 'admin/layouts/base_admin.html' %}
 
-{% block content %}
-<div class="institution-container">
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/institution/index.css') }}">
+{% endblock %}
 
-    <div class="header">
-        <h2>🏢 Institutions</h2>
-        <a href="/admin/institutions/create" class="btn-add">➕ Add</a>
+{% block content %}
+
+<section class="doc-container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div>
+            <h2>🏢 Institutions</h2>
+            <p class="doc-count">Total: {{ institutions|length }} institutions</p>
+        </div>
+
+        <a href="/admin/institutions/create" class="btn-add">
+            ➕ Add
+        </a>
     </div>
 
-    <div class="card">
-        <table>
+    <!-- TABLE -->
+    <div class="doc-table-card">
+        <table class="doc-table">
+
             <thead>
                 <tr>
                     <th>Name</th>
@@ -18,11 +32,37 @@
                 </tr>
             </thead>
 
-            <tbody id="institutionTable"></tbody>
+            <tbody>
+                {% if institutions %}
+                    {% for i in institutions %}
+                    <tr>
+                        <td>{{ i.name }}</td>
+                        <td>
+                            {{ i.type or 'N/A' }}
+                        </td>
+                        <td class="actions">
+                            <a href="/admin/institutions/delete/{{ i.id }}"
+                               class="btn-delete"
+                               onclick="return confirm('Delete institution?')">
+                               Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="3">No data</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+
         </table>
+
+        <!-- PAGINATION -->
+        {% include "admin/components/pagination.html" %}
+
     </div>
 
-</div>
+</section>
 
-<script src="{{ url_for('static', filename='js/admin/pages/institution.js') }}"></script>
 {% endblock %}

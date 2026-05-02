@@ -1,15 +1,29 @@
 {% extends 'admin/layouts/base_admin.html' %}
 
-{% block content %}
-<div class="language-container">
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/language/index.css') }}">
+{% endblock %}
 
-    <div class="header">
-        <h2>🌐 Languages</h2>
-        <a href="/admin/languages/create" class="btn-add">➕ Add</a>
+{% block content %}
+
+<section class="doc-container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div>
+            <h2>🌐 Languages</h2>
+            <p class="doc-count">Total: {{ languages|length }} languages</p>
+        </div>
+
+        <a href="/admin/languages/create" class="btn-add">
+            ➕ Add
+        </a>
     </div>
 
-    <div class="card">
-        <table>
+    <!-- TABLE -->
+    <div class="doc-table-card">
+        <table class="doc-table">
+
             <thead>
                 <tr>
                     <th>Name</th>
@@ -17,11 +31,34 @@
                 </tr>
             </thead>
 
-            <tbody id="languageTable"></tbody>
+            <tbody>
+                {% if languages %}
+                    {% for l in languages %}
+                    <tr>
+                        <td>{{ l.name }}</td>
+                        <td class="actions">
+                            <a href="/admin/languages/delete/{{ l.id }}"
+                               class="btn-delete"
+                               onclick="return confirm('Delete language?')">
+                               Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="2">No data</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+
         </table>
+
+        <!-- PAGINATION -->
+        {% include "admin/components/pagination.html" %}
+
     </div>
 
-</div>
+</section>
 
-<script src="{{ url_for('static', filename='js/admin/pages/language.js') }}"></script>
 {% endblock %}

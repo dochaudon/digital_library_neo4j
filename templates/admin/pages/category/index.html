@@ -1,15 +1,29 @@
 {% extends 'admin/layouts/base_admin.html' %}
 
-{% block content %}
-<div class="category-container">
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/category/index.css') }}">
+{% endblock %}
 
-    <div class="header">
-        <h2>📂 Categories</h2>
-        <a href="/admin/categories/create" class="btn-add">➕ Add</a>
+{% block content %}
+
+<section class="doc-container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div>
+            <h2>📂 Categories</h2>
+            <p class="doc-count">Total: {{ categories|length }} categories</p>
+        </div>
+
+        <a href="/admin/categories/create" class="btn-add">
+            ➕ Add
+        </a>
     </div>
 
-    <div class="card">
-        <table>
+    <!-- TABLE -->
+    <div class="doc-table-card">
+        <table class="doc-table">
+
             <thead>
                 <tr>
                     <th>Name</th>
@@ -17,11 +31,34 @@
                 </tr>
             </thead>
 
-            <tbody id="categoryTable"></tbody>
+            <tbody>
+                {% if categories %}
+                    {% for c in categories %}
+                    <tr>
+                        <td>{{ c.name }}</td>
+                        <td class="actions">
+                            <a href="/admin/categories/delete/{{ c.id }}"
+                               class="btn-delete"
+                               onclick="return confirm('Delete category?')">
+                               Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="2">No data</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+
         </table>
+
+        <!-- PAGINATION -->
+        {% include "admin/components/pagination.html" %}
+
     </div>
 
-</div>
+</section>
 
-<script src="{{ url_for('static', filename='js/admin/pages/category.js') }}"></script>
 {% endblock %}

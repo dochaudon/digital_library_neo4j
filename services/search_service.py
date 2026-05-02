@@ -16,6 +16,10 @@ CASE
     ELSE coalesce(node.type, "Document")
 END
 """
+def normalize_doc(doc):
+    doc["image_url"] = doc.get("image_url") or "/static/images/pdf.jpg"
+    doc["authors"] = doc.get("authors") or []
+    return doc
 
 
 # =========================
@@ -38,6 +42,7 @@ def search_fulltext(query, limit=20):
         node.id AS id,
         node.title AS title,
         node.year AS year,
+        node.image_url AS image_url,
         {TYPE_CASE} AS type,
         collect(DISTINCT a.name) AS authors,
         score AS score,
@@ -47,15 +52,17 @@ def search_fulltext(query, limit=20):
     LIMIT $limit
     """
 
-    return neo4j_conn.query(cypher, {
+    results = neo4j_conn.query(cypher, {
         "index": FULLTEXT_INDEX,
         "query": query,
         "limit": limit
     })
 
+    return [normalize_doc(r) for r in results]
+
 
 # =========================
-# GRAPH SEARCH (FILTER)
+# GRAPH SEARCH
 # =========================
 def search_graph(filters, limit=20):
 
@@ -92,6 +99,7 @@ def search_graph(filters, limit=20):
         d.id AS id,
         d.title AS title,
         d.year AS year,
+        d.image_url AS image_url,
         CASE
             WHEN d:Book THEN "Book"
             WHEN d:Article THEN "Article"
@@ -105,7 +113,7 @@ def search_graph(filters, limit=20):
     LIMIT $limit
     """
 
-    return neo4j_conn.query(cypher, {
+    results = neo4j_conn.query(cypher, {
         "doc_type": filters.get("doc_type"),
         "author": filters.get("author"),
         "subject": filters.get("subject"),
@@ -113,9 +121,11 @@ def search_graph(filters, limit=20):
         "limit": limit
     })
 
+    return [normalize_doc(r) for r in results]
+
 
 # =========================
-# HYBRID SEARCH (AI)
+# HYBRID SEARCH
 # =========================
 def hybrid_search(query="", filters=None, limit=20):
 
@@ -127,16 +137,23 @@ def hybrid_search(query="", filters=None, limit=20):
 
     merged = {}
 
+    # FULLTEXT
     for item in results_fulltext:
-        merged[item["id"]] = item
+        merged[item["id"]] = normalize_doc(item)
 
+    # GRAPH
     for item in results_graph:
+        item = normalize_doc(item)
+
         if item["id"] in merged:
             merged[item["id"]]["score"] += 1
         else:
             merged[item["id"]] = item
 
+    # VECTOR
     for item in results_vector:
+        item = normalize_doc(item)
+
         if item["id"] in merged:
             merged[item["id"]]["score"] += item["score"] * 2
         else:
@@ -146,6 +163,27 @@ def hybrid_search(query="", filters=None, limit=20):
     results.sort(key=lambda x: (-x.get("score", 0), -(x.get("year") or 0)))
 
     return results[:limit]
+
+
+# =========================
+# MAIN SEARCH
+# =========================
+def search_documents(query="", filters=None, limit=20):
+
+    filters = filters or {}
+
+    parsed_query, parsed_filters = parse_query(query)
+    filters.update(parsed_filters)
+
+    results = hybrid_search(parsed_query, filters, limit)
+
+    if not results:
+        results = hybrid_search(parsed_query, {}, limit)
+
+    if not results:
+        results = hybrid_search("", {}, limit)
+
+    return results
 
 
 # =========================
@@ -292,31 +330,6 @@ def strict_search(query="", filters=None, limit=20):
         "institution": filters.get("institution"),
         "limit": limit
     })
-
-
-# =========================
-# MAIN SEARCH
-# =========================
-def search_documents(query="", filters=None, limit=20):
-
-    filters = filters or {}
-
-    parsed_query, parsed_filters = parse_query(query)
-    filters.update(parsed_filters)
-
-    # 🔥 dùng hybrid search thay vì strict
-    results = hybrid_search(parsed_query, filters, limit)
-
-    # 🔥 fallback nếu không có
-    if not results:
-        results = hybrid_search(parsed_query, {}, limit)
-
-    if not results:
-        results = hybrid_search("", {}, limit)
-
-    return results
-
-
 # =========================
 # SUGGEST
 # =========================

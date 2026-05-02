@@ -5,15 +5,25 @@
 {% endblock %}
 
 {% block content %}
-<div class="subject-container">
 
-    <div class="header">
-        <h2>🏷 Subjects</h2>
-        <a href="/admin/subjects/create" class="btn-add">➕ Add</a>
+<section class="doc-container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div>
+            <h2>🏷 Subjects</h2>
+            <p class="doc-count">Total: {{ subjects|length }} subjects</p>
+        </div>
+
+        <a href="/admin/subjects/create" class="btn-add">
+            ➕ Add
+        </a>
     </div>
 
-    <div class="card">
-        <table>
+    <!-- TABLE -->
+    <div class="doc-table-card">
+        <table class="doc-table">
+
             <thead>
                 <tr>
                     <th>Name</th>
@@ -21,11 +31,34 @@
                 </tr>
             </thead>
 
-            <tbody id="subjectTable"></tbody>
+            <tbody>
+                {% if subjects %}
+                    {% for s in subjects %}
+                    <tr>
+                        <td>{{ s.name }}</td>
+                        <td class="actions">
+                            <a href="/admin/subjects/delete/{{ s.id }}"
+                               class="btn-delete"
+                               onclick="return confirm('Delete subject?')">
+                               Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="2">No data</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+
         </table>
+
+        <!-- PAGINATION -->
+        {% include "admin/components/pagination.html" %}
+
     </div>
 
-</div>
+</section>
 
-<script src="{{ url_for('static', filename='js/admin/pages/subject.js') }}"></script>
 {% endblock %}
