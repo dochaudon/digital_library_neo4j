@@ -1,14 +1,25 @@
 {% extends 'admin/layouts/base_admin.html' %}
 
-{% block content %}
-<div class="user-container">
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/user/index.css') }}">
+{% endblock %}
 
-    <div class="header">
-        <h2>👤 Users Management</h2>
+{% block content %}
+
+<section class="doc-container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div>
+            <h2>👤 Users Management</h2>
+            <p class="doc-count">Total: {{ users|length }} users</p>
+        </div>
     </div>
 
-    <div class="card">
-        <table>
+    <!-- TABLE -->
+    <div class="doc-table-card">
+        <table class="doc-table">
+
             <thead>
                 <tr>
                     <th>Username</th>
@@ -19,11 +30,48 @@
                 </tr>
             </thead>
 
-            <tbody id="userTable"></tbody>
+            <tbody>
+                {% if users %}
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>{{ u.role or 'user' }}</td>
+                        <td>
+                            {% if u.is_active %}
+                                <span class="status active">Active</span>
+                            {% else %}
+                                <span class="status inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <a href="/admin/users/toggle/{{ u.id }}"
+                               class="btn-toggle">
+                               Toggle
+                            </a>
+
+                            <a href="/admin/users/delete/{{ u.id }}"
+                               class="btn-delete"
+                               onclick="return confirm('Delete user?')">
+                               Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5">No data</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+
         </table>
+
+        <!-- PAGINATION -->
+        {% include "admin/components/pagination.html" %}
+
     </div>
 
-</div>
+</section>
 
-<script src="{{ url_for('static', filename='js/admin/pages/user.js') }}"></script>
 {% endblock %}

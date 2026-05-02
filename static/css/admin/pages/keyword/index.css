@@ -1,25 +1,54 @@
-.keyword-container {
+.doc-container {
     padding: 20px;
 }
 
-.header {
+.doc-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 15px;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
-.card {
-    background: #fff;
-    padding: 15px;
+.doc-header h2 {
+    margin: 0;
+}
+
+.doc-count {
+    color: #777;
+    font-size: 14px;
+}
+
+.btn-add {
+    background: #2563eb;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.doc-table-card {
+    background: white;
     border-radius: 10px;
+    padding: 15px;
 }
 
-table {
+.doc-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-th, td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
+.doc-table th {
+    background: #f3f4f6;
+    padding: 12px;
+    text-align: left;
+}
+
+.doc-table td {
+    padding: 12px;
+    border-top: 1px solid #eee;
+}
+
+.actions a {
+    color: red;
+    text-decoration: none;
 }

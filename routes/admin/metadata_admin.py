@@ -1,168 +1,229 @@
-from flask import Blueprint, request, jsonify, render_template
-
-from services.metadata_service import (
-    create_author_service,
-    get_authors_service,
-    get_author_detail_service,
-    update_author_service,
-    delete_author_service,
-
-    create_subject_service,
-    get_subjects_service,
-    get_subject_detail_service,
-    update_subject_service,
-    delete_subject_service,
-
-    create_keyword_service,
-    get_keywords_service,
-    get_keyword_detail_service,
-    update_keyword_service,
-    delete_keyword_service,
-
-    create_category_service,
-    get_categories_service,
-    get_category_detail_service,
-    update_category_service,
-    delete_category_service,
-
-    create_institution_service,
-    get_institutions_service,
-    get_institution_detail_service,
-    update_institution_service,
-    delete_institution_service
-)
-
+from flask import Blueprint, request, render_template, redirect
+from services.metadata_service import *
 
 metadata_admin = Blueprint("metadata_admin", __name__, url_prefix="/admin")
 
 
 # =====================================================
-# 🔥 DASHBOARD (THÊM VÀO ĐÂY)
+# PAGINATION HELPER
 # =====================================================
-@metadata_admin.route("/dashboard")
-def dashboard():
-    return render_template("admin/pages/dashboard/index.html")
 
+def paginate(data, page, limit=10):
+    total = len(data)
+    total_pages = (total // limit) + (1 if total % limit else 0)
 
-# =====================================================
-# 🔥 GENERIC PAGE ROUTE
-# =====================================================
-@metadata_admin.route("/metadata/<entity>/page")
-def list_page(entity):
-    return render_template(f"admin/pages/{entity}/index.html")
+    start = (page - 1) * limit
+    items = data[start:start + limit]
 
-
-@metadata_admin.route("/metadata/<entity>/create")
-def create_page(entity):
-    return render_template(f"admin/pages/{entity}/form.html")
-
-
-@metadata_admin.route("/metadata/<entity>/edit/<id>")
-def edit_page(entity, id):
-    return render_template(f"admin/pages/{entity}/form.html")
+    return items, total_pages
 
 
 # =====================================================
-# 🔥 SERVICE MAP
+# AUTHOR
 # =====================================================
-def get_service(entity):
-    return {
-        "author": {
-            "get": get_authors_service,
-            "get_one": get_author_detail_service,
-            "create": create_author_service,
-            "update": update_author_service,
-            "delete": delete_author_service,
-        },
-        "subject": {
-            "get": get_subjects_service,
-            "get_one": get_subject_detail_service,
-            "create": create_subject_service,
-            "update": update_subject_service,
-            "delete": delete_subject_service,
-        },
-        "keyword": {
-            "get": get_keywords_service,
-            "get_one": get_keyword_detail_service,
-            "create": create_keyword_service,
-            "update": update_keyword_service,
-            "delete": delete_keyword_service,
-        },
-        "category": {
-            "get": get_categories_service,
-            "get_one": get_category_detail_service,
-            "create": create_category_service,
-            "update": update_category_service,
-            "delete": delete_category_service,
-        },
-        "institution": {
-            "get": get_institutions_service,
-            "get_one": get_institution_detail_service,
-            "create": create_institution_service,
-            "update": update_institution_service,
-            "delete": delete_institution_service,
-        }
-    }.get(entity)
+
+@metadata_admin.route("/authors")
+def author_page():
+    page = int(request.args.get("page", 1))
+
+    authors, total_pages = paginate(get_authors_service(), page)
+
+    return render_template(
+        "admin/pages/author/index.html",
+        authors=authors,
+        page=page,
+        total_pages=total_pages
+    )
+
+
+@metadata_admin.route("/authors/create", methods=["POST"])
+def create_author():
+    create_author_service(request.form.to_dict())
+    return redirect("/admin/authors")
+
+
+@metadata_admin.route("/authors/delete/<id>")
+def delete_author(id):
+    delete_author_service(id)
+    return redirect("/admin/authors")
 
 
 # =====================================================
-# LIST
+# SUBJECT
 # =====================================================
-@metadata_admin.route("/metadata/<entity>", methods=["GET"])
-def list_items(entity):
-    service = get_service(entity)
-    if not service:
-        return jsonify({"error": "Invalid entity"}), 400
-    return jsonify(service["get"]())
+
+@metadata_admin.route("/subjects")
+def subject_page():
+    page = int(request.args.get("page", 1))
+
+    subjects, total_pages = paginate(get_subjects_service(), page)
+
+    return render_template(
+        "admin/pages/subject/index.html",
+        subjects=subjects,
+        page=page,
+        total_pages=total_pages
+    )
 
 
-# =====================================================
-# DETAIL
-# =====================================================
-@metadata_admin.route("/metadata/<entity>/<id>", methods=["GET"])
-def detail(entity, id):
-    service = get_service(entity)
-    if not service:
-        return jsonify({"error": "Invalid entity"}), 400
-    return jsonify(service["get_one"](id))
+@metadata_admin.route("/subjects/create", methods=["POST"])
+def create_subject():
+    create_subject_service(request.form.to_dict())
+    return redirect("/admin/subjects")
 
 
-# =====================================================
-# CREATE
-# =====================================================
-@metadata_admin.route("/metadata/<entity>", methods=["POST"])
-def create(entity):
-    service = get_service(entity)
-    if not service:
-        return jsonify({"error": "Invalid entity"}), 400
-
-    data = request.get_json()
-    item_id = service["create"](data)
-    return jsonify({"message": "Created", "id": item_id})
+@metadata_admin.route("/subjects/delete/<id>")
+def delete_subject(id):
+    delete_subject_service(id)
+    return redirect("/admin/subjects")
 
 
 # =====================================================
-# UPDATE
+# KEYWORD
 # =====================================================
-@metadata_admin.route("/metadata/<entity>/<id>", methods=["PUT"])
-def update(entity, id):
-    service = get_service(entity)
-    if not service:
-        return jsonify({"error": "Invalid entity"}), 400
 
-    data = request.get_json()
-    service["update"](id, data)
-    return jsonify({"message": "Updated"})
+@metadata_admin.route("/keywords")
+def keyword_page():
+    page = int(request.args.get("page", 1))
+
+    keywords, total_pages = paginate(get_keywords_service(), page)
+
+    return render_template(
+        "admin/pages/keyword/index.html",
+        keywords=keywords,
+        page=page,
+        total_pages=total_pages
+    )
+
+
+@metadata_admin.route("/keywords/create", methods=["POST"])
+def create_keyword():
+    create_keyword_service(request.form.to_dict())
+    return redirect("/admin/keywords")
+
+
+@metadata_admin.route("/keywords/delete/<id>")
+def delete_keyword(id):
+    delete_keyword_service(id)
+    return redirect("/admin/keywords")
 
 
 # =====================================================
-# DELETE
+# CATEGORY
 # =====================================================
-@metadata_admin.route("/metadata/<entity>/<id>", methods=["DELETE"])
-def delete(entity, id):
-    service = get_service(entity)
-    if not service:
-        return jsonify({"error": "Invalid entity"}), 400
 
-    service["delete"](id)
-    return jsonify({"message": "Deleted"})
+@metadata_admin.route("/categories")
+def category_page():
+    page = int(request.args.get("page", 1))
+
+    categories, total_pages = paginate(get_categories_service(), page)
+
+    return render_template(
+        "admin/pages/category/index.html",
+        categories=categories,
+        page=page,
+        total_pages=total_pages
+    )
+
+
+@metadata_admin.route("/categories/create", methods=["POST"])
+def create_category():
+    create_category_service(request.form.to_dict())
+    return redirect("/admin/categories")
+
+
+@metadata_admin.route("/categories/delete/<id>")
+def delete_category(id):
+    delete_category_service(id)
+    return redirect("/admin/categories")
+
+
+# =====================================================
+# INSTITUTION
+# =====================================================
+
+@metadata_admin.route("/institutions")
+def institution_page():
+    page = int(request.args.get("page", 1))
+
+    institutions, total_pages = paginate(get_institutions_service(), page)
+
+    return render_template(
+        "admin/pages/institution/index.html",
+        institutions=institutions,
+        page=page,
+        total_pages=total_pages
+    )
+
+
+@metadata_admin.route("/institutions/create", methods=["POST"])
+def create_institution():
+    create_institution_service(request.form.to_dict())
+    return redirect("/admin/institutions")
+
+
+@metadata_admin.route("/institutions/delete/<id>")
+def delete_institution(id):
+    delete_institution_service(id)
+    return redirect("/admin/institutions")
+
+
+# =====================================================
+# LANGUAGE
+# =====================================================
+
+@metadata_admin.route("/languages")
+def language_page():
+    page = int(request.args.get("page", 1))
+
+    languages, total_pages = paginate(get_languages_service(), page)
+
+    return render_template(
+        "admin/pages/language/index.html",
+        languages=languages,
+        page=page,
+        total_pages=total_pages
+    )
+
+
+@metadata_admin.route("/languages/create", methods=["POST"])
+def create_language():
+    create_language_service(request.form.to_dict())
+    return redirect("/admin/languages")
+
+
+@metadata_admin.route("/languages/delete/<id>")
+def delete_language(id):
+    delete_language_service(id)
+    return redirect("/admin/languages")
+
+
+# =====================================================
+# JOURNAL
+# =====================================================
+
+@metadata_admin.route("/journals")
+def journal_page():
+    page = int(request.args.get("page", 1))
+
+    journals, total_pages = paginate(get_journals_service(), page)
+
+    return render_template(
+        "admin/pages/journal/index.html",
+        journals=journals,
+        page=page,
+        total_pages=total_pages
+    )
+
+
+@metadata_admin.route("/journals/create", methods=["POST"])
+def create_journal():
+    create_journal_service(request.form.to_dict())
+    return redirect("/admin/journals")
+
+
+@metadata_admin.route("/journals/delete/<id>")
+def delete_journal(id):
+    delete_journal_service(id)
+    return redirect("/admin/journals")
+

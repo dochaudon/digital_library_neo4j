@@ -5,15 +5,25 @@
 {% endblock %}
 
 {% block content %}
-<div class="keyword-container">
 
-    <div class="header">
-        <h2>🔑 Keywords</h2>
-        <a href="/admin/keywords/create" class="btn-add">➕ Add</a>
+<section class="doc-container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div>
+            <h2>🔑 Keywords</h2>
+            <p class="doc-count">Total: {{ keywords|length }} keywords</p>
+        </div>
+
+        <a href="/admin/keywords/create" class="btn-add">
+            ➕ Add
+        </a>
     </div>
 
-    <div class="card">
-        <table>
+    <!-- TABLE -->
+    <div class="doc-table-card">
+        <table class="doc-table">
+
             <thead>
                 <tr>
                     <th>Name</th>
@@ -21,11 +31,34 @@
                 </tr>
             </thead>
 
-            <tbody id="keywordTable"></tbody>
+            <tbody>
+                {% if keywords %}
+                    {% for k in keywords %}
+                    <tr>
+                        <td>{{ k.name }}</td>
+                        <td class="actions">
+                            <a href="/admin/keywords/delete/{{ k.id }}"
+                               class="btn-delete"
+                               onclick="return confirm('Delete keyword?')">
+                               Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="2">No data</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+
         </table>
+
+        <!-- PAGINATION -->
+        {% include "admin/components/pagination.html" %}
+
     </div>
 
-</div>
+</section>
 
-<script src="{{ url_for('static', filename='js/admin/pages/keyword.js') }}"></script>
 {% endblock %}

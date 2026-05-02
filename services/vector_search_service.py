@@ -24,16 +24,19 @@ def vector_search(query, limit=20):
     # 🔥 tạo embedding cho query
     query_vec = create_embedding(query)
 
-    # 🔥 lấy tất cả document có embedding
     cypher = """
     MATCH (d)
     WHERE (d:Book OR d:Article OR d:Thesis)
       AND d.embedding IS NOT NULL
 
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+
     RETURN
         d.id AS id,
         d.title AS title,
         d.year AS year,
+        d.image_url AS image_url,
+        collect(DISTINCT a.name) AS authors,
         d.embedding AS embedding
     """
 
@@ -48,11 +51,12 @@ def vector_search(query, limit=20):
             "id": doc["id"],
             "title": doc["title"],
             "year": doc["year"],
+            "image_url": doc.get("image_url"),
+            "authors": doc.get("authors", []),
             "score": float(score),
             "source": "vector"
         })
 
-    # 🔥 sort theo similarity
     results.sort(key=lambda x: x["score"], reverse=True)
 
     return results[:limit]

@@ -24,29 +24,29 @@
         <li class="menu-title">Thực thể</li>
 
         <li>
-            <a href="/admin/metadata/author/page"
-               class="{% if request.path.startswith('/admin/metadata/author') %}active{% endif %}">
+            <a href="/admin/authors"
+               class="{% if request.path.startswith('/admin/authors') %}active{% endif %}">
                 <i class="fa fa-user"></i> Authors
             </a>
         </li>
 
         <li>
-            <a href="/admin/metadata/subject/page"
-               class="{% if request.path.startswith('/admin/metadata/subject') %}active{% endif %}">
+            <a href="/admin/subjects"
+               class="{% if request.path.startswith('/admin/subjects') %}active{% endif %}">
                 <i class="fa fa-book"></i> Subjects
             </a>
         </li>
 
         <li>
-            <a href="/admin/metadata/keyword/page"
-               class="{% if request.path.startswith('/admin/metadata/keyword') %}active{% endif %}">
+            <a href="/admin/keywords"
+               class="{% if request.path.startswith('/admin/keywords') %}active{% endif %}">
                 <i class="fa fa-key"></i> Keywords
             </a>
         </li>
 
         <li>
-            <a href="/admin/metadata/category/page"
-               class="{% if request.path.startswith('/admin/metadata/category') %}active{% endif %}">
+            <a href="/admin/categories"
+               class="{% if request.path.startswith('/admin/categories') %}active{% endif %}">
                 <i class="fa fa-folder"></i> Categories
             </a>
         </li>
@@ -54,40 +54,33 @@
         <!-- ================= PUBLISH ================= -->
         <li class="menu-title">Xuất bản</li>
 
-        <!-- ⚠️ nếu chưa có service journals thì tạm comment -->
-        <!--
         <li>
-            <a href="/admin/metadata/journal/page"
-               class="{% if request.path.startswith('/admin/metadata/journal') %}active{% endif %}">
+            <a href="/admin/journals"
+               class="{% if request.path.startswith('/admin/journals') %}active{% endif %}">
                 <i class="fa fa-newspaper"></i> Journals
             </a>
         </li>
-        -->
 
         <li>
-            <a href="/admin/metadata/institution/page"
-               class="{% if request.path.startswith('/admin/metadata/institution') %}active{% endif %}">
+            <a href="/admin/institutions"
+               class="{% if request.path.startswith('/admin/institutions') %}active{% endif %}">
                 <i class="fa fa-building"></i> Institutions
             </a>
         </li>
 
-        <!-- ⚠️ nếu chưa có route languages thì đừng dùng -->
-        <!--
         <li>
-            <a href="/admin/metadata/language/page">
+            <a href="/admin/languages"
+               class="{% if request.path.startswith('/admin/languages') %}active{% endif %}">
                 <i class="fa fa-globe"></i> Languages
             </a>
         </li>
-        -->
 
-        <!-- ⚠️ users cũng chưa có route -->
-        <!--
         <li>
-            <a href="/admin/users/page">
+            <a href="/admin/users"
+               class="{% if request.path.startswith('/admin/users') %}active{% endif %}">
                 <i class="fa fa-users"></i> Users
             </a>
         </li>
-        -->
 
     </ul>
 

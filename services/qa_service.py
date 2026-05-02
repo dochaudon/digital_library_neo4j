@@ -12,80 +12,39 @@ from services.search_service import search_documents
 
 
 # =========================
-# 🔥 PARSER
+# 🔥 INTENT DETECTION (SMART)
 # =========================
-def parse_question(question):
+def detect_intent(question):
     q = (question or "").lower()
 
-    intent = "search"
-    filters = {}
+    # factual (graph)
+    if any(x in q for x in ["ai viết", "tác giả"]):
+        return "author"
 
-    # =========================
-    # INTENT
-    # =========================
-    if "tác giả" in q or "ai viết" in q:
-        intent = "author"
+    if "xuất bản" in q:
+        return "publisher"
 
-    elif "xuất bản" in q:
-        intent = "publisher"
+    if "năm" in q:
+        return "year"
 
-    elif "năm" in q:
-        intent = "year"
+    if any(x in q for x in ["chủ đề", "lĩnh vực"]):
+        return "subject"
 
-    elif "chủ đề" in q or "lĩnh vực" in q:
-        intent = "subject"
+    if any(x in q for x in ["trường", "đại học"]):
+        return "university"
 
-    elif "trường" in q or "đại học" in q:
-        intent = "university"
+    if any(x in q for x in ["bao nhiêu", "số lượng"]):
+        return "count"
 
-    elif "bao nhiêu" in q or "số lượng" in q:
-        intent = "count"
+    # semantic
+    if any(x in q for x in ["giống", "liên quan", "tương tự"]):
+        return "semantic"
 
-    elif "liên quan" in q:
-        intent = "related"
-
-    # =========================
-    # TYPE
-    # =========================
-    if "luận văn" in q:
-        filters["doc_type"] = "Thesis"
-    elif "bài báo" in q:
-        filters["doc_type"] = "Article"
-    elif "sách" in q or "giáo trình" in q:
-        filters["doc_type"] = "Book"
-
-    # =========================
-    # YEAR
-    # =========================
-    years = re.findall(r'(20\d{2})', q)
-
-    if len(years) == 1:
-        filters["year"] = int(years[0])
-
-    elif len(years) >= 2:
-        filters["year_from"] = int(years[0])
-        filters["year_to"] = int(years[1])
-
-    # =========================
-    # FIX BUG "ai"
-    # =========================
-    if re.search(r"\bai\b", q):
-        filters["keyword"] = "AI"
-
-    # =========================
-    # SUBJECT mapping
-    # =========================
-    if "kinh tế" in q:
-        filters["subject"] = "Economics"
-
-    if "trí tuệ nhân tạo" in q:
-        filters["subject"] = "Artificial Intelligence"
-
-    return intent, filters
+    return "search"
 
 
 # =========================
-# EXTRACT TITLE
+# 🔥 EXTRACT TITLE
 # =========================
 def extract_title(question):
     q = question.lower()
@@ -97,42 +56,66 @@ def extract_title(question):
 
 
 # =========================
-# FORMAT ANSWER
+# 🔥 PARSE FILTER (SMART)
 # =========================
-def format_answer(results, intent):
+def parse_filters(question):
+    q = question.lower()
+    filters = {}
+
+    if "luận văn" in q:
+        filters["doc_type"] = "Thesis"
+    elif "bài báo" in q:
+        filters["doc_type"] = "Article"
+    elif "sách" in q:
+        filters["doc_type"] = "Book"
+
+    # year
+    year_match = re.search(r'\b(19|20)\d{2}\b', q)
+    if year_match:
+        filters["year"] = int(year_match.group())
+
+    # subject mapping
+    if "ai" in q or "trí tuệ nhân tạo" in q:
+        filters["subject"] = "Artificial Intelligence"
+
+    if "học máy" in q:
+        filters["subject"] = "Machine Learning"
+
+    return filters
+
+
+# =========================
+# 🔥 FORMAT ANSWER (NÂNG CẤP)
+# =========================
+def format_smart_answer(results, intent):
 
     if not results:
-        return "Mình đã tìm trong hệ thống nhưng chưa có dữ liệu phù hợp."
+        return "Mình chưa tìm thấy tài liệu phù hợp trong hệ thống."
 
     top = results[0]
 
+    # factual
     if intent == "author":
-        authors = top.get("authors") or []
+        authors = top.get("authors", [])
         if authors:
             return f'Tài liệu "{top["title"]}" được viết bởi {", ".join(authors)}.'
-
-    if intent == "publisher":
-        if top.get("publisher"):
-            return f'Tài liệu "{top["title"]}" được xuất bản bởi {top["publisher"]}.'
 
     if intent == "year":
         if top.get("year"):
             return f'Tài liệu "{top["title"]}" xuất bản năm {top["year"]}.'
 
-    if intent == "subject":
-        subjects = top.get("subjects") or []
-        if subjects:
-            return f'Tài liệu "{top["title"]}" thuộc lĩnh vực {", ".join(subjects)}.'
+    # semantic explanation
+    titles = [r["title"] for r in results[:3]]
 
-    if len(results) > 1:
-        titles = [r["title"] for r in results[:3]]
-        return f"Mình tìm thấy {len(results)} tài liệu, ví dụ: " + ", ".join(titles)
-
-    return f'Mình tìm thấy tài liệu "{top["title"]}" phù hợp nhất.'
+    return (
+        f'Mình tìm thấy {len(results)} tài liệu liên quan.\n\n'
+        f'📚 Gợi ý nổi bật:\n'
+        f'- ' + '\n- '.join(titles)
+    )
 
 
 # =========================
-# MAIN QA
+# 🔥 MAIN QA (HYBRID)
 # =========================
 def get_qa_response(question):
 
@@ -142,11 +125,12 @@ def get_qa_response(question):
             "documents": []
         }
 
-    intent, filters = parse_question(question)
+    intent = detect_intent(question)
+    filters = parse_filters(question)
     title = extract_title(question)
 
     # =========================
-    # 🔥 KNOWLEDGE QA
+    # 🔥 GRAPH QA (CHÍNH XÁC)
     # =========================
     if intent == "author":
         result = get_author_by_title(title)
@@ -192,13 +176,7 @@ def get_qa_response(question):
     # 🔥 COUNT
     # =========================
     if intent == "count":
-        results = search_documents("", filters, 1000)
-
-        if not results:
-            return {
-                "answer": "Chưa có dữ liệu để thống kê.",
-                "documents": []
-            }
+        results = search_documents("", filters, 100)
 
         return {
             "answer": f"Có khoảng {len(results)} tài liệu phù hợp.",
@@ -206,7 +184,7 @@ def get_qa_response(question):
         }
 
     # =========================
-    # 🔥 SEARCH
+    # 🔥 SEMANTIC SEARCH (CHÍNH)
     # =========================
     results = search_documents(question, filters, 10)
 
@@ -216,7 +194,7 @@ def get_qa_response(question):
     if not results:
         results = search_documents("", {}, 10)
 
-    answer = format_answer(results, intent)
+    answer = format_smart_answer(results, intent)
 
     return {
         "answer": answer,

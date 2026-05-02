@@ -5,27 +5,72 @@
 {% endblock %}
 
 {% block content %}
-<div class="author-container">
 
-    <div class="header">
-        <h2>👤 Authors</h2>
-        <a href="/admin/authors/create" class="btn-add">➕ Add</a>
+<section class="doc-container">
+
+    <!-- HEADER -->
+    <div class="doc-header">
+        <div>
+            <h2>👤 Quản Lý Tác Giả</h2>
+            <p class="doc-count">
+                Tổng số: {{ authors|length }} tác giả
+            </p>
+        </div>
+
+        <a href="/admin/authors/create" class="btn-add">
+            + Thêm Tác Giả
+        </a>
     </div>
 
-    <div class="card">
-        <table>
+    <!-- SEARCH (chỉ UI, chưa xử lý backend) -->
+    <div class="doc-search">
+        <input type="text" placeholder="Tìm kiếm tác giả...">
+    </div>
+
+    <!-- TABLE -->
+    <div class="doc-table-card">
+        <table class="doc-table">
+
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Action</th>
+                    <th>Tên tác giả</th>
+                    <th>Số tài liệu</th>
+                    <th>Thao tác</th>
                 </tr>
             </thead>
 
-            <tbody id="authorTable"></tbody>
+            <tbody>
+                {% if authors %}
+                    {% for a in authors %}
+                    <tr>
+                        <td>{{ a.name }}</td>
+                        <td>{{ a.document_count or 0 }}</td>
+                        <td class="actions">
+                            <a href="/admin/authors/edit/{{ a.id }}" class="btn-edit">Sửa</a>
+                            <a href="/admin/authors/delete/{{ a.id }}" 
+                               class="btn-delete"
+                               onclick="return confirm('Xóa tác giả?')">
+                               Xóa
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="3">Không có dữ liệu</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+
         </table>
+
+        <!-- (Optional) Pagination sau này làm server-side -->
+        <div class="doc-pagination">
+            {% include "admin/components/pagination.html" %}
+        </div>
+
     </div>
 
-</div>
+</section>
 
-<script src="{{ url_for('static', filename='js/admin/pages/author.js') }}"></script>
 {% endblock %}

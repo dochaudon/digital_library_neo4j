@@ -1,7 +1,8 @@
 from database.neo4j_connection import neo4j_conn
 
+
 # =========================
-# COMMON TYPE RESOLVER
+# TYPE RESOLVER
 # =========================
 TYPE_CASE = """
 CASE
@@ -21,15 +22,47 @@ CASE
 END
 """
 
+
 # =========================
-# GET DOCUMENT DETAIL (UNIFIED)
+# 🔥 GROUP AUTHOR ROLE (CORE)
+# =========================
+def group_authors(author_roles):
+    grouped = {
+        "author": [],
+        "contributor": [],
+        "supervisor": [],
+        "editor": []
+    }
+
+    for item in author_roles:
+        if not item or not item.get("name"):
+            continue
+
+        role = item.get("role") or "author"
+
+        if role not in grouped:
+            grouped[role] = []
+
+        grouped[role].append({
+            "name": item["name"],
+            "institution": item.get("institution")
+        })
+
+    return grouped
+
+
+# =========================
+# 🔥 GET DOCUMENT DETAIL (FINAL)
 # =========================
 def get_document_by_id(doc_id):
+
     query = f"""
     MATCH (d)
     WHERE d.id = $id AND (d:Book OR d:Article OR d:Thesis)
 
     OPTIONAL MATCH (d)-[r:HAS_AUTHOR]->(a:Author)
+    OPTIONAL MATCH (a)-[:WORKS_AT]->(i:Institution)
+
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
     OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
     OPTIONAL MATCH (d)-[:IN_LANGUAGE]->(l:Language)
@@ -43,18 +76,15 @@ def get_document_by_id(doc_id):
         d.pages AS pages,
         d.abstract AS abstract,
         d.file_url AS file_url,
-        d.image_url AS image_url,  
+        d.image_url AS image_url,
 
         {TYPE_CASE} AS type,
 
-        collect(DISTINCT a.name) AS authors,   
-
-        collect(DISTINCT CASE 
-            WHEN a IS NOT NULL THEN {{
-                name: a.name,
-                role: coalesce(r.role, "author")
-            }}
-        END) AS authors_info,
+        collect(DISTINCT {{
+            name: a.name,
+            role: coalesce(r.role, "author"),
+            institution: i.name
+        }}) AS authors_info,
 
         collect(DISTINCT s.name) AS subjects,
         collect(DISTINCT k.name) AS keywords,
@@ -65,7 +95,16 @@ def get_document_by_id(doc_id):
     """
 
     result = neo4j_conn.query(query, {"id": doc_id})
-    return result[0] if result else None
+
+    if not result:
+        return None
+
+    doc = result[0]
+
+    # 🔥 GROUP ROLE
+    doc["author_groups"] = group_authors(doc.get("authors_info", []))
+
+    return doc
 
 
 # =========================
@@ -82,7 +121,7 @@ def get_all_documents(skip=0, limit=20):
         d.id AS id,
         d.title AS title,
         d.year AS year,
-        d.image_url AS image_url,  
+        d.image_url AS image_url,
         {TYPE_CASE} AS type,
         collect(DISTINCT a.name) AS authors
 
@@ -97,7 +136,7 @@ def get_all_documents(skip=0, limit=20):
 
 
 # =========================
-# COUNT DOCUMENTS
+# COUNT
 # =========================
 def count_documents():
     query = """
@@ -111,7 +150,7 @@ def count_documents():
 
 
 # =========================
-# GET DOCUMENTS BY TYPE
+# BY TYPE
 # =========================
 def get_documents_by_type(doc_type, skip=0, limit=20):
     query = f"""
@@ -127,7 +166,7 @@ def get_documents_by_type(doc_type, skip=0, limit=20):
         d.id AS id,
         d.title AS title,
         d.year AS year,
-        d.image_url AS image_url,   
+        d.image_url AS image_url,
         {TYPE_CASE} AS type,
         collect(DISTINCT a.name) AS authors
 
@@ -143,7 +182,7 @@ def get_documents_by_type(doc_type, skip=0, limit=20):
 
 
 # =========================
-# 🔥 RELATED DOCUMENTS
+# RELATED
 # =========================
 def get_related_documents(doc_id, limit=5):
     query = f"""
@@ -155,7 +194,7 @@ def get_related_documents(doc_id, limit=5):
         related.id AS id,
         related.title AS title,
         related.year AS year,
-        related.image_url AS image_url, 
+        related.image_url AS image_url,
         {TYPE_CASE_RELATED} AS type
 
     ORDER BY related.year DESC
