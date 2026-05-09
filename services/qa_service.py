@@ -5,10 +5,20 @@ from models.qa_model import (
     get_year_by_title,
     get_subject_by_title,
     get_publisher_by_title,
-    get_university_by_title
+    get_university_by_title,
+    get_abstract_by_title,
+    get_keyword_by_title,
+    get_related_by_title
 )
 
 from services.search_service import search_documents
+from services.llm_service import (
+    call_gemini,
+    build_rag_prompt,
+    is_out_of_scope,
+    get_out_of_scope_response,
+    build_context_from_docs
+)
 
 
 # =========================
@@ -37,8 +47,14 @@ def detect_intent(question):
         return "count"
 
     # semantic
-    if any(x in q for x in ["giống", "liên quan", "tương tự"]):
-        return "semantic"
+    if any(x in q for x in ["giống", "liên quan", "tương tự", "cùng chủ đề", "tương đồng"]):
+        return "similar"
+
+    if any(x in q for x in ["tóm tắt", "nội dung"]):
+        return "summary"
+
+    if "từ khóa" in q:
+        return "keyword"
 
     return "search"
 
@@ -46,13 +62,137 @@ def detect_intent(question):
 # =========================
 # 🔥 EXTRACT TITLE
 # =========================
-def extract_title(question):
-    q = question.lower()
+def get_title_from_history(history):
+    if not history or len(history) <= 1:
+        return ""
+    
+    import re
 
-    if "của" in q:
-        return q.split("của")[-1].strip()
+    for msg in reversed(history[:-1]):
+        content = msg.get("content", "")
+        role = msg.get("role")
+        
+        # 1. Từ câu trả lời của Assistant — Độ chính xác cao nhất
+        if role == "assistant":
+            # Pattern 1: **"Tên sách"** (template với markdown bold + quotes)
+            match = re.search(r'\*\*"([^"]+)"\*\*', content)
+            if match:
+                return match.group(1)
 
-    return question.strip()
+            # Pattern 2: "Tên sách" (ngoặc kép thường)
+            match = re.search(r'"([^"]{10,})"', content)
+            if match:
+                return match.group(1)
+
+            # Pattern 3: Tài liệu ... thuộc/được/xuất bản (Gemini không dùng quotes)
+            match = re.search(
+                r'[Tt]ài liệu\s+"?([^""\n]{10,})"?\s+(?:thuộc|được|xuất bản|có từ khóa|viết bởi)',
+                content
+            )
+            if match:
+                return match.group(1).strip()
+
+            # Pattern 4: Danh sách gợi ý "- **Tên sách**"
+            for line in content.split('\n'):
+                line = line.strip()
+                if line.startswith('- **') and line.endswith('**'):
+                    candidate = line[4:-2].strip()
+                    if len(candidate) > 5:
+                        return candidate
+                elif line.startswith('- ') and len(line) > 7:
+                    candidate = line[2:].strip()
+                    # Bỏ qua dòng là giải thích ngắn
+                    if len(candidate) > 15 and not candidate.startswith('_'):
+                        return candidate
+
+        # 2. Từ câu hỏi cũ của User (Dự phòng) — lấy phần sau "của"
+        elif role == "user":
+            q = content
+            # Chỉ lấy từ user message có chứa tên sách thực sự (>20 ký tự sau "của")
+            if "của" in q.lower():
+                after = q.split("của")[-1].strip()
+                # Loại bỏ các hư từ cuối
+                after = re.sub(r'\s*(là gì|là ai|như thế nào|vậy|nhỉ|hả|ạ|\?)+\s*$', '', after, flags=re.IGNORECASE).strip()
+                if len(after) > 10:
+                    return after
+            
+    return ""
+
+import re
+
+def normalize_input(text):
+    text = text.lower()
+    # Loại bỏ khoảng trắng thừa
+    text = re.sub(r'\s+', ' ', text).strip()
+    # Dọn dẹp dấu câu ở đầu và cuối (nhưng giữ lại dấu : ở giữa)
+    text = re.sub(r'^[?!.\s]+|[?!.\s]+$', '', text)
+    return text
+
+def remove_stopwords(text):
+    tail_words = [
+        r"là gì", r"là ai", r"viết năm nào", r"xuất bản năm nào", 
+        r"năm nào", r"ở đâu", r"như thế nào", r"thế nào", 
+        r"vậy", r"nhỉ", r"không", r"hả", r"ạ"
+    ]
+    
+    changed = True
+    while changed:
+        changed = False
+        new_text = re.sub(r'[?\.!\s]+$', '', text)
+        if new_text != text:
+            text = new_text
+            changed = True
+            
+        for w in tail_words:
+            pattern = rf'\b{w}$'
+            if re.search(pattern, text):
+                text = re.sub(pattern, '', text).strip()
+                changed = True
+                
+    return text
+
+def extract_core_title(text, original_q, history):
+    extracted = text
+
+    prefixes = [
+        "của cuốn sách", "của tài liệu", "của bài báo", "của luận văn", "của cuốn", "của sách",
+        "về cuốn sách", "về tài liệu", "về bài báo", "về luận văn", "về cuốn", "về sách",
+        "của", "về"
+    ]
+    
+    for prefix in prefixes:
+        pattern = rf'\b{prefix}\b'
+        match = re.search(pattern, text)
+        if match:
+            extracted = text[match.end():].strip()
+            # Dọn dẹp dấu hai chấm, gạch ngang thừa ở ĐẦU chuỗi sau khi cắt
+            # (VD: cắt xong còn lại ": Góc nhìn đa chiều" -> "Góc nhìn đa chiều")
+            extracted = re.sub(r'^[:\-\s]+', '', extracted).strip()
+            break
+
+    context_keywords = ["trên", "đó", "này", "vừa rồi", "ấy", "nó", "đầu tiên", "quyển đầu"]
+    has_context = False
+    for k in context_keywords:
+        if re.search(rf'\b{k}\b', extracted) or re.search(rf'\b{k}\b', original_q):
+            has_context = True
+            break
+            
+    if has_context:
+        prev_title = get_title_from_history(history)
+        if prev_title:
+            return prev_title
+
+    return extracted
+
+def extract_title(question, history=None):
+    # Bước 1: Chuẩn hóa input
+    normalized = normalize_input(question)
+    
+    # Bước 2: Loại bỏ từ vô nghĩa ở cuối
+    cleaned = remove_stopwords(normalized)
+    
+    # Bước 3: Tách lấy core title
+    return extract_core_title(cleaned, normalized, history)
 
 
 # =========================
@@ -85,118 +225,247 @@ def parse_filters(question):
 
 
 # =========================
-# 🔥 FORMAT ANSWER (NÂNG CẤP)
+# 🔥 APPLY HIGHLIGHT
 # =========================
-def format_smart_answer(results, intent):
+def apply_highlights(docs, query):
+    """Chèn thẻ <mark> vào title của tài liệu khớp với query."""
+    if not query or not docs:
+        return docs
 
+    keywords = [k.strip() for k in query.lower().split() if len(k.strip()) > 1]
+
+    for doc in docs:
+        title = doc.get("title", "")
+        highlighted = title
+        for kw in keywords:
+            pattern = re.compile(rf'({re.escape(kw)})', re.IGNORECASE)
+            highlighted = pattern.sub(r'<mark>\1</mark>', highlighted)
+        doc["title_highlighted"] = highlighted
+
+    return docs
+
+
+# =========================
+# 🔥 SMART ANSWER BUILDER
+# =========================
+def build_answer(answer_text, explanation=None, suggestion_docs=None):
+    """Tổng hợp câu trả lời gồm: Trả lời + Giải thích + Gợi ý."""
+    parts = [answer_text]
+
+    if explanation:
+        parts.append(f"\n_{explanation}_")
+
+    if suggestion_docs and len(suggestion_docs) > 0:
+        titles = [f'- **{d["title"]}**' for d in suggestion_docs[:3]]
+        parts.append("\n\n📖 **Bạn có thể xem thêm:**\n" + "\n".join(titles))
+
+    return "\n".join(parts)
+
+
+# =========================
+# 🔥 FORMAT ANSWER (NLG)
+# =========================
+def format_smart_answer(results, intent, query=""):
+    """Tạo câu trả lời tự nhiên, có tóm tắt và gợi ý."""
     if not results:
-        return "Mình chưa tìm thấy tài liệu phù hợp trong hệ thống."
+        return build_answer(
+            "Mình chưa tìm thấy tài liệu phù hợp trong hệ thống.",
+            explanation="Hãy thử tìm kiếm với từ khóa khác hoặc đặt câu hỏi cụ thể hơn nhé."
+        )
 
-    top = results[0]
+    total = len(results)
+    top3 = results[:3]
+    rest = results[3:6]
 
-    # factual
-    if intent == "author":
-        authors = top.get("authors", [])
-        if authors:
-            return f'Tài liệu "{top["title"]}" được viết bởi {", ".join(authors)}.'
+    # Tóm tắt số lượng
+    if query:
+        summary = f'Mình tìm thấy **{total} tài liệu** liên quan đến "{query}".'
+    else:
+        summary = f'Mình tìm thấy **{total} tài liệu** phù hợp.'
 
-    if intent == "year":
-        if top.get("year"):
-            return f'Tài liệu "{top["title"]}" xuất bản năm {top["year"]}.'
+    top_titles = [f'- **{d["title"]}**' + (f' ({d["year"]})' if d.get("year") else "") for d in top3]
+    answer_text = summary + "\n\n📚 **Gợi ý nổi bật:**\n" + "\n".join(top_titles)
 
-    # semantic explanation
-    titles = [r["title"] for r in results[:3]]
+    # Explanation (giải thích)
+    explanation_map = {
+        "search": "Kết quả được kết hợp từ Fulltext Search và Vector Search để đảm bảo độ chính xác.",
+        "similar": "Các tài liệu trên có cùng chủ đề hoặc từ khóa với tài liệu bạn đang tham chiếu.",
+        "count": "Tổng số tài liệu trong hệ thống khớp với bộ lọc bạn yêu cầu.",
+    }
+    explanation = explanation_map.get(intent, "Kết quả được xếp hạng theo mức độ liên quan.")
 
-    return (
-        f'Mình tìm thấy {len(results)} tài liệu liên quan.\n\n'
-        f'📚 Gợi ý nổi bật:\n'
-        f'- ' + '\n- '.join(titles)
-    )
+    # Gợi ý bổ sung (nếu có >3 kết quả)
+    suggestion = rest if rest else None
+
+    return build_answer(answer_text, explanation, suggestion)
 
 
 # =========================
-# 🔥 MAIN QA (HYBRID)
+# 🔥 MAIN QA (RAG + LLM)
 # =========================
-def get_qa_response(question):
+def get_qa_response(question, history=None):
 
     if not question:
+        return {"answer": "Bạn hãy nhập câu hỏi nhé.", "documents": []}
+
+    # --- OUT-OF-SCOPE CHECK ---
+    if is_out_of_scope(question):
         return {
-            "answer": "Bạn hãy nhập câu hỏi nhé.",
+            "answer": get_out_of_scope_response(),
+            "intent": "out_of_scope",
             "documents": []
         }
 
     intent = detect_intent(question)
     filters = parse_filters(question)
-    title = extract_title(question)
+    title = extract_title(question, history)
 
-    # =========================
-    # 🔥 GRAPH QA (CHÍNH XÁC)
-    # =========================
+    # -------------------------------------------------------
+    # BRANCH A: QA Intent → Neo4j Exact + Gemini NLG
+    # -------------------------------------------------------
+
+    # --- AUTHOR ---
     if intent == "author":
         result = get_author_by_title(title)
-        if result and result[0].get("authors"):
-            return {
-                "answer": f'Tài liệu "{result[0]["title"]}" được viết bởi {", ".join(result[0]["authors"])}.',
-                "documents": []
-            }
+        if result:
+            r = result[0]
+            data_str = f"Tác giả: {', '.join(r.get('authors', []))}"
+            doc_ctx = [{"title": r.get("title"), "authors": r.get("authors", [])}]
+            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            llm_answer = call_gemini(prompt)
+            answer = llm_answer or build_answer(
+                f'📝 Tài liệu **"{r["title"]}"** được viết bởi **{", ".join(r.get("authors", []))}**.',
+                explanation="Thông tin tác giả được trích xuất trực tiếp từ cơ sở dữ liệu thư viện."
+            )
+            return {"answer": answer, "intent": intent, "documents": []}
 
+    # --- PUBLISHER ---
     if intent == "publisher":
         result = get_publisher_by_title(title)
         if result and result[0].get("publisher"):
-            return {
-                "answer": f'Tài liệu "{result[0]["title"]}" được xuất bản bởi {result[0]["publisher"]}.',
-                "documents": []
-            }
+            r = result[0]
+            data_str = f"Nhà xuất bản: {r['publisher']}"
+            doc_ctx = [{"title": r.get("title")}]
+            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            llm_answer = call_gemini(prompt)
+            answer = llm_answer or build_answer(
+                f'🏢 Tài liệu **"{r["title"]}"** được xuất bản bởi **{r["publisher"]}**.',
+            )
+            return {"answer": answer, "intent": intent, "documents": []}
 
+    # --- YEAR ---
     if intent == "year":
         result = get_year_by_title(title)
         if result and result[0].get("year"):
-            return {
-                "answer": f'Tài liệu "{result[0]["title"]}" xuất bản năm {result[0]["year"]}.',
-                "documents": []
-            }
+            r = result[0]
+            data_str = f"Năm xuất bản: {r['year']}"
+            doc_ctx = [{"title": r.get("title"), "year": r.get("year")}]
+            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            llm_answer = call_gemini(prompt)
+            answer = llm_answer or build_answer(f'📅 Tài liệu **"{r["title"]}"** xuất bản năm **{r["year"]}**.')
+            return {"answer": answer, "intent": intent, "documents": []}
 
+    # --- SUBJECT ---
     if intent == "subject":
         result = get_subject_by_title(title)
         if result and result[0].get("subjects"):
-            return {
-                "answer": f'Tài liệu "{result[0]["title"]}" thuộc lĩnh vực {", ".join(result[0]["subjects"])}.',
-                "documents": []
-            }
+            r = result[0]
+            data_str = f"Chủ đề: {', '.join(r['subjects'])}"
+            doc_ctx = [{"title": r.get("title"), "subjects": r.get("subjects")}]
+            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            llm_answer = call_gemini(prompt)
+            answer = llm_answer or build_answer(
+                f'🏷️ Tài liệu **"{r["title"]}"** thuộc các chủ đề: **{", ".join(r["subjects"])}**.',
+                explanation="Chủ đề được phân loại trong đồ thị kiến thức của hệ thống."
+            )
+            return {"answer": answer, "intent": intent, "documents": []}
 
+    # --- UNIVERSITY ---
     if intent == "university":
         result = get_university_by_title(title)
         if result and result[0].get("university"):
-            return {
-                "answer": f'Luận văn "{result[0]["title"]}" được thực hiện tại {result[0]["university"]}.',
-                "documents": []
-            }
+            r = result[0]
+            data_str = f"Trường đại học: {r['university']}"
+            doc_ctx = [{"title": r.get("title")}]
+            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            llm_answer = call_gemini(prompt)
+            answer = llm_answer or build_answer(f'🎓 Luận văn **"{r["title"]}"** được thực hiện tại **{r["university"]}**.')
+            return {"answer": answer, "intent": intent, "documents": []}
 
-    # =========================
-    # 🔥 COUNT
-    # =========================
+    # --- SUMMARY ---
+    if intent == "summary":
+        result = get_abstract_by_title(title)
+        if result:
+            r = result[0]
+            abstract = r.get("abstract", "")
+            if abstract:
+                data_str = f"Tóm tắt: {abstract}"
+                doc_ctx = [{"title": r.get("title"), "abstract": abstract}]
+                prompt = build_rag_prompt(
+                    f"Hãy tóm tắt nội dung của tài liệu này thành 2-3 câu súc tích bằng Tiếng Việt: {question}",
+                    doc_ctx, history, data=data_str
+                )
+                llm_answer = call_gemini(prompt)
+                answer = llm_answer or build_answer(
+                    f'📄 **Tóm tắt tài liệu "{r["title"]}":**\n\n{abstract}',
+                    explanation="Đây là phần tóm tắt nội dung (abstract) được lưu trữ trong hệ thống."
+                )
+            else:
+                answer = build_answer(f'📄 Tài liệu **"{r["title"]}"** hiện chưa có thông tin tóm tắt.')
+            return {"answer": answer, "intent": intent, "documents": []}
+
+    # --- KEYWORD ---
+    if intent == "keyword":
+        result = get_keyword_by_title(title)
+        if result and result[0].get("keywords"):
+            r = result[0]
+            data_str = f"Từ khóa: {', '.join(r['keywords'])}"
+            doc_ctx = [{"title": r.get("title"), "keywords": r.get("keywords")}]
+            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            llm_answer = call_gemini(prompt)
+            answer = llm_answer or build_answer(f'🔑 Từ khóa: **{", ".join(r["keywords"])}**.')
+            return {"answer": answer, "intent": intent, "documents": []}
+
+    # --- SIMILAR ---
+    if intent == "similar":
+        results = get_related_by_title(title)
+        if results:
+            highlighted_results = apply_highlights(results, title)
+            prompt = build_rag_prompt(question, results[:5], history)
+            llm_answer = call_gemini(prompt)
+            answer = llm_answer or build_answer(
+                f'🔗 Tìm thấy **{len(results)} tài liệu** tương đồng với **"{title}"**.',
+                suggestion_docs=results[3:]
+            )
+            return {"answer": answer, "intent": intent, "documents": highlighted_results[:6]}
+
+    # --- COUNT ---
     if intent == "count":
         results = search_documents("", filters, 100)
+        answer = build_answer(f'📊 Hệ thống có khoảng **{len(results)} tài liệu** phù hợp.')
+        return {"answer": answer, "intent": intent, "documents": results[:5]}
 
-        return {
-            "answer": f"Có khoảng {len(results)} tài liệu phù hợp.",
-            "documents": results[:5]
-        }
-
-    # =========================
-    # 🔥 SEMANTIC SEARCH (CHÍNH)
-    # =========================
+    # -------------------------------------------------------
+    # BRANCH B: Search Intent → Hybrid Search + RAG
+    # -------------------------------------------------------
     results = search_documents(question, filters, 10)
-
     if not results:
         results = search_documents(question, {}, 10)
 
-    if not results:
-        results = search_documents("", {}, 10)
+    # RAG: feed kết quả vào Gemini
+    prompt = build_rag_prompt(question, results[:5], history)
+    llm_answer = call_gemini(prompt)
 
-    answer = format_smart_answer(results, intent)
+    if llm_answer:
+        answer = llm_answer
+    else:
+        answer = format_smart_answer(results, intent, query=title or question)
+
+    # Highlight keywords trong title của documents
+    results = apply_highlights(results, question)
 
     return {
         "answer": answer,
+        "intent": intent,
         "documents": results
     }

@@ -19,9 +19,10 @@ def create_category(data):
     """
 
     result = neo4j_conn.query(cypher, {
-        "id": str(uuid.uuid4()),
+        "id": data.get("id"),
         "name": name.strip()
     })
+
 
     return result[0] if result else None
 
@@ -29,7 +30,18 @@ def create_category(data):
 # =========================
 # GET ALL CATEGORIES
 # =========================
-def get_all_categories():
+def get_all_categories(q=None):
+    if q:
+        cypher = """
+        MATCH (c:Category)
+        WHERE toLower(c.name) CONTAINS toLower($q)
+        RETURN 
+            c.id AS id, 
+            c.name AS name
+        ORDER BY c.name
+        """
+        return neo4j_conn.query(cypher, {"q": q})
+
     cypher = """
     MATCH (c:Category)
     RETURN 

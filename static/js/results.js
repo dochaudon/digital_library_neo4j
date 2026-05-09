@@ -1,50 +1,37 @@
 const checkboxes = document.querySelectorAll(".filter-type");
 const sortSelect = document.getElementById("sort-select");
-const results = document.querySelectorAll(".result-card");
-const container = document.getElementById("results-list");
 
 function applyFilters() {
-
-    let selectedTypes = Array.from(checkboxes)
-        .filter(c => c.checked)
-        .map(c => c.value);
-
-    let items = Array.from(results);
-
-    // ===== FILTER TYPE =====
-    items.forEach(item => {
-        const type = item.dataset.type;
-
-        if (selectedTypes.length === 0 || selectedTypes.includes(type)) {
-            item.style.display = "flex";
-        } else {
-            item.style.display = "none";
-        }
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // 1. Collect selected document types
+    const selectedTypes = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+    
+    // 2. Update doc_type in URL (supporting multiple)
+    urlParams.delete("doc_type");
+    selectedTypes.forEach(type => {
+        urlParams.append("doc_type", type);
     });
 
-    // ===== SORT =====
-    let visibleItems = items.filter(i => i.style.display !== "none");
+    // 3. Update sort in URL
+    if (sortSelect && sortSelect.value) {
+        urlParams.set("sort", sortSelect.value);
+    } else {
+        urlParams.delete("sort");
+    }
 
-    const sort = sortSelect.value;
+    // 4. Always reset to page 1 when changing filters
+    urlParams.set("page", "1");
 
-    visibleItems.sort((a, b) => {
-
-        const yearA = parseInt(a.dataset.year) || 0;
-        const yearB = parseInt(b.dataset.year) || 0;
-
-        const titleA = a.dataset.title.toLowerCase();
-        const titleB = b.dataset.title.toLowerCase();
-
-        if (sort === "year_desc") return yearB - yearA;
-        if (sort === "year_asc") return yearA - yearB;
-        if (sort === "az") return titleA.localeCompare(titleB);
-        if (sort === "za") return titleB.localeCompare(titleA);
-
-        return 0;
-    });
-
-    visibleItems.forEach(item => container.appendChild(item));
+    // 5. Reload page with new parameters
+    const newUrl = window.location.pathname + "?" + urlParams.toString();
+    window.location.href = newUrl;
 }
 
+// Event listeners
 checkboxes.forEach(cb => cb.addEventListener("change", applyFilters));
-sortSelect.addEventListener("change", applyFilters);
+if (sortSelect) {
+    sortSelect.addEventListener("change", applyFilters);
+}

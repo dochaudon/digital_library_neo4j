@@ -1,0 +1,27 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/metadata.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>📖 Chỉnh Sửa Tạp Chí</h2>
+    
+    <form action="/admin/journals/edit/{{ journal.id }}" method="POST" class="metadata-form">
+        <div class="form-group">
+            <label>ID Tạp chí</label>
+            <input type="text" name="id" value="{{ journal.id }}" readonly class="readonly">
+        </div>
+        <div class="form-group">
+            <label>Tên tạp chí</label>
+            <input type="text" name="name" value="{{ journal.name }}" required placeholder="Nhập tên tạp chí...">
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Cập nhật</button>
+            <a href="/admin/journals" class="btn-cancel">Hủy bỏ</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

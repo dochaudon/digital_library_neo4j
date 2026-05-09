@@ -12,9 +12,7 @@
     <div class="doc-header">
         <div>
             <h2>👤 Quản Lý Tác Giả</h2>
-            <p class="doc-count">
-                Tổng số: {{ authors|length }} tác giả
-            </p>
+
         </div>
 
         <a href="/admin/authors/create" class="btn-add">
@@ -22,10 +20,11 @@
         </a>
     </div>
 
-    <!-- SEARCH (chỉ UI, chưa xử lý backend) -->
-    <div class="doc-search">
-        <input type="text" placeholder="Tìm kiếm tác giả...">
-    </div>
+    <!-- SEARCH -->
+    <form action="" method="GET" class="doc-search">
+        <input type="text" name="q" placeholder="Tìm kiếm tác giả..." value="{{ q|default('') }}">
+        <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
+    </form>
 
     <!-- TABLE -->
     <div class="doc-table-card">

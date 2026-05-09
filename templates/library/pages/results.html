@@ -23,19 +23,19 @@
 
             <div class="filter-group">
                 <p><strong>Loại tài liệu</strong></p>
-                <label><input type="checkbox" value="Book" class="filter-type"> 📘 Sách</label>
-                <label><input type="checkbox" value="Article" class="filter-type"> 📰 Bài báo</label>
-                <label><input type="checkbox" value="Thesis" class="filter-type"> 🎓 Luận văn</label>
+                <label><input type="checkbox" value="Book" class="filter-type" {% if filters.doc_type and 'Book' in filters.doc_type %}checked{% endif %}> 📘 Sách</label>
+                <label><input type="checkbox" value="Article" class="filter-type" {% if filters.doc_type and 'Article' in filters.doc_type %}checked{% endif %}> 📰 Bài báo</label>
+                <label><input type="checkbox" value="Thesis" class="filter-type" {% if filters.doc_type and 'Thesis' in filters.doc_type %}checked{% endif %}> 🎓 Luận văn</label>
             </div>
 
             <div class="filter-group">
                 <p><strong>Sắp xếp</strong></p>
                 <select id="sort-select">
-                    <option value="">Mặc định</option>
-                    <option value="year_desc">Năm ↓</option>
-                    <option value="year_asc">Năm ↑</option>
-                    <option value="az">A → Z</option>
-                    <option value="za">Z → A</option>
+                    <option value="" {% if not sort %}selected{% endif %}>Mặc định</option>
+                    <option value="year_desc" {% if sort == 'year_desc' %}selected{% endif %}>Năm ↓</option>
+                    <option value="year_asc" {% if sort == 'year_asc' %}selected{% endif %}>Năm ↑</option>
+                    <option value="az" {% if sort == 'az' %}selected{% endif %}>A → Z</option>
+                    <option value="za" {% if sort == 'za' %}selected{% endif %}>Z → A</option>
                 </select>
             </div>
 
@@ -49,15 +49,13 @@
             <div id="results-list">
 
                 {% for doc in results %}
-                <div class="result-card"
-                     data-type="{{ doc.type }}"
-                     data-year="{{ doc.year }}"
-                     data-title="{{ doc.title }}">
+                <div class="result-card" data-type="{{ doc.type }}" data-year="{{ doc.year }}"
+                    data-title="{{ doc.title }}">
 
                     <!-- IMAGE -->
                     <div class="result-thumb">
                         <img src="{{ doc.image_url if doc.image_url else '/static/images/pdf.jpg' }}"
-                        onerror="this.src='/static/images/pdf.jpg'">
+                            onerror="this.src='/static/images/pdf.jpg'">
                     </div>
 
                     <!-- CONTENT -->
@@ -72,8 +70,7 @@
                         </span>
 
                         <!-- TITLE -->
-                        <a class="result-title"
-                           href="/document/{{ doc.id }}">
+                        <a class="result-title" href="/document/{{ doc.id }}">
                             {{ doc.title }}
                         </a>
 
@@ -81,17 +78,17 @@
                         <p class="result-meta">
 
                             {% if doc.authors %}
-                                {% for a in doc.authors %}
-                                    {% if a %}
-                                        <a href="/search?author={{ a }}">{{ a }}</a>{% if not loop.last %}, {% endif %}
-                                    {% endif %}
-                                {% endfor %}
+                            {% for a in doc.authors %}
+                            {% if a %}
+                            <a href="/search?author={{ a }}">{{ a }}</a>{% if not loop.last %}, {% endif %}
+                            {% endif %}
+                            {% endfor %}
                             {% elif doc.publisher %}
-                                {{ doc.publisher }}
+                            {{ doc.publisher }}
                             {% elif doc.university %}
-                                {{ doc.university }}
+                            {{ doc.university }}
                             {% else %}
-                                N/A
+                            N/A
                             {% endif %}
 
                         </p>

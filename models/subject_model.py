@@ -19,9 +19,10 @@ def create_subject(data):
     """
 
     result = neo4j_conn.query(cypher, {
-        "id": str(uuid.uuid4()),
+        "id": data.get("id"),
         "name": name.strip()
     })
+
 
     return result[0] if result else None
 
@@ -29,7 +30,18 @@ def create_subject(data):
 # =========================
 # GET ALL SUBJECTS
 # =========================
-def get_all_subjects():
+def get_all_subjects(q=None):
+    if q:
+        cypher = """
+        MATCH (s:Subject)
+        WHERE toLower(s.name) CONTAINS toLower($q)
+        RETURN 
+            s.id AS id, 
+            s.name AS name
+        ORDER BY s.name
+        """
+        return neo4j_conn.query(cypher, {"q": q})
+
     cypher = """
     MATCH (s:Subject)
     RETURN 

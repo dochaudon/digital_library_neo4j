@@ -219,3 +219,59 @@ def get_top_authors(limit=5):
     """
 
     return neo4j_conn.query(query, {"limit": limit})
+
+# =========================
+# GET ABSTRACT BY TITLE
+# =========================
+def get_abstract_by_title(title):
+    query = """
+    MATCH (d)
+    WHERE (d:Book OR d:Article OR d:Thesis)
+      AND toLower(d.title) CONTAINS toLower($title)
+
+    RETURN
+        d.id AS id,
+        d.title AS title,
+        d.abstract AS abstract
+    LIMIT 1
+    """
+    return neo4j_conn.query(query, {"title": title})
+
+# =========================
+# GET KEYWORD BY TITLE
+# =========================
+def get_keyword_by_title(title):
+    query = """
+    MATCH (d)
+    WHERE (d:Book OR d:Article OR d:Thesis)
+      AND toLower(d.title) CONTAINS toLower($title)
+
+    OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
+
+    RETURN
+        d.id AS id,
+        d.title AS title,
+        collect(DISTINCT k.name) AS keywords
+    LIMIT 1
+    """
+    return neo4j_conn.query(query, {"title": title})
+
+# =========================
+# GET RELATED BY TITLE
+# =========================
+def get_related_by_title(title):
+    query = """
+    MATCH (d)
+    WHERE (d:Book OR d:Article OR d:Thesis)
+      AND toLower(d.title) CONTAINS toLower($title)
+
+    MATCH (d)-[:HAS_SUBJECT]->(s)<-[:HAS_SUBJECT]-(related)
+    WHERE d <> related
+
+    RETURN
+        related.id AS id,
+        related.title AS title,
+        related.year AS year
+    LIMIT 5
+    """
+    return neo4j_conn.query(query, {"title": title})

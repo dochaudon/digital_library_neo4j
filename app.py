@@ -9,6 +9,7 @@ from routes.public.qa_routes import qa
 from routes.admin.document_admin import document_admin
 from routes.admin.metadata_admin import metadata_admin
 from routes.admin.user_admin import user_admin
+from routes.admin.admin_main import admin_main
 
 from routes.api.search_api import search_api
 from routes.api.graph_api import graph_api
@@ -17,6 +18,8 @@ from services.auth_utils import init_bcrypt
 from services.init_admin import init_admin_account
 from routes.api.explore_api import explore_api
 from routes.public.explore_routes import explore_bp
+from routes.public.user_routes import user_bp
+
 
 
 
@@ -48,8 +51,11 @@ def create_app():
     app.register_blueprint(auth)
     app.register_blueprint(qa)
     app.register_blueprint(explore_bp)
+    app.register_blueprint(user_bp)
+
 
     # ADMIN
+    app.register_blueprint(admin_main)
     app.register_blueprint(document_admin)
     app.register_blueprint(metadata_admin)
     app.register_blueprint(user_admin)

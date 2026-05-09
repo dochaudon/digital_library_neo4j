@@ -50,13 +50,14 @@ async function loadLeft(type, id, page = 1) {
     if (["author", "subject", "keyword", "publisher"].includes(entityType)) {
 
         const titleMap = {
-            author: "📚 Tài liệu của tác giả",
-            subject: "📂 Tài liệu theo chủ đề",
-            keyword: "🏷️ Tài liệu theo từ khóa",
-            publisher: "🏢 Tài liệu theo nhà xuất bản"
+            author: "📚 Tác giả",
+            subject: "📂 Chủ đề",
+            keyword: "🏷️ Từ khóa",
+            publisher: "🏢 Nhà xuất bản"
         };
 
-        html += `<h3>${titleMap[entityType] || "Tài liệu liên quan"}</h3>`;
+        const displayName = data.name || "N/A";
+        html += `<h3>${titleMap[entityType] || "Chi tiết"}: <span style="color:#2563eb">${displayName}</span></h3>`;
 
         if (!data.documents || data.documents.length === 0) {
             html += `<p>Không có tài liệu</p>`;
@@ -119,28 +120,36 @@ function renderGraph(graphData) {
     const radius = 180;
 
     const mappedNodes = graphData.nodes.map((n, index) => {
-
         const group = n.group?.toLowerCase();
+        const nodeCount = graphData.nodes.length;
+        const radius = 180;
+
+        let x = 0;
+        let y = 0;
+        let fixed = false;
 
         if (n.id === centerId) {
+            x = 0;
+            y = 0;
+            fixed = { x: true, y: true };
             return {
                 ...n,
                 group,
-                x: 0,
-                y: 0,
-                fixed: true,
-                label: getLabel({ ...n, group })
+                x, y, fixed,
+                label: getLabel({ ...n, group }),
+                size: 30
             };
         }
 
-        const angle = (2 * Math.PI * index) / graphData.nodes.length;
+        // OCD-friendly circle
+        const angle = (2 * Math.PI * (index - 1)) / (nodeCount - 1);
+        x = radius * Math.cos(angle);
+        y = radius * Math.sin(angle);
 
         return {
             ...n,
             group,
-            x: radius * Math.cos(angle),
-            y: radius * Math.sin(angle),
-            fixed: true,
+            x, y, fixed,
             label: getLabel({ ...n, group })
         };
     });
@@ -153,27 +162,59 @@ function renderGraph(graphData) {
     const options = {
         nodes: {
             shape: "dot",
-            size: 18,
-            font: { size: 13, vadjust: 25 }
+            size: 20,
+            font: {
+                size: 14,
+                color: "#333",
+                vadjust: 35,
+                multi: "html"
+            },
+            borderWidth: 2,
+            shadow: {
+                enabled: true,
+                color: "rgba(0,0,0,0.2)",
+                size: 10,
+                x: 3,
+                y: 3
+            }
         },
 
         edges: {
-            smooth: false,
-            width: 1.5,
-            color: "#aaa"
+            width: 2,
+            color: { color: "#cbd5e1", hover: "#64748b", highlight: "#2563eb" },
+            smooth: { type: "continuous", roundness: 0.5 }
         },
 
         groups: {
-            book: { size: 22, color: "#2563eb" },
-            article: { size: 22, color: "#16a34a" },
-            thesis: { size: 24, color: "#9333ea" },
-            author: { size: 18, color: "#22c55e" },
-            subject: { shape: "diamond", size: 20, color: "#f59e0b" },
-            keyword: { shape: "star", size: 20, color: "#ec4899" },
-            publisher: { shape: "hexagon", size: 20, color: "#0ea5e9" }
+            book: { shape: "dot", color: { background: "#2563eb", border: "#1e40af" } },
+            article: { shape: "square", color: { background: "#10b981", border: "#059669" } },
+            thesis: { shape: "triangle", color: { background: "#8b5cf6", border: "#7c3aed" } },
+            author: { shape: "dot", color: { background: "#fbbf24", border: "#d97706" } },
+            subject: { shape: "diamond", color: { background: "#f97316", border: "#ea580c" } },
+            keyword: { shape: "star", color: { background: "#ec4899", border: "#be185d" } },
+            publisher: { shape: "hexagon", color: { background: "#06b6d4", border: "#0891b2" } }
         },
 
-        physics: false
+        physics: {
+            enabled: true,
+            solver: "forceAtlas2Based",
+            forceAtlas2Based: {
+                gravitationalConstant: -100,
+                springLength: 150,
+                springConstant: 0.05,
+                damping: 0.4
+            },
+            stabilization: {
+                iterations: 150,
+                updateInterval: 25
+            }
+        },
+        interaction: {
+            hover: true,
+            tooltipDelay: 200,
+            zoomView: true,
+            dragNodes: true
+        }
     };
 
     if (!network) {

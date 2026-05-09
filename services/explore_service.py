@@ -143,8 +143,17 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
         "id": entity_id
     })[0]["total"]
 
+    # ===== NAME =====
+    name_query = f"""
+    {ENTITY_MATCH}
+    RETURN e.name AS name
+    """
+    name_res = neo4j_conn.query(name_query, {"id": entity_id})
+    entity_name = name_res[0]["name"] if name_res else "N/A"
+
     return {
         "type": entity_type,
+        "name": entity_name,
         "documents": docs,
         "total": total,
         "page": page
@@ -175,7 +184,7 @@ def get_graph_by_entity(entity_type, entity_id):
     query = f"""
     {ENTITY_MATCH}
     MATCH (e)<-[:{rel}]-(d)
-    RETURN e, d
+    RETURN e, collect(d) AS docs, collect(labels(d)) AS labels_list
     """
 
     results = neo4j_conn.query(query, {"id": entity_id})
@@ -188,37 +197,51 @@ def get_graph_by_entity(entity_type, entity_id):
     node_ids = set()
 
     # ===== CENTER NODE =====
-    e = results[0]["e"]
+    record = results[0]
+    e = record["e"]
+    e_id = e.get("id") or entity_id
 
     nodes.append({
-        "id": e.get("id"),
-        "label": e.get("name") or e.get("id"),
+        "id": e_id,
+        "label": e.get("name") or e_id,
         "name": e.get("name"),
-        "group": entity_type
+        "group": entity_type,
+        "size": 30
     })
-    node_ids.add(e.get("id"))
+    node_ids.add(e_id)
 
     # ===== DOCUMENT NODES =====
-    for r in results:
-        d = r["d"]
+    all_docs = record.get("docs", [])
+    all_labels = record.get("labels_list", [])
+
+    for i in range(len(all_docs)):
+        d = all_docs[i]
+        d_labels = all_labels[i] if i < len(all_labels) else []
         doc_id = d.get("id")
+
+        if not doc_id: continue
+
+        # Detect group
+        doc_group = "book"
+        if "Article" in d_labels: doc_group = "article"
+        elif "Thesis" in d_labels: doc_group = "thesis"
 
         if doc_id not in node_ids:
             nodes.append({
                 "id": doc_id,
-                "label": d.get("title") or d.get("name"),
-                "title": d.get("title") or d.get("name"),
-                "group": "book"
+                "label": d.get("title") or d.get("name") or "Unknown",
+                "title": d.get("title") or d.get("name") or "Unknown",
+                "group": doc_group
             })
             node_ids.add(doc_id)
 
         edges.append({
-            "from": e.get("id"),
+            "from": e_id,
             "to": doc_id
         })
 
     return {
         "nodes": nodes,
         "edges": edges,
-        "center_id": e.get("id")
+        "center_id": e_id
     }

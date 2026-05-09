@@ -1,4 +1,4 @@
-﻿const chatForm = document.getElementById("chatForm");
+const chatForm = document.getElementById("chatForm");
 const chatBox = document.getElementById("chatBox");
 const questionInput = document.getElementById("questionInput");
 const sendButton = document.getElementById("sendButton");
@@ -17,7 +17,10 @@ function escapeHtml(text) {
 }
 
 function scrollToBottom() {
-    chatBox.scrollTop = chatBox.scrollHeight;
+    chatBox.scrollTo({
+        top: chatBox.scrollHeight,
+        behavior: 'smooth'
+    });
 }
 
 // =========================
@@ -46,7 +49,12 @@ function createMessage(content, type) {
     wrapper.className = `chat-message ${type}`;
 
     const avatar = document.createElement("div");
-    avatar.className = `message-avatar ${type === "user" ? "user-avatar" : "bot-avatar"}`;
+    if (type === "user") {
+        avatar.className = "message-avatar user-avatar";
+    } else {
+        avatar.className = "message-avatar bot-avatar";
+        avatar.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>`;
+    }
 
     const bubble = document.createElement("div");
     bubble.className = "message-bubble";
@@ -61,7 +69,11 @@ function createMessage(content, type) {
     }
 
     chatBox.appendChild(wrapper);
-    scrollToBottom();
+    
+    // small delay to ensure DOM is updated and animation runs
+    setTimeout(() => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }, 10);
 
     return bubble;
 }
@@ -69,24 +81,26 @@ function createMessage(content, type) {
 // =========================
 // TYPING EFFECT
 // =========================
-async function typeText(element, text, speed = 15) {
-    element.innerHTML = "";
+async function typeText(element, rawText, speed = 15) {
+    element.textContent = "";
 
-    for (let i = 0; i < text.length; i++) {
-        element.innerHTML += text[i];
+    for (let i = 0; i < rawText.length; i++) {
+        // Dùng textContent để tránh partial HTML tags xuất hiện
+        element.textContent = rawText.slice(0, i + 1);
         await new Promise(r => setTimeout(r, speed));
-        scrollToBottom();
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
+
+    // Khi typing xong, render toàn bộ Markdown thành HTML một lần
+    element.innerHTML = renderMarkdown(rawText);
 }
 
 // =========================
 // BOT RESPONSE (typing)
 // =========================
-async function addBotResponse(text, docs, keyword) {
+async function addBotResponse(text, docs, keyword, intent) {
 
-    text = renderMarkdown(text);
-    text = highlight(text, keyword);
-
+    // Không pre-render ở đây nữa, typeText sẽ tự xử lý
     const bubble = createMessage(`<p class="message-text"></p>`, "bot");
     const textEl = bubble.querySelector(".message-text");
 
@@ -94,7 +108,7 @@ async function addBotResponse(text, docs, keyword) {
 
     // render documents
     if (docs && docs.length) {
-        renderDocuments(docs);
+        renderDocuments(docs, intent);
     }
 }
 
@@ -108,21 +122,26 @@ function addUserMessage(text) {
 // =========================
 // DOCUMENT LIST
 // =========================
-function renderDocuments(docs) {
+function renderDocuments(docs, intent) {
 
-    let html = "<div class='chat-docs'>";
+    let html = `<div class='chat-docs'>`;
 
-    docs.slice(0, 3).forEach(doc => {
+    docs.slice(0, 5).forEach(doc => {
+        const titleHtml = doc.title_highlighted || escapeHtml(doc.title);
+        const authors = doc.authors && doc.authors.length
+            ? `<span class="doc-authors">${doc.authors.slice(0, 2).join(", ")}</span>`
+            : "";
         html += `
             <a class="chat-doc-item" href="/document/${doc.id}">
                 <span class="doc-type">${doc.type || "Document"}</span>
-                <span class="doc-title">${doc.title}</span>
+                <span class="doc-title">${titleHtml}</span>
                 ${doc.year ? `<span class="doc-year">(${doc.year})</span>` : ""}
+                ${authors}
             </a>
         `;
     });
 
-    html += "</div>";
+    html += `</div>`;
 
     createMessage(html, "bot");
 }
@@ -132,7 +151,11 @@ function renderDocuments(docs) {
 // =========================
 function addLoading() {
     const bubble = createMessage(
-        `<p class="message-text">Đang suy nghĩ...</p>`,
+        `<div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>`,
         "bot"
     );
     bubble.id = "loading-msg";
@@ -189,8 +212,9 @@ async function sendQuestion() {
 
         const answer = data.answer || "Không có câu trả lời.";
         const docs = data.documents || [];
+        const intent = data.intent || "search";
 
-        await addBotResponse(answer, docs, question);
+        await addBotResponse(answer, docs, question, intent);
 
         pushHistory("assistant", answer);
 

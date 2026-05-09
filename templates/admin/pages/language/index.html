@@ -11,14 +11,19 @@
     <!-- HEADER -->
     <div class="doc-header">
         <div>
-            <h2>🌐 Languages</h2>
-            <p class="doc-count">Total: {{ languages|length }} languages</p>
+            <h2>🌐 Quản Lý Ngôn Ngữ</h2>
         </div>
 
         <a href="/admin/languages/create" class="btn-add">
-            ➕ Add
+            + Thêm Ngôn Ngữ
         </a>
     </div>
+
+    <!-- SEARCH -->
+    <form action="" method="GET" class="doc-search">
+        <input type="text" name="q" placeholder="Tìm kiếm ngôn ngữ..." value="{{ q|default('') }}">
+        <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
+    </form>
 
     <!-- TABLE -->
     <div class="doc-table-card">
@@ -26,8 +31,8 @@
 
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Action</th>
+                    <th>Tên ngôn ngữ</th>
+                    <th>Thao tác</th>
                 </tr>
             </thead>
 
@@ -37,17 +42,19 @@
                     <tr>
                         <td>{{ l.name }}</td>
                         <td class="actions">
+                            <a href="/admin/languages/edit/{{ l.id }}" class="btn-edit">Sửa</a>
                             <a href="/admin/languages/delete/{{ l.id }}"
                                class="btn-delete"
-                               onclick="return confirm('Delete language?')">
-                               Delete
+                               onclick="return confirm('Xóa ngôn ngữ?')">
+                               Xóa
                             </a>
                         </td>
+
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="2">No data</td>
+                        <td colspan="2">Không có dữ liệu</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -55,7 +62,9 @@
         </table>
 
         <!-- PAGINATION -->
-        {% include "admin/components/pagination.html" %}
+        <div class="doc-pagination">
+            {% include "admin/components/pagination.html" %}
+        </div>
 
     </div>
 

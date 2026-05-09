@@ -19,9 +19,10 @@ def create_keyword(data):
     """
 
     result = neo4j_conn.query(cypher, {
-        "id": str(uuid.uuid4()),
+        "id": data.get("id"),
         "name": name.strip()
     })
+
 
     return result[0] if result else None
 
@@ -29,7 +30,18 @@ def create_keyword(data):
 # =========================
 # GET ALL KEYWORDS
 # =========================
-def get_all_keywords():
+def get_all_keywords(q=None):
+    if q:
+        cypher = """
+        MATCH (k:Keyword)
+        WHERE toLower(k.name) CONTAINS toLower($q)
+        RETURN 
+            k.id AS id, 
+            k.name AS name
+        ORDER BY k.name
+        """
+        return neo4j_conn.query(cypher, {"q": q})
+
     cypher = """
     MATCH (k:Keyword)
     RETURN 

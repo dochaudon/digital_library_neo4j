@@ -1,0 +1,36 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/metadata.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>🏢 Chỉnh Sửa Cơ Quan / Trường Học</h2>
+    
+    <form action="/admin/institutions/edit/{{ institution.id }}" method="POST" class="metadata-form">
+        <div class="form-group">
+            <label>ID Cơ quan</label>
+            <input type="text" name="id" value="{{ institution.id }}" readonly class="readonly">
+        </div>
+        <div class="form-group">
+            <label>Tên cơ quan / Trường học</label>
+            <input type="text" name="name" value="{{ institution.name }}" required placeholder="Nhập tên cơ quan...">
+        </div>
+        <div class="form-group">
+            <label>Loại tổ chức</label>
+            <select name="type">
+                <option value="publisher" {{ 'selected' if institution.type == 'publisher' }}>Nhà xuất bản (Publisher)</option>
+                <option value="university" {{ 'selected' if institution.type == 'university' }}>Trường đại học (University)</option>
+                <option value="research_center" {{ 'selected' if institution.type == 'research_center' }}>Viện nghiên cứu (Research Center)</option>
+                <option value="other" {{ 'selected' if institution.type == 'other' }}>Khác</option>
+            </select>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Cập nhật</button>
+            <a href="/admin/institutions" class="btn-cancel">Hủy bỏ</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

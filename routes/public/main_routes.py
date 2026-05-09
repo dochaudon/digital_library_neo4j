@@ -32,19 +32,37 @@ def home():
 # =========================
 @main.route("/search")
 def search():
-    query = (request.args.get("query") or "").strip()
-    page = int(request.args.get("page", 1))
-    sort = request.args.get("sort", "")
+    # Hàm làm sạch tham số (bóc tách các dấu ngoặc vuông lồng nhau)
+    def clean_param(val):
+        if not val: return ""
+        s = str(val).strip()
+        while (s.startswith('[') and s.endswith(']')) or (s.startswith("'") and s.endswith("'")) or (s.startswith('"') and s.endswith('"')):
+            if s.startswith('[') and s.endswith(']'): s = s[1:-1].strip()
+            elif s.startswith("'") and s.endswith("'"): s = s[1:-1].strip()
+            elif s.startswith('"') and s.endswith('"'): s = s[1:-1].strip()
+            else: break
+        return s
+
+    query_raw = request.args.get("query") or ""
+    query = clean_param(query_raw)
+    
+    page_raw = request.args.get("page", "1")
+    page = int(clean_param(page_raw) or 1)
+    
+    sort = clean_param(request.args.get("sort", ""))
 
     limit = 5
     skip = (page - 1) * limit
 
+    doc_types = request.args.getlist("doc_type")
+    cleaned_doc_types = [clean_param(t) for t in doc_types if clean_param(t)]
+
     filters = {
-        "doc_type": request.args.get("doc_type") or None,
-        "author": request.args.get("author") or None,
-        "subject": request.args.get("subject") or None,
-        "publisher": request.args.get("publisher") or None,
-        "university": request.args.get("university") or None,
+        "doc_type": cleaned_doc_types or None,
+        "author": clean_param(request.args.get("author")) or None,
+        "subject": clean_param(request.args.get("subject")) or None,
+        "publisher": clean_param(request.args.get("publisher")) or None,
+        "university": clean_param(request.args.get("university")) or None,
         "year": None,
     }
 
@@ -52,7 +70,10 @@ def search():
     if year_raw.isdigit():
         filters["year"] = int(year_raw)
 
-    results_all = search_documents(query=query, filters=filters, limit=100)
+    # Tạo bản sao của filters để search_documents có thể thêm các filter từ query (parse_query)
+    # mà không làm ảnh hưởng đến bộ lọc hiển thị trên giao diện (checkboxes)
+    search_filters = filters.copy() if filters else {}
+    results_all = search_documents(query=query, filters=search_filters, limit=100)
 
     # SORT
     if sort == "year_asc":
@@ -134,15 +155,6 @@ def documents_page():
 @main.route("/qa")
 def qa_page():
     return render_template("library/pages/qa/index.html")
-
-
-@main.route("/api/qa", methods=["POST"])
-def qa_api():
-    data = request.get_json() or {}
-    question = (data.get("question") or "").strip()
-
-    return jsonify(get_qa_response(question))
-
 
 # =========================
 # GRAPH API

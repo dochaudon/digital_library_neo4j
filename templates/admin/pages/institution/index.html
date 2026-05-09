@@ -11,14 +11,19 @@
     <!-- HEADER -->
     <div class="doc-header">
         <div>
-            <h2>🏢 Institutions</h2>
-            <p class="doc-count">Total: {{ institutions|length }} institutions</p>
+            <h2>🏢 Quản Lý Cơ Quan</h2>
         </div>
 
         <a href="/admin/institutions/create" class="btn-add">
-            ➕ Add
+            + Thêm Cơ Quan
         </a>
     </div>
+
+    <!-- SEARCH -->
+    <form action="" method="GET" class="doc-search">
+        <input type="text" name="q" placeholder="Tìm kiếm cơ quan..." value="{{ q|default('') }}">
+        <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
+    </form>
 
     <!-- TABLE -->
     <div class="doc-table-card">
@@ -26,9 +31,9 @@
 
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Action</th>
+                    <th>Tên cơ quan</th>
+                    <th>Loại</th>
+                    <th>Thao tác</th>
                 </tr>
             </thead>
 
@@ -41,17 +46,19 @@
                             {{ i.type or 'N/A' }}
                         </td>
                         <td class="actions">
+                            <a href="/admin/institutions/edit/{{ i.id }}" class="btn-edit">Sửa</a>
                             <a href="/admin/institutions/delete/{{ i.id }}"
                                class="btn-delete"
-                               onclick="return confirm('Delete institution?')">
-                               Delete
+                               onclick="return confirm('Xóa cơ quan?')">
+                               Xóa
                             </a>
                         </td>
+
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="3">No data</td>
+                        <td colspan="3">Không có dữ liệu</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -59,7 +66,9 @@
         </table>
 
         <!-- PAGINATION -->
-        {% include "admin/components/pagination.html" %}
+        <div class="doc-pagination">
+            {% include "admin/components/pagination.html" %}
+        </div>
 
     </div>
 

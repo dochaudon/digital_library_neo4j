@@ -165,14 +165,7 @@
     text-decoration: none;
 }
 
-/* SEARCH */
-.doc-search input {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    margin-bottom: 20px;
-}
+
 
 /* TABLE CARD */
 .doc-table-card {

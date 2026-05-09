@@ -16,28 +16,31 @@ from services.embedding_service import create_embedding, build_document_text
 # =========================
 # GET LIST (PAGINATION)
 # =========================
-def get_documents_service(page=1, limit=20, doc_type=None):
+def get_documents_service(page=1, limit=20, doc_type=None, q=None):
+    if doc_type and isinstance(doc_type, str):
+        doc_type = [doc_type]
+        
     skip = (page - 1) * limit
 
     if doc_type:
         return get_documents_by_type(doc_type, skip, limit)
 
-    return get_all_documents(skip, limit)
+    return get_all_documents(skip, limit, q)
 
 
 # =========================
 # COUNT
 # =========================
-def count_documents_service(doc_type=None):
+def count_documents_service(doc_type=None, q=None):
+    if doc_type and isinstance(doc_type, str):
+        doc_type = [doc_type]
+        
     if not doc_type:
-        return count_documents()
+        return count_documents(q)
 
     query = """
     MATCH (d)
-    WHERE
-        ($type = "Book" AND d:Book) OR
-        ($type = "Article" AND d:Article) OR
-        ($type = "Thesis" AND d:Thesis)
+    WHERE $type IS NULL OR ANY(label IN labels(d) WHERE label IN $type)
     RETURN count(d) AS total
     """
 
@@ -71,7 +74,7 @@ def get_related_documents_service(doc_id, limit=5):
 # CREATE DOCUMENT
 # =========================
 def create_document_service(data):
-    doc_id = str(uuid.uuid4())
+    doc_id = data.get("id")
     doc_type = data.get("type")
 
     if doc_type not in ["Book", "Article", "Thesis"]:
@@ -90,11 +93,14 @@ def create_document_service(data):
     CREATE (d:{label} {{
         id: $id,
         title: $title,
+        other_title: $other_title,
         year: $year,
         pages: $pages,
         abstract: $abstract,
         file_url: $file_url,
-        embedding: $embedding
+        image_url: $image_url,
+        embedding: $embedding,
+        created_at: datetime()
     }})
     RETURN d
     """
@@ -102,41 +108,100 @@ def create_document_service(data):
     params = {
         "id": doc_id,
         "title": data.get("title"),
-        "year": data.get("year"),
+        "other_title": data.get("other_title"),
+        "year": int(data.get("year")) if data.get("year") else None,
         "pages": data.get("pages"),
         "abstract": data.get("abstract"),
         "file_url": data.get("file_url"),
+        "image_url": data.get("image_url"),
         "embedding": embedding
     }
 
     neo4j_conn.query(query, params)
 
-    # AUTHOR
-    for name in data.get("authors", []):
-        neo4j_conn.query("""
-        MERGE (a:Author {name:$name})
-        WITH a
-        MATCH (d {id:$id})
-        MERGE (d)-[:HAS_AUTHOR]->(a)
-        """, {"name": name.strip(), "id": doc_id})
+    # AUTHORS WITH ROLES
+    authors = data.get("authors_json", [])
+    for auth in authors:
+        name = auth.get("name", "").strip()
+        role = auth.get("role", "author").strip()
+        if name:
+            neo4j_conn.query("""
+            MERGE (a:Author {name: $name})
+            WITH a
+            MATCH (d {id: $id})
+            MERGE (d)-[r:HAS_AUTHOR {role: $role}]->(a)
+            """, {"name": name, "id": doc_id, "role": role})
 
-    # SUBJECT
+    # INSTITUTIONS WITH ROLES
+    institutions = data.get("institutions_json", [])
+    for inst in institutions:
+        name = inst.get("name", "").strip()
+        role = inst.get("role", "other").strip()
+        if name:
+            # Map role to specific relation or use ASSOCIATED_WITH
+            rel_type = "ASSOCIATED_WITH"
+            if role == "publisher": rel_type = "PUBLISHED_BY"
+            elif role == "university": rel_type = "SUBMITTED_TO"
+
+            query = f"""
+            MERGE (i:Institution {{name: $name}})
+            WITH i
+            MATCH (d {{id: $id}})
+            MERGE (d)-[r:{rel_type}]->(i)
+            SET r.role = $role
+            """
+            neo4j_conn.query(query, {"name": name, "id": doc_id, "role": role})
+
+    # SUBJECTS
     for name in data.get("subjects", []):
-        neo4j_conn.query("""
-        MERGE (s:Subject {name:$name})
-        WITH s
-        MATCH (d {id:$id})
-        MERGE (d)-[:HAS_SUBJECT]->(s)
-        """, {"name": name.strip(), "id": doc_id})
+        if name.strip():
+            neo4j_conn.query("""
+            MERGE (s:Subject {name: $name})
+            WITH s
+            MATCH (d {id: $id})
+            MERGE (d)-[:HAS_SUBJECT]->(s)
+            """, {"name": name.strip(), "id": doc_id})
 
-    # KEYWORD
+    # KEYWORDS
     for name in data.get("keywords", []):
+        if name.strip():
+            neo4j_conn.query("""
+            MERGE (k:Keyword {name: $name})
+            WITH k
+            MATCH (d {id: $id})
+            MERGE (d)-[:HAS_KEYWORD]->(k)
+            """, {"name": name.strip(), "id": doc_id})
+
+    # CATEGORIES
+    for name in data.get("categories", []):
+        if name.strip():
+            neo4j_conn.query("""
+            MERGE (c:Category {name: $name})
+            WITH c
+            MATCH (d {id: $id})
+            MERGE (d)-[:IN_CATEGORY]->(c)
+            """, {"name": name.strip(), "id": doc_id})
+
+    # LANGUAGES
+    for name in data.get("languages", []):
+        if name.strip():
+            neo4j_conn.query("""
+            MERGE (l:Language {name: $name})
+            WITH l
+            MATCH (d {id: $id})
+            MERGE (d)-[:IN_LANGUAGE]->(l)
+            """, {"name": name.strip(), "id": doc_id})
+
+    # JOURNAL (For Article)
+    journal = data.get("journal", "").strip()
+    if journal:
         neo4j_conn.query("""
-        MERGE (k:Keyword {name:$name})
-        WITH k
-        MATCH (d {id:$id})
-        MERGE (d)-[:HAS_KEYWORD]->(k)
-        """, {"name": name.strip(), "id": doc_id})
+        MERGE (j:Journal {name: $name})
+        WITH j
+        MATCH (d {id: $id})
+        MERGE (d)-[:PUBLISHED_IN]->(j)
+        """, {"name": journal, "id": doc_id})
+
 
     return doc_id
 
@@ -153,58 +218,136 @@ def update_document_service(doc_id, data):
     )
     embedding = create_embedding(doc_text)
 
-    query = """
-    MATCH (d {id:$id})
-    SET 
-        d.title = $title,
-        d.year = $year,
-        d.pages = $pages,
-        d.abstract = $abstract,
-        d.file_url = $file_url,
-        d.embedding = $embedding
+    set_clauses = [
+        "d.title = $title",
+        "d.other_title = $other_title",
+        "d.year = $year",
+        "d.pages = $pages",
+        "d.abstract = $abstract",
+        "d.embedding = $embedding",
+        "d.updated_at = datetime()"
+    ]
+    
+    params = {
+        "id": doc_id,
+        "title": data.get("title"),
+        "other_title": data.get("other_title"),
+        "year": int(data.get("year")) if data.get("year") else None,
+        "pages": data.get("pages"),
+        "abstract": data.get("abstract"),
+        "embedding": embedding
+    }
+
+    if data.get("image_url"):
+        set_clauses.append("d.image_url = $image_url")
+        params["image_url"] = data.get("image_url")
+    
+    if data.get("file_url"):
+        set_clauses.append("d.file_url = $file_url")
+        params["file_url"] = data.get("file_url")
+
+    query = f"""
+    MATCH (d {{id: $id}})
+    REMOVE d:Book:Article:Thesis
+    WITH d
+    SET d:{data.get('type')}
+    SET {", ".join(set_clauses)}
     RETURN d
     """
 
-    neo4j_conn.query(query, {
-        "id": doc_id,
-        "title": data.get("title"),
-        "year": data.get("year"),
-        "pages": data.get("pages"),
-        "abstract": data.get("abstract"),
-        "file_url": data.get("file_url"),
-        "embedding": embedding
-    })
+    neo4j_conn.query(query, params)
 
-    # RESET RELATION
+
+    # RESET RELATIONS
     neo4j_conn.query("""
-    MATCH (d {id:$id})-[r:HAS_AUTHOR|HAS_SUBJECT|HAS_KEYWORD]->()
+    MATCH (d {id: $id})-[r:HAS_AUTHOR|HAS_SUBJECT|HAS_KEYWORD|IN_CATEGORY|IN_LANGUAGE|PUBLISHED_BY|SUBMITTED_TO|PUBLISHED_IN]->()
     DELETE r
     """, {"id": doc_id})
 
-    # RE-ADD
-    for name in data.get("authors", []):
-        neo4j_conn.query("""
-        MERGE (a:Author {name:$name})
-        WITH a
-        MATCH (d {id:$id})
-        MERGE (d)-[:HAS_AUTHOR]->(a)
-        """, {"name": name.strip(), "id": doc_id})
+    # RE-ADD ALL (Same logic as create)
+    # AUTHORS
+    authors = data.get("authors_json", [])
+    for auth in authors:
+        name = auth.get("name", "").strip()
+        role = auth.get("role", "author").strip()
+        if name:
+            neo4j_conn.query("""
+            MERGE (a:Author {name: $name})
+            WITH a
+            MATCH (d {id: $id})
+            MERGE (d)-[r:HAS_AUTHOR {role: $role}]->(a)
+            """, {"name": name, "id": doc_id, "role": role})
 
+    # INSTITUTIONS
+    institutions = data.get("institutions_json", [])
+    for inst in institutions:
+        name = inst.get("name", "").strip()
+        role = inst.get("role", "other").strip()
+        if name:
+            rel_type = "ASSOCIATED_WITH"
+            if role == "publisher": rel_type = "PUBLISHED_BY"
+            elif role == "university": rel_type = "SUBMITTED_TO"
+
+            query = f"""
+            MERGE (i:Institution {{name: $name}})
+            WITH i
+            MATCH (d {{id: $id}})
+            MERGE (d)-[r:{rel_type}]->(i)
+            SET r.role = $role
+            """
+            neo4j_conn.query(query, {"name": name, "id": doc_id, "role": role})
+
+    # SUBJECTS
     for name in data.get("subjects", []):
-        neo4j_conn.query("""
-        MERGE (s:Subject {name:$name})
-        WITH s
-        MATCH (d {id:$id})
-        MERGE (d)-[:HAS_SUBJECT]->(s)
-        """, {"name": name.strip(), "id": doc_id})
+        if name.strip():
+            neo4j_conn.query("""
+            MERGE (s:Subject {name: $name})
+            WITH s
+            MATCH (d {id: $id})
+            MERGE (d)-[:HAS_SUBJECT]->(s)
+            """, {"name": name.strip(), "id": doc_id})
 
+    # KEYWORDS
     for name in data.get("keywords", []):
+        if name.strip():
+            neo4j_conn.query("""
+            MERGE (k:Keyword {name: $name})
+            WITH k
+            MATCH (d {id: $id})
+            MERGE (d)-[:HAS_KEYWORD]->(k)
+            """, {"name": name.strip(), "id": doc_id})
+
+    # CATEGORIES
+    for name in data.get("categories", []):
+        if name.strip():
+            neo4j_conn.query("""
+            MERGE (c:Category {name: $name})
+            WITH c
+            MATCH (d {id: $id})
+            MERGE (d)-[:IN_CATEGORY]->(c)
+            """, {"name": name.strip(), "id": doc_id})
+
+    # LANGUAGES
+    for name in data.get("languages", []):
+        if name.strip():
+            neo4j_conn.query("""
+            MERGE (l:Language {name: $name})
+            WITH l
+            MATCH (d {id: $id})
+            MERGE (d)-[:IN_LANGUAGE]->(l)
+            """, {"name": name.strip(), "id": doc_id})
+
+    # JOURNAL (For Article)
+    journal = data.get("journal", "").strip()
+    if journal:
         neo4j_conn.query("""
-        MERGE (k:Keyword {name:$name})
-        WITH k
-        MATCH (d {id:$id})
-        MERGE (d)-[:HAS_KEYWORD]->(k)
-        """, {"name": name.strip(), "id": doc_id})
+        MERGE (j:Journal {name: $name})
+        WITH j
+        MATCH (d {id: $id})
+        MERGE (d)-[:PUBLISHED_IN]->(j)
+        """, {"name": journal, "id": doc_id})
+
+
 
     return True
 
@@ -214,7 +357,7 @@ def update_document_service(doc_id, data):
 # =========================
 def delete_document_service(doc_id):
     query = """
-    MATCH (d {id:$id})
+    MATCH (d {id: $id})
     DETACH DELETE d
     """
     return neo4j_conn.query(query, {"id": doc_id})
