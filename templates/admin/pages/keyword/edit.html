@@ -1,0 +1,27 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/metadata.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>🔑 Chỉnh Sửa Từ Khóa</h2>
+    
+    <form action="/admin/keywords/edit/{{ keyword.id }}" method="POST" class="metadata-form">
+        <div class="form-group">
+            <label>ID Từ khóa</label>
+            <input type="text" name="id" value="{{ keyword.id }}" readonly class="readonly">
+        </div>
+        <div class="form-group">
+            <label>Tên từ khóa</label>
+            <input type="text" name="name" value="{{ keyword.name }}" required placeholder="Nhập tên từ khóa...">
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Cập nhật</button>
+            <a href="/admin/keywords" class="btn-cancel">Hủy bỏ</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

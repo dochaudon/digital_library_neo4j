@@ -1,0 +1,27 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/metadata.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>📂 Chỉnh Sửa Thể Loại</h2>
+    
+    <form action="/admin/categories/edit/{{ category.id }}" method="POST" class="metadata-form">
+        <div class="form-group">
+            <label>ID Thể loại</label>
+            <input type="text" name="id" value="{{ category.id }}" readonly class="readonly">
+        </div>
+        <div class="form-group">
+            <label>Tên thể loại</label>
+            <input type="text" name="name" value="{{ category.name }}" required placeholder="Nhập tên thể loại...">
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Cập nhật</button>
+            <a href="/admin/categories" class="btn-cancel">Hủy bỏ</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

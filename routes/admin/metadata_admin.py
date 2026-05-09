@@ -25,22 +25,27 @@ def paginate(data, page, limit=10):
 @metadata_admin.route("/authors")
 def author_page():
     page = int(request.args.get("page", 1))
+    q = request.args.get("q", "")
+    authors, total_pages = paginate(get_authors_service(q), page)
+    return render_template("admin/pages/author/index.html", authors=authors, page=page, total_pages=total_pages, q=q)
 
-    authors, total_pages = paginate(get_authors_service(), page)
-
-    return render_template(
-        "admin/pages/author/index.html",
-        authors=authors,
-        page=page,
-        total_pages=total_pages
-    )
-
-
-@metadata_admin.route("/authors/create", methods=["POST"])
+@metadata_admin.route("/authors/create", methods=["GET", "POST"])
 def create_author():
-    create_author_service(request.form.to_dict())
-    return redirect("/admin/authors")
+    if request.method == "POST":
+        create_author_service(request.form.to_dict())
+        return redirect("/admin/authors")
+    
+    next_id = get_next_metadata_id("Author", "A")
+    return render_template("admin/pages/author/create.html", next_id=next_id)
 
+@metadata_admin.route("/authors/edit/<id>", methods=["GET", "POST"])
+def edit_author(id):
+    if request.method == "POST":
+        update_author_service(id, request.form.to_dict())
+        return redirect("/admin/authors")
+    
+    author = get_author_detail_service(id)
+    return render_template("admin/pages/author/edit.html", author=author)
 
 @metadata_admin.route("/authors/delete/<id>")
 def delete_author(id):
@@ -55,22 +60,27 @@ def delete_author(id):
 @metadata_admin.route("/subjects")
 def subject_page():
     page = int(request.args.get("page", 1))
+    q = request.args.get("q", "")
+    subjects, total_pages = paginate(get_subjects_service(q), page)
+    return render_template("admin/pages/subject/index.html", subjects=subjects, page=page, total_pages=total_pages, q=q)
 
-    subjects, total_pages = paginate(get_subjects_service(), page)
-
-    return render_template(
-        "admin/pages/subject/index.html",
-        subjects=subjects,
-        page=page,
-        total_pages=total_pages
-    )
-
-
-@metadata_admin.route("/subjects/create", methods=["POST"])
+@metadata_admin.route("/subjects/create", methods=["GET", "POST"])
 def create_subject():
-    create_subject_service(request.form.to_dict())
-    return redirect("/admin/subjects")
+    if request.method == "POST":
+        create_subject_service(request.form.to_dict())
+        return redirect("/admin/subjects")
+    
+    next_id = get_next_metadata_id("Subject", "S")
+    return render_template("admin/pages/subject/create.html", next_id=next_id)
 
+@metadata_admin.route("/subjects/edit/<id>", methods=["GET", "POST"])
+def edit_subject(id):
+    if request.method == "POST":
+        update_subject_service(id, request.form.to_dict())
+        return redirect("/admin/subjects")
+    
+    subject = get_subject_detail_service(id)
+    return render_template("admin/pages/subject/edit.html", subject=subject)
 
 @metadata_admin.route("/subjects/delete/<id>")
 def delete_subject(id):
@@ -85,22 +95,27 @@ def delete_subject(id):
 @metadata_admin.route("/keywords")
 def keyword_page():
     page = int(request.args.get("page", 1))
+    q = request.args.get("q", "")
+    keywords, total_pages = paginate(get_keywords_service(q), page)
+    return render_template("admin/pages/keyword/index.html", keywords=keywords, page=page, total_pages=total_pages, q=q)
 
-    keywords, total_pages = paginate(get_keywords_service(), page)
-
-    return render_template(
-        "admin/pages/keyword/index.html",
-        keywords=keywords,
-        page=page,
-        total_pages=total_pages
-    )
-
-
-@metadata_admin.route("/keywords/create", methods=["POST"])
+@metadata_admin.route("/keywords/create", methods=["GET", "POST"])
 def create_keyword():
-    create_keyword_service(request.form.to_dict())
-    return redirect("/admin/keywords")
+    if request.method == "POST":
+        create_keyword_service(request.form.to_dict())
+        return redirect("/admin/keywords")
+    
+    next_id = get_next_metadata_id("Keyword", "K")
+    return render_template("admin/pages/keyword/create.html", next_id=next_id)
 
+@metadata_admin.route("/keywords/edit/<id>", methods=["GET", "POST"])
+def edit_keyword(id):
+    if request.method == "POST":
+        update_keyword_service(id, request.form.to_dict())
+        return redirect("/admin/keywords")
+    
+    keyword = get_keyword_detail_service(id)
+    return render_template("admin/pages/keyword/edit.html", keyword=keyword)
 
 @metadata_admin.route("/keywords/delete/<id>")
 def delete_keyword(id):
@@ -115,22 +130,27 @@ def delete_keyword(id):
 @metadata_admin.route("/categories")
 def category_page():
     page = int(request.args.get("page", 1))
+    q = request.args.get("q", "")
+    categories, total_pages = paginate(get_categories_service(q), page)
+    return render_template("admin/pages/category/index.html", categories=categories, page=page, total_pages=total_pages, q=q)
 
-    categories, total_pages = paginate(get_categories_service(), page)
-
-    return render_template(
-        "admin/pages/category/index.html",
-        categories=categories,
-        page=page,
-        total_pages=total_pages
-    )
-
-
-@metadata_admin.route("/categories/create", methods=["POST"])
+@metadata_admin.route("/categories/create", methods=["GET", "POST"])
 def create_category():
-    create_category_service(request.form.to_dict())
-    return redirect("/admin/categories")
+    if request.method == "POST":
+        create_category_service(request.form.to_dict())
+        return redirect("/admin/categories")
+    
+    next_id = get_next_metadata_id("Category", "C")
+    return render_template("admin/pages/category/create.html", next_id=next_id)
 
+@metadata_admin.route("/categories/edit/<id>", methods=["GET", "POST"])
+def edit_category(id):
+    if request.method == "POST":
+        update_category_service(id, request.form.to_dict())
+        return redirect("/admin/categories")
+    
+    category = get_category_detail_service(id)
+    return render_template("admin/pages/category/edit.html", category=category)
 
 @metadata_admin.route("/categories/delete/<id>")
 def delete_category(id):
@@ -145,22 +165,27 @@ def delete_category(id):
 @metadata_admin.route("/institutions")
 def institution_page():
     page = int(request.args.get("page", 1))
+    q = request.args.get("q", "")
+    institutions, total_pages = paginate(get_institutions_service(q), page)
+    return render_template("admin/pages/institution/index.html", institutions=institutions, page=page, total_pages=total_pages, q=q)
 
-    institutions, total_pages = paginate(get_institutions_service(), page)
-
-    return render_template(
-        "admin/pages/institution/index.html",
-        institutions=institutions,
-        page=page,
-        total_pages=total_pages
-    )
-
-
-@metadata_admin.route("/institutions/create", methods=["POST"])
+@metadata_admin.route("/institutions/create", methods=["GET", "POST"])
 def create_institution():
-    create_institution_service(request.form.to_dict())
-    return redirect("/admin/institutions")
+    if request.method == "POST":
+        create_institution_service(request.form.to_dict())
+        return redirect("/admin/institutions")
+    
+    next_id = get_next_metadata_id("Institution", "I")
+    return render_template("admin/pages/institution/create.html", next_id=next_id)
 
+@metadata_admin.route("/institutions/edit/<id>", methods=["GET", "POST"])
+def edit_institution(id):
+    if request.method == "POST":
+        update_institution_service(id, request.form.to_dict())
+        return redirect("/admin/institutions")
+    
+    institution = get_institution_detail_service(id)
+    return render_template("admin/pages/institution/edit.html", institution=institution)
 
 @metadata_admin.route("/institutions/delete/<id>")
 def delete_institution(id):
@@ -175,22 +200,27 @@ def delete_institution(id):
 @metadata_admin.route("/languages")
 def language_page():
     page = int(request.args.get("page", 1))
+    q = request.args.get("q", "")
+    languages, total_pages = paginate(get_languages_service(q), page)
+    return render_template("admin/pages/language/index.html", languages=languages, page=page, total_pages=total_pages, q=q)
 
-    languages, total_pages = paginate(get_languages_service(), page)
-
-    return render_template(
-        "admin/pages/language/index.html",
-        languages=languages,
-        page=page,
-        total_pages=total_pages
-    )
-
-
-@metadata_admin.route("/languages/create", methods=["POST"])
+@metadata_admin.route("/languages/create", methods=["GET", "POST"])
 def create_language():
-    create_language_service(request.form.to_dict())
-    return redirect("/admin/languages")
+    if request.method == "POST":
+        create_language_service(request.form.to_dict())
+        return redirect("/admin/languages")
+    
+    next_id = get_next_metadata_id("Language", "L")
+    return render_template("admin/pages/language/create.html", next_id=next_id)
 
+@metadata_admin.route("/languages/edit/<id>", methods=["GET", "POST"])
+def edit_language(id):
+    if request.method == "POST":
+        update_language_service(id, request.form.to_dict())
+        return redirect("/admin/languages")
+    
+    language = get_language_detail_service(id)
+    return render_template("admin/pages/language/edit.html", language=language)
 
 @metadata_admin.route("/languages/delete/<id>")
 def delete_language(id):
@@ -205,25 +235,31 @@ def delete_language(id):
 @metadata_admin.route("/journals")
 def journal_page():
     page = int(request.args.get("page", 1))
+    q = request.args.get("q", "")
+    journals, total_pages = paginate(get_journals_service(q), page)
+    return render_template("admin/pages/journal/index.html", journals=journals, page=page, total_pages=total_pages, q=q)
 
-    journals, total_pages = paginate(get_journals_service(), page)
-
-    return render_template(
-        "admin/pages/journal/index.html",
-        journals=journals,
-        page=page,
-        total_pages=total_pages
-    )
-
-
-@metadata_admin.route("/journals/create", methods=["POST"])
+@metadata_admin.route("/journals/create", methods=["GET", "POST"])
 def create_journal():
-    create_journal_service(request.form.to_dict())
-    return redirect("/admin/journals")
+    if request.method == "POST":
+        create_journal_service(request.form.to_dict())
+        return redirect("/admin/journals")
+    
+    next_id = get_next_metadata_id("Journal", "J")
+    return render_template("admin/pages/journal/create.html", next_id=next_id)
 
+@metadata_admin.route("/journals/edit/<id>", methods=["GET", "POST"])
+def edit_journal(id):
+    if request.method == "POST":
+        update_journal_service(id, request.form.to_dict())
+        return redirect("/admin/journals")
+    
+    journal = get_journal_detail_service(id)
+    return render_template("admin/pages/journal/edit.html", journal=journal)
 
 @metadata_admin.route("/journals/delete/<id>")
 def delete_journal(id):
     delete_journal_service(id)
     return redirect("/admin/journals")
+
 

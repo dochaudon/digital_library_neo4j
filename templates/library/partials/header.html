@@ -11,19 +11,28 @@
         <div class="header-right">
 
             {% if session.get("user") %}
-
-                <!-- USER INFO -->
-                <span class="user-name">
-                    👤 {{ session.get("user")["username"] }}
-                </span>
-
-                <!-- ADMIN -->
-                {% if session.get("user")["role"] == "admin" %}
-                    <a href="/admin/documents" class="admin-link">⚙️ Admin</a>
-                {% endif %}
-
-                <!-- LOGOUT -->
-                <a href="{{ url_for('auth.logout') }}" class="auth-link">🚪 Đăng xuất</a>
+                <div class="user-menu-container">
+                    <div class="user-dropdown">
+                        <button class="dropdown-btn">
+                            👤 {{ session.get("user")["username"] }}
+                            <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i>
+                        </button>
+                        <div class="dropdown-content">
+                            {% if session.get("user")["role"] == "admin" %}
+                                <a href="/admin/documents">
+                                    <i class="fas fa-cog"></i> Quản trị hệ thống
+                                </a>
+                            {% endif %}
+                            <a href="/profile">
+                                <i class="fas fa-user-circle"></i> Trang cá nhân
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{{ url_for('auth.logout') }}" class="logout-item">
+                                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
             {% else %}
 

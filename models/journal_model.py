@@ -19,9 +19,10 @@ def create_journal(data):
     """
 
     result = neo4j_conn.query(cypher, {
-        "id": str(uuid.uuid4()),
+        "id": data.get("id"),
         "name": name.strip()
     })
+
 
     return result[0] if result else None
 
@@ -29,7 +30,18 @@ def create_journal(data):
 # =========================
 # GET ALL JOURNALS
 # =========================
-def get_all_journals():
+def get_all_journals(q=None):
+    if q:
+        cypher = """
+        MATCH (j:Journal)
+        WHERE toLower(j.name) CONTAINS toLower($q)
+        RETURN 
+            j.id AS id, 
+            j.name AS name
+        ORDER BY j.name
+        """
+        return neo4j_conn.query(cypher, {"q": q})
+
     cypher = """
     MATCH (j:Journal)
     RETURN 

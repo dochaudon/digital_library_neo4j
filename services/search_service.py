@@ -21,11 +21,30 @@ def normalize_doc(doc):
     doc["authors"] = doc.get("authors") or []
     return doc
 
-
+def search_title_index(query):
+    cypher = """
+    CALL db.index.fulltext.queryNodes("documentTitleIndex", $q)
+    YIELD node, score
+    RETURN
+        node.id AS id,
+        node.title AS title,
+        node.year AS year,
+        node.image_url AS image_url,
+        score
+    ORDER BY score DESC
+    LIMIT 5
+    """
+    return neo4j_conn.query(cypher, {"q": query})
 # =========================
 # FULLTEXT SEARCH
 # =========================
-def search_fulltext(query, limit=20):
+def search_fulltext(query, filters=None, limit=20):
+    filters = filters or {}
+    doc_type = filters.get("doc_type")
+    
+    # Normalize to list
+    if doc_type and isinstance(doc_type, str):
+        doc_type = [doc_type]
 
     if not query:
         return []
@@ -34,7 +53,8 @@ def search_fulltext(query, limit=20):
     CALL db.index.fulltext.queryNodes($index, $query)
     YIELD node, score
 
-    WHERE node:Book OR node:Article OR node:Thesis
+    WHERE (node:Book OR node:Article OR node:Thesis)
+    AND ($doc_type IS NULL OR ANY(label IN labels(node) WHERE label IN $doc_type))
 
     OPTIONAL MATCH (node)-[:HAS_AUTHOR]->(a:Author)
 
@@ -55,6 +75,7 @@ def search_fulltext(query, limit=20):
     results = neo4j_conn.query(cypher, {
         "index": FULLTEXT_INDEX,
         "query": query,
+        "doc_type": doc_type,
         "limit": limit
     })
 
@@ -64,14 +85,19 @@ def search_fulltext(query, limit=20):
 # =========================
 # GRAPH SEARCH
 # =========================
-def search_graph(filters, limit=20):
+def search_graph(filters, query="", limit=20):
 
     if not any(filters.values()):
         return []
 
+    # Normalize doc_type to list for Neo4j
+    if filters.get("doc_type") and isinstance(filters["doc_type"], str):
+        filters["doc_type"] = [filters["doc_type"]]
+
     cypher = """
     MATCH (d)
-    WHERE d:Book OR d:Article OR d:Thesis
+    WHERE (d:Book OR d:Article OR d:Thesis)
+    AND ($query = "" OR toLower(d.title) CONTAINS toLower($query))
 
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
@@ -82,9 +108,7 @@ def search_graph(filters, limit=20):
 
     WHERE
         ($doc_type IS NULL OR
-            ($doc_type = "Book" AND d:Book) OR
-            ($doc_type = "Article" AND d:Article) OR
-            ($doc_type = "Thesis" AND d:Thesis)
+            ANY(label IN labels(d) WHERE label IN $doc_type)
         )
 
         AND ($author IS NULL OR
@@ -110,6 +134,7 @@ def search_graph(filters, limit=20):
         'graph' AS source
 
     ORDER BY d.year DESC
+    SKIP $skip
     LIMIT $limit
     """
 
@@ -118,6 +143,8 @@ def search_graph(filters, limit=20):
         "author": filters.get("author"),
         "subject": filters.get("subject"),
         "year": filters.get("year"),
+        "query": query or "",
+        "skip": filters.get("skip", 0),
         "limit": limit
     })
 
@@ -131,14 +158,34 @@ def hybrid_search(query="", filters=None, limit=20):
 
     filters = filters or {}
 
-    results_fulltext = search_fulltext(query, limit)
-    results_graph = search_graph(filters, limit)
-    results_vector = vector_search(query, limit)
+    results_fulltext = search_fulltext(query, filters, limit)
+    
+    # Only call search_graph if we have specific filters or no query
+    # to avoid pulling all documents of a type into a keyword search
+    has_specific_filters = any(k for k in filters if k not in ["doc_type", "skip"] and filters[k])
+    
+    if has_specific_filters or not query:
+        results_graph = search_graph(filters, query, limit)
+    else:
+        results_graph = []
+        
+    results_vector = vector_search(query, filters=filters, limit=limit)
 
     merged = {}
+    
+    # Normalize fulltext scores
+    if results_fulltext:
+        max_ft = max((item.get("score") or 0) for item in results_fulltext)
+        if max_ft > 0:
+            for item in results_fulltext:
+                item["score"] = item["score"] / max_ft
+                
+    w1 = 0.6  # Trọng số cho Fulltext
+    w2 = 0.4  # Trọng số cho Vector
 
     # FULLTEXT
     for item in results_fulltext:
+        item["score"] = item["score"] * w1
         merged[item["id"]] = normalize_doc(item)
 
     # GRAPH
@@ -146,17 +193,20 @@ def hybrid_search(query="", filters=None, limit=20):
         item = normalize_doc(item)
 
         if item["id"] in merged:
-            merged[item["id"]]["score"] += 1
+            merged[item["id"]]["score"] += 0.1 # Boost nhỏ cho graph match
         else:
+            item["score"] = 0.1
             merged[item["id"]] = item
 
     # VECTOR
     for item in results_vector:
         item = normalize_doc(item)
+        weighted_score = (item.get("score") or 0) * w2
 
         if item["id"] in merged:
-            merged[item["id"]]["score"] += item["score"] * 2
+            merged[item["id"]]["score"] += weighted_score
         else:
+            item["score"] = weighted_score
             merged[item["id"]] = item
 
     results = list(merged.values())
@@ -166,22 +216,65 @@ def hybrid_search(query="", filters=None, limit=20):
 
 
 # =========================
-# MAIN SEARCH
+# MAIN SEARCH PIPELINE
 # =========================
 def search_documents(query="", filters=None, limit=20):
 
     filters = filters or {}
 
+    # Làm sạch query để tránh lỗi Lucene (loại bỏ các ký tự đặc biệt có thể gây crash)
+    query = re.sub(r'[\[\]\{\}\(\)\^\~\*\?\:\\\/\'\"]', ' ', query).strip()
+
     parsed_query, parsed_filters = parse_query(query)
     filters.update(parsed_filters)
 
+    # Import inline để tránh circular import với qa_service
+    from services.qa_service import detect_intent, extract_title
+
+    intent = detect_intent(query)
+    title = extract_title(query)
+
+    # 1. STRONG QA INTENT
+    if intent != "search":
+        print(f"🚀 [Pipeline] Strong QA Intent detected. Title Search for: {title}")
+        results = search_title_index(title)
+        if results:
+            return [normalize_doc(r) for r in results]
+
+    # 2. WEAK QA INTENT (Check nếu extract_title đã cắt gọt được query)
+    if title and title != query and len(title) > 3:
+        print(f"🚀 [Pipeline] Weak QA Intent. Trying Title Search for: {title}")
+        results = search_title_index(title)
+        if results:
+            return [normalize_doc(r) for r in results]
+
+    # 3. HYBRID SEARCH
+    print("🚀 [Pipeline] Hybrid Search")
     results = hybrid_search(parsed_query, filters, limit)
 
+    # 4. FALLBACK 1: Hybrid without OTHER filters, but MUST keep doc_type
+    if not results and any(filters.values()):
+        print("⚠️ No results found with strict filters.")
+        # Optional: you could try removing other filters but keeping doc_type
+    # 5. FALLBACK 2: Only Fulltext
     if not results:
-        results = hybrid_search(parsed_query, {}, limit)
+        print("⚠️ Fallback to Only Fulltext")
+        results = search_fulltext(parsed_query, filters, limit)
 
+    # 6. FALLBACK 3: Only Vector
     if not results:
-        results = hybrid_search("", {}, limit)
+        print("⚠️ Fallback to Only Vector")
+        results = vector_search(parsed_query, filters, limit)
+
+    # 7. FALLBACK 4: Only Graph
+    if not results:
+        print("⚠️ Fallback to Only Graph")
+        results = search_graph(filters, limit)
+
+    # 8. ANTI-FAIL
+    if not results:
+        print("⚠️ Fallback to Latest Documents (Anti-fail)")
+        results = get_latest_documents(limit)
 
     return results
 
@@ -257,8 +350,11 @@ def parse_query(query):
 # STRICT SEARCH (CHÍNH)
 # =========================
 def strict_search(query="", filters=None, limit=20):
-
     filters = filters or {}
+
+    # Normalize doc_type to list for Neo4j
+    if filters.get("doc_type") and isinstance(filters["doc_type"], str):
+        filters["doc_type"] = [filters["doc_type"]]
 
     cypher = """
     MATCH (d)
@@ -277,9 +373,7 @@ def strict_search(query="", filters=None, limit=20):
         ($query IS NULL OR toLower(d.title) CONTAINS toLower($query))
 
         AND ($doc_type IS NULL OR
-            ($doc_type = "Book" AND d:Book) OR
-            ($doc_type = "Article" AND d:Article) OR
-            ($doc_type = "Thesis" AND d:Thesis)
+            ANY(label IN labels(d) WHERE label IN $doc_type)
         )
 
         AND ($year IS NULL OR d.year = $year)
@@ -316,6 +410,7 @@ def strict_search(query="", filters=None, limit=20):
         1 AS score
 
     ORDER BY d.year DESC
+    SKIP $skip
     LIMIT $limit
     """
 
@@ -328,6 +423,7 @@ def strict_search(query="", filters=None, limit=20):
         "keyword": filters.get("keyword"),
         "language": filters.get("language"),
         "institution": filters.get("institution"),
+        "skip": filters.get("skip", 0),
         "limit": limit
     })
 # =========================

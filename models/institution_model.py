@@ -21,10 +21,11 @@ def create_institution(data):
     """
 
     result = neo4j_conn.query(cypher, {
-        "id": str(uuid.uuid4()),
+        "id": data.get("id"),
         "name": name.strip(),
         "type": inst_type.strip()
     })
+
 
     return result[0] if result else None
 
@@ -32,12 +33,24 @@ def create_institution(data):
 # =========================
 # GET ALL INSTITUTIONS
 # =========================
-def get_all_institutions():
+def get_all_institutions(q=None):
+    if q:
+        cypher = """
+        MATCH (i:Institution)
+        WHERE toLower(i.name) CONTAINS toLower($q) OR toLower(i.type) CONTAINS toLower($q)
+        RETURN 
+            i.id AS id, 
+            i.name AS name,
+            i.type AS type
+        ORDER BY i.name
+        """
+        return neo4j_conn.query(cypher, {"q": q})
+
     cypher = """
     MATCH (i:Institution)
     RETURN 
         i.id AS id, 
-        i.name AS name, 
+        i.name AS name,
         i.type AS type
     ORDER BY i.name
     """

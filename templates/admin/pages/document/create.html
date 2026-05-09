@@ -1,0 +1,206 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/document/form.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/pages/document/form.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<section class="document-form-page">
+
+    <div class="form-header">
+        <h2 class="form-title">➕ Thêm Tài Liệu Mới</h2>
+        <a href="/admin/documents" class="cancel-btn" style="padding: 8px 15px; font-size: 14px;">Quay lại</a>
+    </div>
+
+    <!-- CHỌN LOẠI -->
+    <div class="form-switch">
+        <button class="type-btn active" data-type="book">Sách (Book)</button>
+        <button class="type-btn" data-type="article">Bài báo (Article)</button>
+        <button class="type-btn" data-type="thesis">Luận văn (Thesis)</button>
+    </div>
+
+    <form id="main-doc-form" action="/admin/documents/create" method="POST" enctype="multipart/form-data" class="doc-form">
+        
+        <input type="hidden" name="type" id="doc-type" value="Book">
+        <input type="hidden" name="authors_json" id="authors-json-hidden">
+        <input type="hidden" name="institutions_json" id="institutions-json-hidden">
+        <input type="hidden" name="subjects" id="subjects-hidden">
+        <input type="hidden" name="keywords" id="keywords-hidden">
+        <input type="hidden" name="categories" id="categories-hidden">
+        <input type="hidden" name="languages" id="languages-hidden">
+
+        <!-- THÔNG TIN CƠ BẢN -->
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-info-circle"></i> Thông tin cơ bản</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>ID Tài liệu (Tự động)</label>
+                    <input type="text" name="id" value="{{ next_id }}" readonly class="readonly">
+                </div>
+                <div class="form-group">
+                    <label>Năm xuất bản</label>
+                    <input type="number" name="year" placeholder="VD: 2024">
+                </div>
+                <div class="form-group full-width">
+                    <label>Tên tài liệu / Nhan đề chính *</label>
+                    <input type="text" name="title" required placeholder="Nhập tên tài liệu...">
+                </div>
+                <div class="form-group full-width">
+                    <label>Nhan đề khác / Phụ đề</label>
+                    <input type="text" name="other_title" placeholder="Nhập nhan đề khác nếu có...">
+                </div>
+                <div class="form-group">
+                    <label>Số trang</label>
+                    <input type="text" name="pages" placeholder="VD: 250">
+                </div>
+                <div class="form-group hidden" id="group-journal">
+                    <label>Tên Tạp chí / Journal</label>
+                    <input type="text" name="journal" list="journal-datalist" placeholder="Chọn hoặc nhập mới...">
+                </div>
+            </div>
+        </div>
+
+        <!-- TÁC GIẢ -->
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-users"></i> Tác giả & Trách nhiệm</div>
+            <div class="dynamic-container" id="author-list">
+                <div class="dynamic-row author-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên tác giả</label>
+                        <input type="text" class="auth-name" placeholder="Tên tác giả" list="author-datalist">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <select class="auth-role">
+                            <option value="author">Tác giả chính</option>
+                            <option value="contributor">Đồng tác giả</option>
+                            <option value="supervisor">Giảng viên hướng dẫn</option>
+                        </select>
+                    </div>
+                    <div style="padding-bottom: 12px;"></div>
+                </div>
+            </div>
+            <button type="button" class="add-row-btn" id="add-author-btn"><i class="fas fa-plus"></i> Thêm tác giả</button>
+        </div>
+
+        <!-- CƠ QUAN / TRƯỜNG / NXB -->
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-university"></i> Cơ quan / Trường học / Nhà xuất bản</div>
+            <div class="dynamic-container" id="inst-list">
+                <div class="dynamic-row inst-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên cơ quan / Trường</label>
+                        <input type="text" class="inst-name" placeholder="Tên cơ quan hoặc trường học" list="institution-datalist">
+                    </div>
+                    <div class="form-group">
+                        <label>Loại / Vai trò</label>
+                        <select class="inst-role">
+                            <option value="publisher">Nhà xuất bản</option>
+                            <option value="university">Trường đại học</option>
+                            <option value="research_center">Viện nghiên cứu</option>
+                            <option value="other">Khác</option>
+                        </select>
+                    </div>
+                    <div style="padding-bottom: 12px;"></div>
+                </div>
+            </div>
+            <button type="button" class="add-row-btn" id="add-inst-btn"><i class="fas fa-plus"></i> Thêm cơ quan</button>
+        </div>
+
+
+        <!-- PHÂN LOẠI & MÔ TẢ -->
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-tags"></i> Phân loại & Metadata</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Chủ đề (Cách nhau bằng dấu phẩy)</label>
+                    <input type="text" id="subjects-input" placeholder="VD: Công nghệ, Lịch sử..." list="subject-datalist">
+                </div>
+                <div class="form-group">
+                    <label>Từ khóa (Cách nhau bằng dấu phẩy)</label>
+                    <input type="text" id="keywords-input" placeholder="VD: AI, ML, Data..." list="keyword-datalist">
+                </div>
+                <div class="form-group">
+                    <label>Danh mục / Category</label>
+                    <input type="text" id="categories-input" placeholder="VD: Giáo trình, Sách tham khảo..." list="category-datalist">
+                </div>
+                <div class="form-group">
+                    <label>Ngôn ngữ</label>
+                    <input type="text" id="languages-input" placeholder="VD: Tiếng Việt, Tiếng Anh..." list="language-datalist">
+                </div>
+                <div class="form-group full-width">
+                    <label>Tóm tắt nội dung (Abstract)</label>
+                    <textarea name="abstract" placeholder="Nhập tóm tắt ngắn gọn nội dung tài liệu..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILE & IMAGE -->
+        <div class="form-section">
+            <div class="section-title"><i class="fas fa-file-upload"></i> Tệp tin & Hình ảnh</div>
+            <div class="upload-container">
+                <div class="upload-box" onclick="document.getElementById('image-input').click()">
+                    <i class="fas fa-image"></i>
+                    <span>Tải ảnh bìa (JPG, PNG)</span>
+                    <input type="file" name="image_file" id="image-input" class="hidden" accept="image/*">
+                    <img id="image-preview" class="preview-img">
+                </div>
+                <div class="upload-box" onclick="document.getElementById('file-input').click()">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Tải tệp tài liệu (PDF, DOC)</span>
+                    <input type="file" name="doc_file" id="file-input" class="hidden" accept=".pdf,.doc,.docx">
+                    <div id="file-info" style="margin-top: 10px; font-size: 12px; color: #3b82f6;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="form-footer">
+            <a href="/admin/documents" class="cancel-btn">Hủy bỏ</a>
+            <button type="submit" class="submit-btn"><span id="submit-text">Lưu Sách</span></button>
+        </div>
+
+    </form>
+</section>
+
+<!-- DATALISTS FOR AUTOCOMPLETE -->
+<datalist id="author-datalist">
+    {% for item in metadata.authors %}<option value="{{ item }}">{% endfor %}
+</datalist>
+<datalist id="subject-datalist">
+    {% for item in metadata.subjects %}<option value="{{ item }}">{% endfor %}
+</datalist>
+<datalist id="keyword-datalist">
+    {% for item in metadata.keywords %}<option value="{{ item }}">{% endfor %}
+</datalist>
+<datalist id="category-datalist">
+    {% for item in metadata.categories %}<option value="{{ item }}">{% endfor %}
+</datalist>
+<datalist id="language-datalist">
+    {% for item in metadata.languages %}<option value="{{ item }}">{% endfor %}
+</datalist>
+<datalist id="institution-datalist">
+    {% for item in metadata.institutions %}<option value="{{ item.name }}">{% endfor %}
+</datalist>
+<datalist id="publisher-datalist">
+    {% for item in metadata.publishers %}<option value="{{ item.name }}">{% endfor %}
+</datalist>
+<datalist id="university-datalist">
+    {% for item in metadata.universities %}<option value="{{ item.name }}">{% endfor %}
+</datalist>
+<datalist id="journal-datalist">
+    {% for item in metadata.journals %}<option value="{{ item }}">{% endfor %}
+</datalist>
+
+<script>
+    document.getElementById('file-input').addEventListener('change', function() {
+        if (this.files[0]) {
+            document.getElementById('file-info').textContent = 'Đã chọn: ' + this.files[0].name;
+        }
+    });
+</script>
+{% endblock %}

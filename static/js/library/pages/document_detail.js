@@ -70,12 +70,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const container = document.getElementById("graph-network");
 
-    const nodes = new vis.DataSet(
-        graphData.nodes.map(n => ({
+    const centerId = graphData.center_id;
+    const radius = 180;
+    const nodeCount = graphData.nodes.length;
+
+    const mappedNodes = graphData.nodes.map((n, index) => {
+        const group = n.group?.toLowerCase();
+
+        // OCD-friendly circular initialization
+        let x = 0;
+        let y = 0;
+        let fixed = false;
+
+        if (n.id === centerId) {
+            x = 0;
+            y = 0;
+            fixed = { x: true, y: true };
+        } else {
+            // Space items evenly around center
+            const angle = (2 * Math.PI * (index - 1)) / (nodeCount - 1);
+            x = radius * Math.cos(angle);
+            y = radius * Math.sin(angle);
+        }
+
+        return {
             ...n,
+            group,
+            x,
+            y,
+            fixed,
             label: formatLabel(n.label)
-        }))
-    );
+        };
+    });
+
+    const nodes = new vis.DataSet(mappedNodes);
 
     const edges = new vis.DataSet(graphData.edges);
 
@@ -85,52 +113,64 @@ document.addEventListener("DOMContentLoaded", function () {
 
         nodes: {
             shape: "dot",
-            size: 18,
-
-            widthConstraint: {
-                maximum: 120
-            },
-
+            size: 20,
             font: {
-                size: 13,
-                color: "#111",
-                vadjust: 30,
-                multi: "html"
+                size: 14,
+                color: "#333",
+                vadjust: 35,
+                multi: "html",
+                bold: { color: "#000" }
             },
-
-            borderWidth: 2
+            borderWidth: 2,
+            shadow: {
+                enabled: true,
+                color: "rgba(0,0,0,0.2)",
+                size: 10,
+                x: 3,
+                y: 3
+            },
+            scaling: {
+                label: { enabled: true, min: 14, max: 20 }
+            }
         },
 
         edges: {
-            width: 1.5,
-            color: "#aaa",
-            smooth: false   // ✅ thẳng luôn
+            width: 2,
+            color: { color: "#cbd5e1", hover: "#64748b", highlight: "#2563eb" },
+            smooth: { type: "continuous", roundness: 0.5 },
+            arrows: { to: { enabled: false } }
         },
 
         groups: {
-            book: { shape: "dot", size: 22, color: "#2563eb" },
-            article: { shape: "dot", size: 22, color: "#16a34a" },
-            thesis: { shape: "dot", size: 24, color: "#9333ea" },
-            author: { shape: "dot", size: 18, color: "#22c55e" },
-            subject: { shape: "diamond", size: 20, color: "#f59e0b" },
-            keyword: { shape: "star", size: 20, color: "#ec4899" },
-            publisher: { shape: "hexagon", size: 20, color: "#0ea5e9" }
+            book: { shape: "dot", color: { background: "#2563eb", border: "#1e40af" } },
+            article: { shape: "square", color: { background: "#10b981", border: "#059669" } },
+            thesis: { shape: "triangle", color: { background: "#8b5cf6", border: "#7c3aed" } },
+            author: { shape: "dot", color: { background: "#fbbf24", border: "#d97706" } },
+            subject: { shape: "diamond", color: { background: "#f97316", border: "#ea580c" } },
+            keyword: { shape: "star", color: { background: "#ec4899", border: "#be185d" } },
+            publisher: { shape: "hexagon", color: { background: "#06b6d4", border: "#0891b2" } }
         },
 
         physics: {
+            enabled: true,
             solver: "forceAtlas2Based",
             forceAtlas2Based: {
-                gravitationalConstant: -50,
-                springLength: 120,
-                springConstant: 0.08
+                gravitationalConstant: -100,
+                springLength: 150,
+                springConstant: 0.05,
+                damping: 0.4
             },
             stabilization: {
-                iterations: 200
+                iterations: 150,
+                updateInterval: 25
             }
         },
 
         interaction: {
-            hover: true
+            hover: true,
+            tooltipDelay: 200,
+            zoomView: true,
+            dragNodes: true
         }
     };
 

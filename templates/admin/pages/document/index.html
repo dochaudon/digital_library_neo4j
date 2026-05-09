@@ -12,7 +12,6 @@
     <div class="doc-header">
         <div>
             <h2>📚 Quản Lý Tài Liệu</h2>
-            <p class="doc-count">Tổng số: {{ documents|length }} tài liệu</p>
         </div>
 
         <a href="/admin/documents/create" class="btn-add">
@@ -21,9 +20,10 @@
     </div>
 
     <!-- SEARCH -->
-    <div class="doc-search">
-        <input type="text" placeholder="Tìm kiếm tài liệu..." id="searchInput">
-    </div>
+    <form action="" method="GET" class="doc-search">
+        <input type="text" name="q" placeholder="Tìm kiếm tài liệu..." value="{{ q|default('') }}">
+        <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
+    </form>
 
     <!-- TABLE -->
     <div class="doc-table-card">

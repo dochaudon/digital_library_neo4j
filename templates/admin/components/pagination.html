@@ -2,7 +2,7 @@
 
     <!-- PREV -->
     {% if page > 1 %}
-        <a href="?query={{ query|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ page - 1 }}" class="page-btn">«</a>
+        <a href="?query={{ query|default('') }}&q={{ q|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ page - 1 }}" class="page-btn">«</a>
     {% else %}
         <span class="page-btn disabled">«</span>
     {% endif %}
@@ -14,7 +14,7 @@
             <span class="page-btn active">{{ p }}</span>
 
         {% elif p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
-            <a href="?query={{ query|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ p }}" class="page-btn">{{ p }}</a>
+            <a href="?query={{ query|default('') }}&q={{ q|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ p }}" class="page-btn">{{ p }}</a>
 
         {% elif p == 3 and page > 4 %}
             <span class="dots">...</span>
@@ -27,7 +27,7 @@
 
     <!-- NEXT -->
     {% if page < total_pages %}
-        <a href="?query={{ query|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ page + 1 }}" class="page-btn">»</a>
+        <a href="?query={{ query|default('') }}&q={{ q|default('') }}&mode={{ mode|default('') }}&sort={{ sort|default('') }}&page={{ page + 1 }}" class="page-btn">»</a>
     {% else %}
         <span class="page-btn disabled">»</span>
     {% endif %}

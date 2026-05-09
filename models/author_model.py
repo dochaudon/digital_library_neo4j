@@ -19,9 +19,10 @@ def create_author(data):
     """
 
     result = neo4j_conn.query(cypher, {
-        "id": str(uuid.uuid4()),
+        "id": data.get("id"),
         "name": name.strip()
     })
+
 
     return result[0] if result else None
 
@@ -29,7 +30,18 @@ def create_author(data):
 # =========================
 # GET ALL AUTHORS
 # =========================
-def get_all_authors():
+def get_all_authors(q=None):
+    if q:
+        cypher = """
+        MATCH (a:Author)
+        WHERE toLower(a.name) CONTAINS toLower($q)
+        RETURN 
+            a.id AS id, 
+            a.name AS name
+        ORDER BY a.name
+        """
+        return neo4j_conn.query(cypher, {"q": q})
+        
     cypher = """
     MATCH (a:Author)
     RETURN 

@@ -34,6 +34,7 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
+    align-self: start;
 }
 
 .pdf-image {
@@ -162,13 +163,21 @@
     position: absolute;
     top: 10px;
     left: 10px;
-    background: white;
-    padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 12px 15px;
+    border-radius: 12px;
+    font-size: 13px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     z-index: 10;
-    min-width: 130px;
+    min-width: 150px;
+    transition: transform 0.3s ease;
+}
+
+.graph-legend:hover {
+    transform: translateY(-5px);
 }
 
 .graph-legend div {
@@ -200,10 +209,8 @@
 }
 
 /* meta */
-.lightgreen {
-    background: #22c55e;
-    border-radius: 50%;
-}
+.lightgreen { background: #22c55e; }
+.yellow { background: #fbbf24; }
 
 .orange {
     background: #f59e0b;
@@ -220,14 +227,30 @@
     );
 }
 
-.cyan {
-    background: #0ea5e9;
+.cyan { background: #0ea5e9; }
+
+/* SHAPE HELPERS */
+.circle { border-radius: 50%; }
+.square { border-radius: 0; }
+.diamond { transform: rotate(45deg); }
+.hexagon {
     clip-path: polygon(
         25% 0%, 75% 0%,
         100% 50%,
         75% 100%, 25% 100%,
         0% 50%
     );
+}
+.star {
+    clip-path: polygon(
+        50% 0%, 61% 35%, 98% 35%,
+        68% 57%, 79% 91%,
+        50% 70%, 21% 91%,
+        32% 57%, 2% 35%, 39% 35%
+    );
+}
+.triangle {
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
 }
 
 /* ================= NOTE ================= */
@@ -253,19 +276,25 @@
     position: fixed;
     top: 100px;
     right: 20px;
-    width: 300px;
+    width: 320px;
 
-    background: white;
-    border-radius: 10px;
-    border: 1px solid #ddd;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
 
     z-index: 9999;
-
-    /* 🔥 tránh che toàn màn hình */
-    max-height: 400px;
+    max-height: 450px;
     overflow: hidden;
+    animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 /* Ẩn popup */

@@ -9,7 +9,10 @@ document.addEventListener("DOMContentLoaded", function () {
         loginForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
-            console.log("Login submit");
+            const submitBtn = loginForm.querySelector("button[type='submit']");
+            const originalText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Đang đăng nhập...";
 
             const data = {
                 email: document.getElementById("email").value,
@@ -17,28 +20,31 @@ document.addEventListener("DOMContentLoaded", function () {
             };
 
             try {
-                const res = await fetch("/auth/login", {
+                const res = await fetch("/auth/api/login", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify(data)
                 });
 
                 const result = await res.json();
-                console.log("Login result:", result);
 
                 if (result.token) {
-                    alert("Đăng nhập thành công!");
                     window.location.href = "/";
                 } else {
                     alert(result.error || "Đăng nhập thất bại");
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
                 }
 
             } catch (err) {
                 console.error("Login error:", err);
                 alert("Lỗi kết nối server");
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
             }
         });
     }
+
 
     // ===== REGISTER =====
     const registerForm = document.getElementById("registerForm");
@@ -64,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
             };
 
             try {
-                const res = await fetch("/auth/register", {
+                const res = await fetch("/auth/api/register", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify(data)
@@ -75,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (result.message) {
                     alert("Đăng ký thành công!");
-                    window.location.href = "/auth/login-page";
+                    window.location.href = "/auth/login";
                 } else {
                     alert(result.error || "Đăng ký thất bại");
                 }
@@ -84,6 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Register error:", err);
                 alert("Lỗi kết nối server");
             }
+
         });
     }
 

@@ -4,6 +4,7 @@
     color: white;
     text-align: center;
     padding: 60px 0;
+    margin-bottom: 40px;
 }
 
 /* ===== SEARCH ===== */
@@ -139,6 +140,28 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
+}
+
+/* ===== VIEW ALL BUTTON ===== */
+.view-all-container {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.view-all-btn {
+    display: inline-block;
+    padding: 10px 24px;
+    background: #eef2f7;
+    color: #1d4ed8;
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.view-all-btn:hover {
+    background: #dbeafe;
+    color: #0d3b66;
 }
 
 /* ===== CARD (NEW) ===== */

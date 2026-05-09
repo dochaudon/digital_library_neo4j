@@ -19,9 +19,10 @@ def create_language(data):
     """
 
     result = neo4j_conn.query(cypher, {
-        "id": str(uuid.uuid4()),
+        "id": data.get("id"),
         "name": name.strip()
     })
+
 
     return result[0] if result else None
 
@@ -29,7 +30,18 @@ def create_language(data):
 # =========================
 # GET ALL LANGUAGES
 # =========================
-def get_all_languages():
+def get_all_languages(q=None):
+    if q:
+        cypher = """
+        MATCH (l:Language)
+        WHERE toLower(l.name) CONTAINS toLower($q)
+        RETURN 
+            l.id AS id, 
+            l.name AS name
+        ORDER BY l.name
+        """
+        return neo4j_conn.query(cypher, {"q": q})
+
     cypher = """
     MATCH (l:Language)
     RETURN 

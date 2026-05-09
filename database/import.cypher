@@ -178,24 +178,13 @@ CREATE CONSTRAINT user_email_unique IF NOT EXISTS
 FOR (u:User)
 REQUIRE u.email IS UNIQUE;
 
-CREATE (u:User {
-id: "user_admin_001",
-username: "admin",
-email: "admin@gmail.com",
-password: "123456",
-role: "admin",
-status: "active",
-created_at: datetime()
-});
-
 // =========================
 // 12. INDEX FULLTEXT (SEARCH)
 // =========================
-CALL db.index.fulltext.createNodeIndex(
-    "documentSearchIndex",
-    ["Document"],
-    ["title", "abstract"]
-);
+CREATE FULLTEXT INDEX documentTitleIndex
+FOR (n:Book|Article|Thesis)
+ON EACH [n.title];
+
 CREATE FULLTEXT INDEX documentSearchIndex
 FOR (n:Document)
 ON EACH [n.title, n.abstract]

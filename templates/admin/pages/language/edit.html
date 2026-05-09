@@ -1,0 +1,27 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/metadata.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>🌐 Chỉnh Sửa Ngôn Ngữ</h2>
+    
+    <form action="/admin/languages/edit/{{ language.id }}" method="POST" class="metadata-form">
+        <div class="form-group">
+            <label>ID Ngôn ngữ</label>
+            <input type="text" name="id" value="{{ language.id }}" readonly class="readonly">
+        </div>
+        <div class="form-group">
+            <label>Tên ngôn ngữ</label>
+            <input type="text" name="name" value="{{ language.name }}" required placeholder="Nhập tên ngôn ngữ...">
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Cập nhật</button>
+            <a href="/admin/languages" class="btn-cancel">Hủy bỏ</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

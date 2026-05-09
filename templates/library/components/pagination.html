@@ -1,46 +1,46 @@
 <div class="pagination">
 
-    {% set qs = request.args.to_dict() %}
+    {# 
+       Hàm build_qs giúp tạo query string an toàn, 
+       không bị lỗi bọc ngoặc vuông [ ] khi có nhiều tham số.
+    #}
+    {% set query_params = [] %}
+    {% for k, values in request.args.to_dict(flat=False).items() %}
+        {% if k != 'page' %}
+            {% for v in values %}
+                {% if v %}
+                    {% set _ = query_params.append(k ~ '=' ~ v | urlencode) %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+    {% set base_qs = query_params | join('&') %}
 
     <!-- PREV -->
     {% if page > 1 %}
-        {% set _ = qs.update({'page': page-1}) %}
-        <a href="?{{ qs | urlencode }}" class="page-btn">«</a>
+    <a href="?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ page - 1 }}" class="page-btn">«</a>
     {% else %}
-        <span class="page-btn disabled">«</span>
+    <span class="page-btn disabled">«</span>
     {% endif %}
 
-    <!-- PAGE NUMBERS -->
+    <!-- NUMBERS -->
     {% for p in range(1, total_pages + 1) %}
-
         {% if p == page %}
             <span class="page-btn active">{{ p }}</span>
-
-        {% elif p <= 2 or p > total_pages - 2 or (p >= page-1 and p <= page+1) %}
-
-            {% set qs_page = request.args.to_dict() %}
-            {% set _ = qs_page.update({'page': p}) %}
-
-            <a href="?{{ qs_page | urlencode }}" class="page-btn">
+        {% elif p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+            <a href="?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ p }}" class="page-btn">
                 {{ p }}
             </a>
-
-        {% elif p == 3 and page > 4 %}
-            <span class="dots">...</span>
-
-        {% elif p == total_pages - 2 and page < total_pages - 3 %}
-            <span class="dots">...</span>
-
+        {% elif p == 3 or p == total_pages - 2 %}
+            <span class="page-dots">...</span>
         {% endif %}
-
     {% endfor %}
 
     <!-- NEXT -->
     {% if page < total_pages %}
-        {% set _ = qs.update({'page': page+1}) %}
-        <a href="?{{ qs | urlencode }}" class="page-btn">»</a>
+    <a href="?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ page + 1 }}" class="page-btn">»</a>
     {% else %}
-        <span class="page-btn disabled">»</span>
+    <span class="page-btn disabled">»</span>
     {% endif %}
 
 </div>
