@@ -134,30 +134,57 @@ def delete_category_service(category_id):
 
 
 # =====================================================
-# INSTITUTION
+# PUBLISHER
 # =====================================================
-from models.institution_model import (
-    create_institution,
-    get_all_institutions,
-    get_institution_by_id,
-    update_institution,
-    delete_institution
+from models.publisher_model import (
+    create_publisher,
+    get_all_publishers,
+    get_publisher_by_id,
+    update_publisher,
+    delete_publisher
 )
 
-def create_institution_service(data):
-    return create_institution(data)
+def create_publisher_service(data):
+    return create_publisher(data)
 
-def get_institutions_service(q=None):
-    return get_all_institutions(q)
+def get_publishers_service(q=None):
+    return get_all_publishers(q)
 
-def get_institution_detail_service(inst_id):
-    return get_institution_by_id(inst_id)
+def get_publisher_detail_service(pub_id):
+    return get_publisher_by_id(pub_id)
 
-def update_institution_service(inst_id, data):
-    return update_institution(inst_id, data)
+def update_publisher_service(pub_id, data):
+    return update_publisher(pub_id, data)
 
-def delete_institution_service(inst_id):
-    return delete_institution(inst_id)
+def delete_publisher_service(pub_id):
+    return delete_publisher(pub_id)
+
+
+# =====================================================
+# UNIVERSITY
+# =====================================================
+from models.university_model import (
+    create_university,
+    get_all_universities,
+    get_university_by_id,
+    update_university,
+    delete_university
+)
+
+def create_university_service(data):
+    return create_university(data)
+
+def get_universities_service(q=None):
+    return get_all_universities(q)
+
+def get_university_detail_service(uni_id):
+    return get_university_by_id(uni_id)
+
+def update_university_service(uni_id, data):
+    return update_university(uni_id, data)
+
+def delete_university_service(uni_id):
+    return delete_university(uni_id)
 
 
 # =====================================================

@@ -83,10 +83,10 @@
                             <a href="/search?author={{ a }}">{{ a }}</a>{% if not loop.last %}, {% endif %}
                             {% endif %}
                             {% endfor %}
-                            {% elif doc.publisher %}
-                            {{ doc.publisher }}
-                            {% elif doc.university %}
-                            {{ doc.university }}
+                            {% elif doc.publishers %}
+                            🏢 {{ doc.publishers[0] }}
+                            {% elif doc.universities %}
+                            🎓 {{ doc.universities[0] }}
                             {% else %}
                             N/A
                             {% endif %}
@@ -95,6 +95,38 @@
 
                         <!-- YEAR -->
                         <p class="result-year">📅 {{ doc.year or 'N/A' }}</p>
+
+                        <!-- EXPLANATION -->
+                        <details class="result-explain">
+                            <summary>Tại sao có kết quả này?</summary>
+                            <div class="explain-body">
+                                <ul class="explain-list">
+                                    {% for item in doc.explanation %}
+                                    <li><i class="fas fa-check-circle"></i> {{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <div class="score-grid">
+                                    <div class="score-bar">
+                                        <label>Ngữ nghĩa (Vector)</label>
+                                        <div class="bar-outer"><div class="bar-inner vec" style="width: {{ (doc.vector_score * 100)|round }}%"></div></div>
+                                    </div>
+                                    <div class="score-bar">
+                                        <label>Từ khóa (Fulltext)</label>
+                                        <div class="bar-outer"><div class="bar-inner ft" style="width: {{ (doc.fulltext_score * 100)|round }}%"></div></div>
+                                    </div>
+                                    <div class="score-bar">
+                                        <label>Liên kết (Graph)</label>
+                                        <div class="bar-outer"><div class="bar-inner graph" style="width: {{ (doc.graph_score * 1000)|round }}%"></div></div>
+                                    </div>
+                                    {% if doc.rerank_score > 0 %}
+                                    <div class="score-bar">
+                                        <label>Rerank</label>
+                                        <div class="bar-outer"><div class="bar-inner rerank" style="width: {{ (doc.rerank_score * 10)|round }}%"></div></div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </details>
 
                     </div>
 

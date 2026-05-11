@@ -148,7 +148,8 @@ document.addEventListener("DOMContentLoaded", function () {
             author: { shape: "dot", color: { background: "#fbbf24", border: "#d97706" } },
             subject: { shape: "diamond", color: { background: "#f97316", border: "#ea580c" } },
             keyword: { shape: "star", color: { background: "#ec4899", border: "#be185d" } },
-            publisher: { shape: "hexagon", color: { background: "#06b6d4", border: "#0891b2" } }
+            publisher: { shape: "triangleDown", color: { background: "#06b6d4", border: "#0891b2" } },
+            university: { shape: "hexagon", color: { background: "#6366f1", border: "#4f46e5" } }
         },
 
         physics: {
@@ -248,7 +249,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const node = nodes.get(params.nodes[0]);
         if (!node) return;
 
-        window.location.href = `/explore/${node.group}/${node.id}`;
+        const id = node.id;
+        window.location.href = `/explore/${node.group}/${id}`;
     });
 
 });

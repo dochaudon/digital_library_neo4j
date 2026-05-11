@@ -95,7 +95,7 @@ def get_publisher_by_title(title):
     WHERE (d:Book OR d:Article OR d:Thesis)
       AND toLower(d.title) CONTAINS toLower($title)
 
-    OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Institution)
+    OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Publisher)
 
     RETURN
         d.id AS id,
@@ -116,7 +116,7 @@ def get_university_by_title(title):
     WHERE (d:Book OR d:Article OR d:Thesis)
       AND toLower(d.title) CONTAINS toLower($title)
 
-    OPTIONAL MATCH (d)-[:SUBMITTED_TO]->(u:Institution)
+    OPTIONAL MATCH (d)-[:OWNED_BY]->(u:University)
 
     RETURN
         d.id AS id,

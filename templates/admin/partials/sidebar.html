@@ -62,9 +62,16 @@
         </li>
 
         <li>
-            <a href="/admin/institutions"
-               class="{% if request.path.startswith('/admin/institutions') %}active{% endif %}">
-                <i class="fa fa-building"></i> Institutions
+            <a href="/admin/publishers"
+               class="{% if request.path.startswith('/admin/publishers') %}active{% endif %}">
+                <i class="fa fa-building"></i> Publishers
+            </a>
+        </li>
+
+        <li>
+            <a href="/admin/universities"
+               class="{% if request.path.startswith('/admin/universities') %}active{% endif %}">
+                <i class="fa fa-graduation-cap"></i> Universities
             </a>
         </li>
 

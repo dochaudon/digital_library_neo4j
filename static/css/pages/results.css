@@ -130,6 +130,19 @@
     font-size: 12px;
     color: #9ca3af;
 }
+
+.result-type {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f3f4f6;
+    color: #4b5563;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
 /* FIX chiều cao card */
 .result-card {
     min-height: 110px;
@@ -152,3 +165,78 @@
         grid-template-columns: 1fr 1fr;
     }
 }
+
+/* EXPLAINABLE SEARCH CSS */
+.result-explain {
+    margin-top: 12px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 8px;
+}
+
+.result-explain summary {
+    font-size: 13px;
+    color: #6366f1;
+    cursor: pointer;
+    font-weight: 500;
+    outline: none;
+}
+
+.result-explain summary:hover {
+    text-decoration: underline;
+}
+
+.explain-body {
+    padding: 10px;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.explain-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: #374151;
+}
+
+.explain-list li {
+    margin-bottom: 4px;
+}
+
+.explain-list li i {
+    color: #10b981;
+    margin-right: 6px;
+    font-size: 11px;
+}
+
+.score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.score-bar label {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.bar-outer {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.bar-inner {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.bar-inner.vec { background: #6366f1; }
+.bar-inner.ft { background: #f59e0b; }
+.bar-inner.graph { background: #10b981; }
+.bar-inner.rerank { background: #ec4899; }

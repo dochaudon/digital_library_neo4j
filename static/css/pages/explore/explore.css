@@ -173,6 +173,7 @@
 }
 
 .cyan { background: #0ea5e9; }
+.indigo { background: #6366f1; }
 
 /* SHAPE HELPERS */
 .circle { border-radius: 50%; }
@@ -196,6 +197,9 @@
 }
 .triangle {
     clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+.triangle-down {
+    clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
 }
 
 /* ================= GRAPH NOTE ================= */

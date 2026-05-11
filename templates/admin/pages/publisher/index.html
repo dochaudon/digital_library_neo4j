@@ -11,17 +11,17 @@
     <!-- HEADER -->
     <div class="doc-header">
         <div>
-            <h2>🏢 Quản Lý Cơ Quan</h2>
+            <h2>🏢 Quản Lý Nhà Xuất Bản</h2>
         </div>
 
-        <a href="/admin/institutions/create" class="btn-add">
-            + Thêm Cơ Quan
+        <a href="/admin/publishers/create" class="btn-add">
+            + Thêm Nhà Xuất Bản
         </a>
     </div>
 
     <!-- SEARCH -->
     <form action="" method="GET" class="doc-search">
-        <input type="text" name="q" placeholder="Tìm kiếm cơ quan..." value="{{ q|default('') }}">
+        <input type="text" name="q" placeholder="Tìm kiếm nhà xuất bản..." value="{{ q|default('') }}">
         <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
     </form>
 
@@ -31,25 +31,21 @@
 
             <thead>
                 <tr>
-                    <th>Tên cơ quan</th>
-                    <th>Loại</th>
+                    <th>Tên nhà xuất bản</th>
                     <th>Thao tác</th>
                 </tr>
             </thead>
 
             <tbody>
-                {% if institutions %}
-                    {% for i in institutions %}
+                {% if publishers %}
+                    {% for p in publishers %}
                     <tr>
-                        <td>{{ i.name }}</td>
-                        <td>
-                            {{ i.type or 'N/A' }}
-                        </td>
+                        <td>{{ p.name }}</td>
                         <td class="actions">
-                            <a href="/admin/institutions/edit/{{ i.id }}" class="btn-edit">Sửa</a>
-                            <a href="/admin/institutions/delete/{{ i.id }}"
+                            <a href="/admin/publishers/edit/{{ p.id }}" class="btn-edit">Sửa</a>
+                            <a href="/admin/publishers/delete/{{ p.id }}"
                                class="btn-delete"
-                               onclick="return confirm('Xóa cơ quan?')">
+                               onclick="return confirm('Xóa nhà xuất bản?')">
                                Xóa
                             </a>
                         </td>
@@ -58,7 +54,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="3">Không có dữ liệu</td>
+                        <td colspan="2">Không có dữ liệu</td>
                     </tr>
                 {% endif %}
             </tbody>

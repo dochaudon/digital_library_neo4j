@@ -7,11 +7,19 @@ _faiss_index = None
 _doc_id_map = []
 _doc_metadata_map = {}
 
+def reset_faiss_index():
+    global _faiss_index, _doc_id_map, _doc_metadata_map
+    _faiss_index = None
+    _doc_id_map = []
+    _doc_metadata_map = {}
+    print("FAISS index has been reset")
+
 def get_faiss_index():
     global _faiss_index, _doc_id_map, _doc_metadata_map
     
     if _faiss_index is None:
-        print("🔄 Building FAISS index from Neo4j...")
+        print("Building FAISS index from Neo4j...")
+
         
         # Fetch all documents that have embeddings
         cypher = """
@@ -59,7 +67,8 @@ def get_faiss_index():
         _faiss_index = faiss.IndexFlatIP(dim)
         _faiss_index.add(vectors)
         
-        print(f"✅ FAISS index built with {len(_doc_id_map)} vectors")
+        print(f"FAISS index built with {len(_doc_id_map)} vectors")
+
         
     return _faiss_index
 
