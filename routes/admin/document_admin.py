@@ -70,17 +70,10 @@ def get_all_metadata():
         "languages":  query_list("Language"),
         "journals":   query_list("Journal"),
         "publishers": neo4j_conn.query(
-            "MATCH (i:Institution) WHERE i.type = 'publisher' OR i.role = 'publisher' "
-            "OR i.name CONTAINS 'NXB' OR i.name CONTAINS 'Publisher' "
-            "RETURN i.name AS name ORDER BY i.name"
+            "MATCH (p:Publisher) RETURN p.name AS name ORDER BY p.name"
         ),
         "universities": neo4j_conn.query(
-            "MATCH (i:Institution) WHERE i.type = 'university' OR i.name CONTAINS 'Đại học' "
-            "OR i.name CONTAINS 'University' OR i.name CONTAINS 'Trường' "
-            "RETURN i.name AS name ORDER BY i.name"
-        ),
-        "institutions": neo4j_conn.query(
-            "MATCH (i:Institution) RETURN i.name AS name ORDER BY i.name"
+            "MATCH (u:University) RETURN u.name AS name ORDER BY u.name"
         ),
     }
 

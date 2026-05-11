@@ -19,7 +19,8 @@ def get_preview(entity_type, entity_id):
         "author": "HAS_AUTHOR",
         "subject": "HAS_SUBJECT",
         "keyword": "HAS_KEYWORD",
-        "publisher": "PUBLISHED_BY|SUBMITTED_TO"
+        "publisher": "PUBLISHED_BY",
+        "university": "OWNED_BY"
     }
 
     # ===== DOCUMENT =====
@@ -78,7 +79,8 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
         "author": "HAS_AUTHOR",
         "subject": "HAS_SUBJECT",
         "keyword": "HAS_KEYWORD",
-        "publisher": "PUBLISHED_BY|SUBMITTED_TO"
+        "publisher": "PUBLISHED_BY",
+        "university": "OWNED_BY"
     }
 
     # ===== DOCUMENT =====
@@ -87,13 +89,17 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
         MATCH (d {id:$id})
         OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
         OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
+        OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Publisher)
+        OPTIONAL MATCH (d)-[:OWNED_BY]->(u:University)
 
         RETURN
             d.id AS id,
             coalesce(d.title, d.name) AS title,
             d.year AS year,
             collect(DISTINCT a.name) AS authors,
-            collect(DISTINCT s.name) AS subjects
+            collect(DISTINCT s.name) AS subjects,
+            collect(DISTINCT p.name) AS publishers,
+            collect(DISTINCT u.name) AS universities
         """
 
         result = neo4j_conn.query(query, {"id": entity_id})
@@ -173,7 +179,8 @@ def get_graph_by_entity(entity_type, entity_id):
         "author": "HAS_AUTHOR",
         "subject": "HAS_SUBJECT",
         "keyword": "HAS_KEYWORD",
-        "publisher": "PUBLISHED_BY|SUBMITTED_TO"
+        "publisher": "PUBLISHED_BY",
+        "university": "OWNED_BY"
     }
 
     if entity_type not in relation_map:

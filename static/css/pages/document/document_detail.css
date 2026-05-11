@@ -85,18 +85,32 @@
 /* ================= TABLE ================= */
 .doc-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .doc-table td {
-    padding: 12px;
+    padding: 14px 16px;
     border-bottom: 1px solid #e5e7eb;
 }
 
+.doc-table tr:last-child td {
+    border-bottom: none;
+}
+
 .doc-table td:first-child {
-    width: 180px;
+    width: 200px;
     background: #f9fafb;
     font-weight: 600;
+    color: #374151;
+    border-right: 1px solid #e5e7eb;
+}
+
+.doc-table tr:hover td {
+    background: #fdfdfd;
 }
 
 /* ================= ABSTRACT ================= */
@@ -228,6 +242,7 @@
 }
 
 .cyan { background: #0ea5e9; }
+.indigo { background: #6366f1; }
 
 /* SHAPE HELPERS */
 .circle { border-radius: 50%; }
@@ -251,6 +266,9 @@
 }
 .triangle {
     clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+.triangle-down {
+    clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
 }
 
 /* ================= NOTE ================= */

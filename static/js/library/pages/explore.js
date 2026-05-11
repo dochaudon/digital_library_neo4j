@@ -47,13 +47,14 @@ async function loadLeft(type, id, page = 1) {
     let html = "";
 
     // ===== ENTITY LIST =====
-    if (["author", "subject", "keyword", "publisher"].includes(entityType)) {
+    if (["author", "subject", "keyword", "publisher", "university"].includes(entityType)) {
 
         const titleMap = {
             author: "📚 Tác giả",
             subject: "📂 Chủ đề",
             keyword: "🏷️ Từ khóa",
-            publisher: "🏢 Nhà xuất bản"
+            publisher: "🏢 Nhà xuất bản",
+            university: "🎓 Trường đại học"
         };
 
         const displayName = data.name || "N/A";
@@ -86,6 +87,8 @@ async function loadLeft(type, id, page = 1) {
             <p>📅 ${d.year || "N/A"}</p>
             <p>👤 ${d.authors?.join(", ") || "N/A"}</p>
             <p>📂 ${d.subjects?.join(", ") || "N/A"}</p>
+            ${d.publishers && d.publishers.length > 0 ? `<p>🏢 ${d.publishers.join(", ")}</p>` : ""}
+            ${d.universities && d.universities.length > 0 ? `<p>🎓 ${d.universities.join(", ")}</p>` : ""}
             <br>
             <a class="btn-detail" href="/document/${d.id}">
                 Xem chi tiết
@@ -192,7 +195,8 @@ function renderGraph(graphData) {
             author: { shape: "dot", color: { background: "#fbbf24", border: "#d97706" } },
             subject: { shape: "diamond", color: { background: "#f97316", border: "#ea580c" } },
             keyword: { shape: "star", color: { background: "#ec4899", border: "#be185d" } },
-            publisher: { shape: "hexagon", color: { background: "#06b6d4", border: "#0891b2" } }
+            publisher: { shape: "triangleDown", color: { background: "#06b6d4", border: "#0891b2" } },
+            university: { shape: "hexagon", color: { background: "#6366f1", border: "#4f46e5" } }
         },
 
         physics: {
@@ -248,7 +252,7 @@ function getLabel(node) {
         return truncate(node.title || node.label);
     }
 
-    if (["subject", "keyword", "publisher"].includes(group)) {
+    if (["subject", "keyword", "publisher", "university"].includes(group)) {
         return node.name || node.label;
     }
 
@@ -341,8 +345,9 @@ function onNodeDoubleClick(params) {
     if (!node) return;
 
     const type = node.group?.toLowerCase();
+    const id = node.id;
 
-    window.location.href = `/explore/${type}/${node.id}`;
+    window.location.href = `/explore/${type}/${id}`;
 }
 
 

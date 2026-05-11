@@ -110,51 +110,64 @@
             <button type="button" class="add-row-btn" id="add-author-btn"><i class="fas fa-plus"></i> Thêm tác giả</button>
         </div>
 
-        <!-- CƠ QUAN / TRƯỜNG / NXB -->
+        <!-- NXB & TRƯỜNG -->
         <div class="form-section">
-            <div class="section-title"><i class="fas fa-university"></i> Cơ quan / Trường học / Nhà xuất bản</div>
+            <div class="section-title"><i class="fas fa-university"></i> Nhà xuất bản & Trường học</div>
             <div class="dynamic-container" id="inst-list">
-                {% if document.institutions_info %}
-                    {% for inst in document.institutions_info %}
-                    {% if inst.name %}
-                    <div class="dynamic-row inst-row" style="grid-template-columns: 2fr 1fr 40px;">
-                        <div class="form-group">
-                            <label>Tên cơ quan / Trường</label>
-                            <input type="text" class="inst-name" value="{{ inst.name }}" placeholder="Tên cơ quan hoặc trường học" list="institution-datalist">
-                        </div>
-                        <div class="form-group">
-                            <label>Loại / Vai trò</label>
-                            <select class="inst-role">
-                                <option value="publisher" {{ 'selected' if inst.role == 'publisher' }}>Nhà xuất bản</option>
-                                <option value="university" {{ 'selected' if inst.role == 'university' }}>Trường đại học</option>
-                                <option value="research_center" {{ 'selected' if inst.role == 'research_center' }}>Viện nghiên cứu</option>
-                                <option value="other" {{ 'selected' if inst.role == 'other' }}>Khác</option>
-                            </select>
-                        </div>
-                        <div class="remove-row-btn"><i class="fas fa-trash"></i></div>
+                <!-- Publishers -->
+                {% for name in document.publishers %}
+                <div class="dynamic-row inst-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên NXB</label>
+                        <input type="text" class="inst-name" value="{{ name }}" placeholder="Tên nhà xuất bản" list="publisher-datalist">
                     </div>
-                    {% endif %}
-                    {% endfor %}
-                {% else %}
+                    <div class="form-group">
+                        <label>Loại</label>
+                        <select class="inst-role">
+                            <option value="publisher" selected>Nhà xuất bản</option>
+                            <option value="university">Trường đại học</option>
+                        </select>
+                    </div>
+                    <div class="remove-row-btn"><i class="fas fa-trash"></i></div>
+                </div>
+                {% endfor %}
+
+                <!-- Universities -->
+                {% for name in document.universities %}
+                <div class="dynamic-row inst-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên Trường</label>
+                        <input type="text" class="inst-name" value="{{ name }}" placeholder="Tên trường đại học" list="university-datalist">
+                    </div>
+                    <div class="form-group">
+                        <label>Loại</label>
+                        <select class="inst-role">
+                            <option value="publisher">Nhà xuất bản</option>
+                            <option value="university" selected>Trường đại học</option>
+                        </select>
+                    </div>
+                    <div class="remove-row-btn"><i class="fas fa-trash"></i></div>
+                </div>
+                {% endfor %}
+
+                {% if not document.publishers and not document.universities %}
                     <div class="dynamic-row inst-row" style="grid-template-columns: 2fr 1fr 40px;">
                         <div class="form-group">
-                            <label>Tên cơ quan / Trường</label>
-                            <input type="text" class="inst-name" placeholder="Tên cơ quan hoặc trường học" list="institution-datalist">
+                            <label>Tên đơn vị</label>
+                            <input type="text" class="inst-name" placeholder="Tên NXB hoặc Trường" list="institution-datalist">
                         </div>
                         <div class="form-group">
-                            <label>Loại / Vai trò</label>
+                            <label>Loại</label>
                             <select class="inst-role">
                                 <option value="publisher">Nhà xuất bản</option>
                                 <option value="university">Trường đại học</option>
-                                <option value="research_center">Viện nghiên cứu</option>
-                                <option value="other">Khác</option>
                             </select>
                         </div>
                         <div style="padding-bottom: 12px;"></div>
                     </div>
                 {% endif %}
             </div>
-            <button type="button" class="add-row-btn" id="add-inst-btn"><i class="fas fa-plus"></i> Thêm cơ quan</button>
+            <button type="button" class="add-row-btn" id="add-inst-btn"><i class="fas fa-plus"></i> Thêm đơn vị</button>
         </div>
 
 

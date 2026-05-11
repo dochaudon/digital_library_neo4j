@@ -7,7 +7,6 @@ from models.user_model import (
     change_password
 )
 
-from werkzeug.security import generate_password_hash
 
 
 # =========================
@@ -50,11 +49,13 @@ def change_password_service(user_id, password):
     if not user:
         return {"error": "User not found"}
 
-    hashed = generate_password_hash(password)
+    from services.auth_utils import hash_password
+    hashed = hash_password(password)
 
     return {
         "id": change_password(user_id, hashed)
     }
+
 
 
 # =========================

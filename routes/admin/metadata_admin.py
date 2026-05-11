@@ -159,38 +159,73 @@ def delete_category(id):
 
 
 # =====================================================
-# INSTITUTION
+# PUBLISHER
 # =====================================================
 
-@metadata_admin.route("/institutions")
-def institution_page():
+@metadata_admin.route("/publishers")
+def publisher_page():
     page = int(request.args.get("page", 1))
     q = request.args.get("q", "")
-    institutions, total_pages = paginate(get_institutions_service(q), page)
-    return render_template("admin/pages/institution/index.html", institutions=institutions, page=page, total_pages=total_pages, q=q)
+    publishers, total_pages = paginate(get_publishers_service(q), page)
+    return render_template("admin/pages/publisher/index.html", publishers=publishers, page=page, total_pages=total_pages, q=q)
 
-@metadata_admin.route("/institutions/create", methods=["GET", "POST"])
-def create_institution():
+@metadata_admin.route("/publishers/create", methods=["GET", "POST"])
+def create_publisher():
     if request.method == "POST":
-        create_institution_service(request.form.to_dict())
-        return redirect("/admin/institutions")
+        create_publisher_service(request.form.to_dict())
+        return redirect("/admin/publishers")
     
-    next_id = get_next_metadata_id("Institution", "I")
-    return render_template("admin/pages/institution/create.html", next_id=next_id)
+    next_id = get_next_metadata_id("Publisher", "P")
+    return render_template("admin/pages/publisher/create.html", next_id=next_id)
 
-@metadata_admin.route("/institutions/edit/<id>", methods=["GET", "POST"])
-def edit_institution(id):
+@metadata_admin.route("/publishers/edit/<id>", methods=["GET", "POST"])
+def edit_publisher(id):
     if request.method == "POST":
-        update_institution_service(id, request.form.to_dict())
-        return redirect("/admin/institutions")
+        update_publisher_service(id, request.form.to_dict())
+        return redirect("/admin/publishers")
     
-    institution = get_institution_detail_service(id)
-    return render_template("admin/pages/institution/edit.html", institution=institution)
+    publisher = get_publisher_detail_service(id)
+    return render_template("admin/pages/publisher/edit.html", publisher=publisher)
 
-@metadata_admin.route("/institutions/delete/<id>")
-def delete_institution(id):
-    delete_institution_service(id)
-    return redirect("/admin/institutions")
+@metadata_admin.route("/publishers/delete/<id>")
+def delete_publisher(id):
+    delete_publisher_service(id)
+    return redirect("/admin/publishers")
+
+
+# =====================================================
+# UNIVERSITY
+# =====================================================
+
+@metadata_admin.route("/universities")
+def university_page():
+    page = int(request.args.get("page", 1))
+    q = request.args.get("q", "")
+    universities, total_pages = paginate(get_universities_service(q), page)
+    return render_template("admin/pages/university/index.html", universities=universities, page=page, total_pages=total_pages, q=q)
+
+@metadata_admin.route("/universities/create", methods=["GET", "POST"])
+def create_university():
+    if request.method == "POST":
+        create_university_service(request.form.to_dict())
+        return redirect("/admin/universities")
+    
+    next_id = get_next_metadata_id("University", "U")
+    return render_template("admin/pages/university/create.html", next_id=next_id)
+
+@metadata_admin.route("/universities/edit/<id>", methods=["GET", "POST"])
+def edit_university(id):
+    if request.method == "POST":
+        update_university_service(id, request.form.to_dict())
+        return redirect("/admin/universities")
+    
+    university = get_university_detail_service(id)
+    return render_template("admin/pages/university/edit.html", university=university)
+
+@metadata_admin.route("/universities/delete/<id>")
+def delete_university(id):
+    delete_university_service(id)
+    return redirect("/admin/universities")
 
 
 # =====================================================

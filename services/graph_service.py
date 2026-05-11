@@ -15,8 +15,8 @@ def get_graph_data(document_id):
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
     OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
-    OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Institution)
-    OPTIONAL MATCH (d)-[:SUBMITTED_TO]->(u:Institution)
+    OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Publisher)
+    OPTIONAL MATCH (d)-[:OWNED_BY]->(u:University)
 
     RETURN
         d,
@@ -103,7 +103,7 @@ def get_graph_data(document_id):
     add_nodes_and_edges(record.get("subjects"), "subject", "HAS_SUBJECT")
     add_nodes_and_edges(record.get("keywords"), "keyword", "HAS_KEYWORD")
     add_nodes_and_edges(record.get("publishers"), "publisher", "PUBLISHED_BY")
-    add_nodes_and_edges(record.get("universities"), "university", "SUBMITTED_TO")  # 🔥 FIX
+    add_nodes_and_edges(record.get("universities"), "university", "OWNED_BY")  # 🔥 FIX
 
     return {
         "nodes": nodes,

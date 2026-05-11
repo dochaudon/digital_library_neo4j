@@ -16,35 +16,41 @@ from services.llm_service import (
     call_gemini,
     build_rag_prompt,
     is_out_of_scope,
+    is_academic_intent,
     get_out_of_scope_response,
     build_context_from_docs
 )
+from services.external_search_service import get_external_academic_papers
+
+
 
 
 # =========================
-# 🔥 INTENT DETECTION (SMART)
+# INTENT DETECTION (SMART)
+
 # =========================
 def detect_intent(question):
     q = (question or "").lower()
 
     # factual (graph)
-    if any(x in q for x in ["ai viết", "tác giả"]):
+    if any(x in q for x in ["ai viết", "tác giả", "người viết", "viết bởi"]):
         return "author"
 
-    if "xuất bản" in q:
+    if any(x in q for x in ["xuất bản", "nhà xuất bản", "nxb"]):
         return "publisher"
 
-    if "năm" in q:
+    if any(x in q for x in ["năm", "năm nào", "vào năm"]):
         return "year"
 
-    if any(x in q for x in ["chủ đề", "lĩnh vực"]):
+    if any(x in q for x in ["chủ đề", "lĩnh vực", "về chủ đề", "về lĩnh vực"]):
         return "subject"
 
-    if any(x in q for x in ["trường", "đại học"]):
+    if any(x in q for x in ["trường", "đại học", "học viện"]):
         return "university"
 
-    if any(x in q for x in ["bao nhiêu", "số lượng"]):
+    if any(x in q for x in ["bao nhiêu", "số lượng", "có mấy"]):
         return "count"
+
 
     # semantic
     if any(x in q for x in ["giống", "liên quan", "tương tự", "cùng chủ đề", "tương đồng"]):
@@ -60,7 +66,8 @@ def detect_intent(question):
 
 
 # =========================
-# 🔥 EXTRACT TITLE
+# EXTRACT TITLE
+
 # =========================
 def get_title_from_history(history):
     if not history or len(history) <= 1:
@@ -196,7 +203,8 @@ def extract_title(question, history=None):
 
 
 # =========================
-# 🔥 PARSE FILTER (SMART)
+# PARSE FILTER (SMART)
+
 # =========================
 def parse_filters(question):
     q = question.lower()
@@ -215,17 +223,18 @@ def parse_filters(question):
         filters["year"] = int(year_match.group())
 
     # subject mapping
-    if "ai" in q or "trí tuệ nhân tạo" in q:
-        filters["subject"] = "Artificial Intelligence"
-
-    if "học máy" in q:
-        filters["subject"] = "Machine Learning"
+    from services.search_service import SUBJECT_MAPPINGS
+    for key, val in SUBJECT_MAPPINGS.items():
+        if key in q:
+            filters["subject"] = val
 
     return filters
 
 
+
 # =========================
-# 🔥 APPLY HIGHLIGHT
+# APPLY HIGHLIGHT
+
 # =========================
 def apply_highlights(docs, query):
     """Chèn thẻ <mark> vào title của tài liệu khớp với query."""
@@ -246,7 +255,8 @@ def apply_highlights(docs, query):
 
 
 # =========================
-# 🔥 SMART ANSWER BUILDER
+# SMART ANSWER BUILDER
+
 # =========================
 def build_answer(answer_text, explanation=None, suggestion_docs=None):
     """Tổng hợp câu trả lời gồm: Trả lời + Giải thích + Gợi ý."""
@@ -257,13 +267,15 @@ def build_answer(answer_text, explanation=None, suggestion_docs=None):
 
     if suggestion_docs and len(suggestion_docs) > 0:
         titles = [f'- **{d["title"]}**' for d in suggestion_docs[:3]]
-        parts.append("\n\n📖 **Bạn có thể xem thêm:**\n" + "\n".join(titles))
+        parts.append("\n\nBạn có thể xem thêm:\n" + "\n".join(titles))
+
 
     return "\n".join(parts)
 
 
 # =========================
-# 🔥 FORMAT ANSWER (NLG)
+# FORMAT ANSWER (NLG)
+
 # =========================
 def format_smart_answer(results, intent, query=""):
     """Tạo câu trả lời tự nhiên, có tóm tắt và gợi ý."""
@@ -284,7 +296,8 @@ def format_smart_answer(results, intent, query=""):
         summary = f'Mình tìm thấy **{total} tài liệu** phù hợp.'
 
     top_titles = [f'- **{d["title"]}**' + (f' ({d["year"]})' if d.get("year") else "") for d in top3]
-    answer_text = summary + "\n\n📚 **Gợi ý nổi bật:**\n" + "\n".join(top_titles)
+    answer_text = summary + "\n\nGợi ý nổi bật:\n" + "\n".join(top_titles)
+
 
     # Explanation (giải thích)
     explanation_map = {
@@ -301,20 +314,23 @@ def format_smart_answer(results, intent, query=""):
 
 
 # =========================
-# 🔥 MAIN QA (RAG + LLM)
+# MAIN QA (RAG + LLM)
+
 # =========================
 def get_qa_response(question, history=None):
 
     if not question:
         return {"answer": "Bạn hãy nhập câu hỏi nhé.", "documents": []}
 
-    # --- OUT-OF-SCOPE CHECK ---
-    if is_out_of_scope(question):
+    # --- DOMAIN GUARD (HYBRID) ---
+    if is_out_of_scope(question) or not is_academic_intent(question):
         return {
+
             "answer": get_out_of_scope_response(),
             "intent": "out_of_scope",
             "documents": []
         }
+
 
     intent = detect_intent(question)
     filters = parse_filters(question)
@@ -331,10 +347,12 @@ def get_qa_response(question, history=None):
             r = result[0]
             data_str = f"Tác giả: {', '.join(r.get('authors', []))}"
             doc_ctx = [{"title": r.get("title"), "authors": r.get("authors", [])}]
-            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            prompt = build_rag_prompt(question, local_docs=doc_ctx, history=history, data=data_str)
+
             llm_answer = call_gemini(prompt)
             answer = llm_answer or build_answer(
-                f'📝 Tài liệu **"{r["title"]}"** được viết bởi **{", ".join(r.get("authors", []))}**.',
+                f'Tài liệu **"{r["title"]}"** được viết bởi **{", ".join(r.get("authors", []))}**.',
+
                 explanation="Thông tin tác giả được trích xuất trực tiếp từ cơ sở dữ liệu thư viện."
             )
             return {"answer": answer, "intent": intent, "documents": []}
@@ -346,10 +364,12 @@ def get_qa_response(question, history=None):
             r = result[0]
             data_str = f"Nhà xuất bản: {r['publisher']}"
             doc_ctx = [{"title": r.get("title")}]
-            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            prompt = build_rag_prompt(question, local_docs=doc_ctx, history=history, data=data_str)
+
             llm_answer = call_gemini(prompt)
             answer = llm_answer or build_answer(
-                f'🏢 Tài liệu **"{r["title"]}"** được xuất bản bởi **{r["publisher"]}**.',
+                f'Tài liệu **"{r["title"]}"** được xuất bản bởi **{r["publisher"]}**.',
+
             )
             return {"answer": answer, "intent": intent, "documents": []}
 
@@ -360,9 +380,11 @@ def get_qa_response(question, history=None):
             r = result[0]
             data_str = f"Năm xuất bản: {r['year']}"
             doc_ctx = [{"title": r.get("title"), "year": r.get("year")}]
-            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            prompt = build_rag_prompt(question, local_docs=doc_ctx, history=history, data=data_str)
+
             llm_answer = call_gemini(prompt)
-            answer = llm_answer or build_answer(f'📅 Tài liệu **"{r["title"]}"** xuất bản năm **{r["year"]}**.')
+            answer = llm_answer or build_answer(f'Tài liệu **"{r["title"]}"** xuất bản năm **{r["year"]}**.')
+
             return {"answer": answer, "intent": intent, "documents": []}
 
     # --- SUBJECT ---
@@ -372,10 +394,12 @@ def get_qa_response(question, history=None):
             r = result[0]
             data_str = f"Chủ đề: {', '.join(r['subjects'])}"
             doc_ctx = [{"title": r.get("title"), "subjects": r.get("subjects")}]
-            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            prompt = build_rag_prompt(question, local_docs=doc_ctx, history=history, data=data_str)
+
             llm_answer = call_gemini(prompt)
             answer = llm_answer or build_answer(
-                f'🏷️ Tài liệu **"{r["title"]}"** thuộc các chủ đề: **{", ".join(r["subjects"])}**.',
+                f'Tài liệu **"{r["title"]}"** thuộc các chủ đề: **{", ".join(r["subjects"])}**.',
+
                 explanation="Chủ đề được phân loại trong đồ thị kiến thức của hệ thống."
             )
             return {"answer": answer, "intent": intent, "documents": []}
@@ -387,9 +411,11 @@ def get_qa_response(question, history=None):
             r = result[0]
             data_str = f"Trường đại học: {r['university']}"
             doc_ctx = [{"title": r.get("title")}]
-            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            prompt = build_rag_prompt(question, local_docs=doc_ctx, history=history, data=data_str)
+
             llm_answer = call_gemini(prompt)
-            answer = llm_answer or build_answer(f'🎓 Luận văn **"{r["title"]}"** được thực hiện tại **{r["university"]}**.')
+            answer = llm_answer or build_answer(f'Luận văn **"{r["title"]}"** được thực hiện tại **{r["university"]}**.')
+
             return {"answer": answer, "intent": intent, "documents": []}
 
     # --- SUMMARY ---
@@ -403,15 +429,18 @@ def get_qa_response(question, history=None):
                 doc_ctx = [{"title": r.get("title"), "abstract": abstract}]
                 prompt = build_rag_prompt(
                     f"Hãy tóm tắt nội dung của tài liệu này thành 2-3 câu súc tích bằng Tiếng Việt: {question}",
-                    doc_ctx, history, data=data_str
+                    local_docs=doc_ctx, history=history, data=data_str
                 )
+
                 llm_answer = call_gemini(prompt)
                 answer = llm_answer or build_answer(
-                    f'📄 **Tóm tắt tài liệu "{r["title"]}":**\n\n{abstract}',
+                    f'Tóm tắt tài liệu "{r["title"]}":\n\n{abstract}',
+
                     explanation="Đây là phần tóm tắt nội dung (abstract) được lưu trữ trong hệ thống."
                 )
             else:
-                answer = build_answer(f'📄 Tài liệu **"{r["title"]}"** hiện chưa có thông tin tóm tắt.')
+                answer = build_answer(f'Tài liệu **"{r["title"]}"** hiện chưa có thông tin tóm tắt.')
+
             return {"answer": answer, "intent": intent, "documents": []}
 
     # --- KEYWORD ---
@@ -421,9 +450,11 @@ def get_qa_response(question, history=None):
             r = result[0]
             data_str = f"Từ khóa: {', '.join(r['keywords'])}"
             doc_ctx = [{"title": r.get("title"), "keywords": r.get("keywords")}]
-            prompt = build_rag_prompt(question, doc_ctx, history, data=data_str)
+            prompt = build_rag_prompt(question, local_docs=doc_ctx, history=history, data=data_str)
+
             llm_answer = call_gemini(prompt)
-            answer = llm_answer or build_answer(f'🔑 Từ khóa: **{", ".join(r["keywords"])}**.')
+            answer = llm_answer or build_answer(f'Từ khóa: **{", ".join(r["keywords"])}**.')
+
             return {"answer": answer, "intent": intent, "documents": []}
 
     # --- SIMILAR ---
@@ -431,10 +462,12 @@ def get_qa_response(question, history=None):
         results = get_related_by_title(title)
         if results:
             highlighted_results = apply_highlights(results, title)
-            prompt = build_rag_prompt(question, results[:5], history)
+            prompt = build_rag_prompt(question, local_docs=results[:5], history=history)
+
             llm_answer = call_gemini(prompt)
             answer = llm_answer or build_answer(
-                f'🔗 Tìm thấy **{len(results)} tài liệu** tương đồng với **"{title}"**.',
+                f'Tìm thấy **{len(results)} tài liệu** tương đồng với **"{title}"**.',
+
                 suggestion_docs=results[3:]
             )
             return {"answer": answer, "intent": intent, "documents": highlighted_results[:6]}
@@ -442,30 +475,48 @@ def get_qa_response(question, history=None):
     # --- COUNT ---
     if intent == "count":
         results = search_documents("", filters, 100)
-        answer = build_answer(f'📊 Hệ thống có khoảng **{len(results)} tài liệu** phù hợp.')
+        answer = build_answer(f'Hệ thống có khoảng **{len(results)} tài liệu** phù hợp.')
+
         return {"answer": answer, "intent": intent, "documents": results[:5]}
 
-    # -------------------------------------------------------
-    # BRANCH B: Search Intent → Hybrid Search + RAG
-    # -------------------------------------------------------
+    # --- BRANCH B: Search Intent → Hybrid Search + External + RAG ---
     results = search_documents(question, filters, 10)
-    if not results:
-        results = search_documents(question, {}, 10)
+    top_score = results[0].get("score", 0) if results else 0
+    print(f"[QA] Local results: {len(results)}, Top score: {top_score}")
 
-    # RAG: feed kết quả vào Gemini
-    prompt = build_rag_prompt(question, results[:5], history)
+    external_results = []
+    # TRIGGER EXTERNAL SEARCH
+    if len(results) <= 3 or top_score < 0.45:
+
+        print(f"[QA] Insufficient local data. Triggering external retrieval...")
+        external_results = get_external_academic_papers(question, limit=5)
+
+        print(f"[QA] External papers fetched: {len(external_results)}")
+
+    # RAG: feed cả local và external vào Gemini
+    prompt = build_rag_prompt(
+        question, 
+        local_docs=results[:5], 
+        external_docs=external_results, 
+        history=history
+    )
+    
     llm_answer = call_gemini(prompt)
 
     if llm_answer:
         answer = llm_answer
     else:
-        answer = format_smart_answer(results, intent, query=title or question)
+        # Fallback answer if LLM fails
+        answer = format_smart_answer(results + external_results, intent, query=title or question)
 
+    # Combine for UI
+    all_docs = results + external_results
+    
     # Highlight keywords trong title của documents
-    results = apply_highlights(results, question)
+    all_docs = apply_highlights(all_docs, question)
 
     return {
         "answer": answer,
         "intent": intent,
-        "documents": results
+        "documents": all_docs
     }

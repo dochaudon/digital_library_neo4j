@@ -23,7 +23,7 @@ def explore_page(entity_type, entity_id):
     """
 
     # validate entity type (tránh lỗi linh tinh)
-    valid_types = ["author", "subject", "keyword", "publisher", "document"]
+    valid_types = ["author", "subject", "keyword", "publisher", "university", "document"]
 
     if entity_type not in valid_types:
         entity_type = "document"

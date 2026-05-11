@@ -11,6 +11,8 @@ from database.neo4j_connection import neo4j_conn
 
 # 🔥 NEW IMPORT
 from services.embedding_service import create_embedding, build_document_text
+from services.vector_search_service import reset_faiss_index
+
 
 
 # =========================
@@ -140,11 +142,13 @@ def create_document_service(data):
         if name:
             # Map role to specific relation or use ASSOCIATED_WITH
             rel_type = "ASSOCIATED_WITH"
+            label = "Publisher" if role == "publisher" else "University"
+
             if role == "publisher": rel_type = "PUBLISHED_BY"
-            elif role == "university": rel_type = "SUBMITTED_TO"
+            elif role == "university": rel_type = "OWNED_BY"
 
             query = f"""
-            MERGE (i:Institution {{name: $name}})
+            MERGE (i:{label} {{name: $name}})
             WITH i
             MATCH (d {{id: $id}})
             MERGE (d)-[r:{rel_type}]->(i)
@@ -203,7 +207,9 @@ def create_document_service(data):
         """, {"name": journal, "id": doc_id})
 
 
+    reset_faiss_index()
     return doc_id
+
 
 
 # =========================
@@ -260,7 +266,7 @@ def update_document_service(doc_id, data):
 
     # RESET RELATIONS
     neo4j_conn.query("""
-    MATCH (d {id: $id})-[r:HAS_AUTHOR|HAS_SUBJECT|HAS_KEYWORD|IN_CATEGORY|IN_LANGUAGE|PUBLISHED_BY|SUBMITTED_TO|PUBLISHED_IN]->()
+    MATCH (d {id: $id})-[r:HAS_AUTHOR|HAS_SUBJECT|HAS_KEYWORD|IN_CATEGORY|IN_LANGUAGE|PUBLISHED_BY|OWNED_BY|PUBLISHED_IN]->()
     DELETE r
     """, {"id": doc_id})
 
@@ -285,11 +291,13 @@ def update_document_service(doc_id, data):
         role = inst.get("role", "other").strip()
         if name:
             rel_type = "ASSOCIATED_WITH"
+            label = "Publisher" if role == "publisher" else "University"
+
             if role == "publisher": rel_type = "PUBLISHED_BY"
-            elif role == "university": rel_type = "SUBMITTED_TO"
+            elif role == "university": rel_type = "OWNED_BY"
 
             query = f"""
-            MERGE (i:Institution {{name: $name}})
+            MERGE (i:{label} {{name: $name}})
             WITH i
             MATCH (d {{id: $id}})
             MERGE (d)-[r:{rel_type}]->(i)
@@ -349,7 +357,9 @@ def update_document_service(doc_id, data):
 
 
 
+    reset_faiss_index()
     return True
+
 
 
 # =========================
@@ -360,4 +370,7 @@ def delete_document_service(doc_id):
     MATCH (d {id: $id})
     DETACH DELETE d
     """
-    return neo4j_conn.query(query, {"id": doc_id})
+    result = neo4j_conn.query(query, {"id": doc_id})
+    reset_faiss_index()
+    return result
+

@@ -60,18 +60,6 @@ def get_document_by_id(doc_id):
     MATCH (d)
     WHERE d.id = $id AND (d:Book OR d:Article OR d:Thesis)
 
-    OPTIONAL MATCH (d)-[r_auth:HAS_AUTHOR]->(a:Author)
-
-    OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
-    OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
-    OPTIONAL MATCH (d)-[:IN_CATEGORY]->(c:Category)
-    OPTIONAL MATCH (d)-[:IN_LANGUAGE]->(l:Language)
-    OPTIONAL MATCH (d)-[:PUBLISHED_IN]->(j:Journal)
-
-    // Institutions with roles
-    OPTIONAL MATCH (d)-[r_inst:PUBLISHED_BY|SUBMITTED_TO|ASSOCIATED_WITH]->(i:Institution)
-    WITH d, a, r_auth, s, k, c, l, j, i, r_inst
-
     RETURN
         d.id AS id,
         d.title AS title,
@@ -81,29 +69,20 @@ def get_document_by_id(doc_id):
         d.abstract AS abstract,
         d.file_url AS file_url,
         d.image_url AS image_url,
-
         {TYPE_CASE} AS type,
 
-        collect(DISTINCT {{
+        [(d)-[r:HAS_AUTHOR]->(a:Author) | {{
             name: a.name,
-            role: coalesce(r_auth.role, "author")
-        }}) AS authors_info,
+            role: coalesce(r.role, "author")
+        }}] AS authors_info,
 
-        collect(DISTINCT s.name) AS subjects,
-        collect(DISTINCT k.name) AS keywords,
-        collect(DISTINCT c.name) AS categories,
-        collect(DISTINCT l.name) AS languages,
-
-        collect(DISTINCT {{
-            name: i.name,
-            role: CASE 
-                WHEN type(r_inst) = "PUBLISHED_BY" THEN "publisher"
-                WHEN type(r_inst) = "SUBMITTED_TO" THEN "university"
-                ELSE coalesce(r_inst.role, "other")
-            END
-        }}) AS institutions_info,
-
-        head(collect(DISTINCT j.name)) AS journal
+        [(d)-[:HAS_SUBJECT]->(s:Subject) | s.name] AS subjects,
+        [(d)-[:HAS_KEYWORD]->(k:Keyword) | k.name] AS keywords,
+        [(d)-[:IN_CATEGORY]->(c:Category) | c.name] AS categories,
+        [(d)-[:IN_LANGUAGE]->(l:Language) | l.name] AS languages,
+        [(d)-[:PUBLISHED_BY]->(p) | p.name] AS publishers,
+        [(d)-[:OWNED_BY]->(u) | u.name] AS universities,
+        [(d)-[:PUBLISHED_IN]->(j:Journal) | j.name][0] AS journal
     """
 
 
