@@ -12,8 +12,8 @@ def check_gemini_connection():
 
     try:
         client = genai.Client(api_key=api_key)
-        print("\n--- Testing simple generation with gemini-flash-latest ---")
-        model_name = "gemini-flash-latest"
+        print("\n--- Testing simple generation with gemini-2.5-flash ---")
+        model_name = "gemini-2.5-flash"
         response = client.models.generate_content(
             model=model_name,
             contents="Hello, are you connected? Respond in 10 words or less."

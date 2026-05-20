@@ -20,13 +20,15 @@ def get_preview(entity_type, entity_id):
         "subject": "HAS_SUBJECT",
         "keyword": "HAS_KEYWORD",
         "publisher": "PUBLISHED_BY",
-        "university": "OWNED_BY"
+        "university": "OWNED_BY",
+        "journal": "PUBLISHED_IN"
     }
 
     # ===== DOCUMENT =====
-    if entity_type == "document":
+    if entity_type in ["document", "book", "article", "thesis"]:
         query = """
-        MATCH (d {id:$id})
+        MATCH (d)
+        WHERE d.id = $id
         RETURN 
             d.id AS id,
             coalesce(d.title, d.name) AS title,
@@ -56,7 +58,7 @@ def get_preview(entity_type, entity_id):
             WHEN d:Thesis THEN "thesis"
             ELSE "document"
         END AS type
-    ORDER BY d.year DESC
+    ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     LIMIT 5
     """
 
@@ -80,17 +82,20 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
         "subject": "HAS_SUBJECT",
         "keyword": "HAS_KEYWORD",
         "publisher": "PUBLISHED_BY",
-        "university": "OWNED_BY"
+        "university": "OWNED_BY",
+        "journal": "PUBLISHED_IN"
     }
 
     # ===== DOCUMENT =====
-    if entity_type == "document":
+    if entity_type in ["document", "book", "article", "thesis"]:
         query = """
-        MATCH (d {id:$id})
+        MATCH (d)
+        WHERE d.id = $id
         OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
         OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
         OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Publisher)
         OPTIONAL MATCH (d)-[:OWNED_BY]->(u:University)
+        OPTIONAL MATCH (d)-[:PUBLISHED_IN]->(j:Journal)
 
         RETURN
             d.id AS id,
@@ -99,7 +104,8 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
             collect(DISTINCT a.name) AS authors,
             collect(DISTINCT s.name) AS subjects,
             collect(DISTINCT p.name) AS publishers,
-            collect(DISTINCT u.name) AS universities
+            collect(DISTINCT u.name) AS universities,
+            j.name AS journal
         """
 
         result = neo4j_conn.query(query, {"id": entity_id})
@@ -128,7 +134,7 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
             WHEN d:Thesis THEN "thesis"
             ELSE "document"
         END AS type
-    ORDER BY d.year DESC
+    ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     SKIP $skip LIMIT $limit
     """
 
@@ -171,7 +177,7 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
 # =========================
 def get_graph_by_entity(entity_type, entity_id):
 
-    if entity_type == "document":
+    if entity_type in ["document", "book", "article", "thesis"]:
         from services.graph_service import get_graph_data
         return get_graph_data(entity_id)
 
@@ -180,7 +186,8 @@ def get_graph_by_entity(entity_type, entity_id):
         "subject": "HAS_SUBJECT",
         "keyword": "HAS_KEYWORD",
         "publisher": "PUBLISHED_BY",
-        "university": "OWNED_BY"
+        "university": "OWNED_BY",
+        "journal": "PUBLISHED_IN"
     }
 
     if entity_type not in relation_map:

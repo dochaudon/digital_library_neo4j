@@ -3,12 +3,14 @@ from flask import Blueprint, render_template, request, jsonify
 from services.document_service import (
     get_documents_service,
     get_document_detail_service,
-    count_documents_service
+    count_documents_service,
+    get_related_documents_by_author_service  # 🔥 RE-ADD
 )
 
 from services.search_service import search_documents, get_latest_documents
 from services.graph_service import get_graph_data
 from services.qa_service import get_qa_response
+from services.metadata_service import get_subjects_service
 
 
 main = Blueprint("main", __name__)
@@ -20,10 +22,12 @@ main = Blueprint("main", __name__)
 @main.route("/")
 def home():
     documents = get_latest_documents(10)
+    subjects = get_subjects_service()
 
     return render_template(
         "library/pages/index.html",
-        documents=documents
+        documents=documents,
+        subjects=subjects
     )
 
 
@@ -46,6 +50,12 @@ def search():
     query_raw = request.args.get("query") or ""
     query = clean_param(query_raw)
     
+    print(f"DEBUG - request.args: {dict(request.args)}")
+    search_type = clean_param(request.args.get("search_type", "hybrid"))
+    print(f"DEBUG - search_type after clean: {search_type}")
+    if search_type not in ["keyword", "semantic", "hybrid"]:
+        search_type = "hybrid"
+
     page_raw = request.args.get("page", "1")
     page = int(clean_param(page_raw) or 1)
     
@@ -73,7 +83,7 @@ def search():
     # Tạo bản sao của filters để search_documents có thể thêm các filter từ query (parse_query)
     # mà không làm ảnh hưởng đến bộ lọc hiển thị trên giao diện (checkboxes)
     search_filters = filters.copy() if filters else {}
-    results_all = search_documents(query=query, filters=search_filters, limit=100)
+    results_all = search_documents(query=query, filters=search_filters, limit=100, search_type=search_type)
 
     # SORT
     if sort == "year_asc":
@@ -97,7 +107,8 @@ def search():
         results=results,
         page=page,
         total_pages=total_pages,
-        sort=sort
+        sort=sort,
+        search_type=search_type
     )
 
 
@@ -112,11 +123,15 @@ def document_detail(id):
         return "Không tìm thấy tài liệu", 404
 
     graph_data = get_graph_data(id)
+    
+    # 🔥 RE-ADD
+    related_by_author = get_related_documents_by_author_service(id)
 
     return render_template(
         "library/pages/document/detail.html",
         document=document,
-        graph_data=graph_data
+        graph_data=graph_data,
+        related_by_author=related_by_author
     )
 
 
@@ -133,7 +148,7 @@ def documents_page():
     documents = get_documents_service(
         page=page,
         limit=limit,
-        doc_type=doc_type   # 🔥 THÊM DÒNG NÀY
+        doc_type=doc_type
     )
 
     total = count_documents_service(doc_type=doc_type)
@@ -145,7 +160,7 @@ def documents_page():
         documents=documents,
         page=page,
         total_pages=total_pages,
-        doc_type=doc_type   # 🔥 để highlight UI
+        doc_type=doc_type
     )
 
 

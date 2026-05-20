@@ -2,7 +2,7 @@ import uuid
 from flask_jwt_extended import create_access_token
 
 from models.user_model import create_user, find_user_by_email
-from services.auth_utils import hash_password, check_password
+from services.auth_utils import hash_password, check_password, bcrypt
 
 
 # =========================
@@ -83,9 +83,17 @@ def login_user(data):
         return {"error": "Account is inactive"}
 
     try:
-        token = create_access_token(identity=user["id"])
+        # 🔥 Đảm bảo identity là JSON serializable
+        # Không truyền nguyên object user nếu có fields phức tạp
+        identity = {
+            "id": str(user["id"]),
+            "role": user["role"]
+        }
+        token = create_access_token(identity=identity)
     except Exception as e:
+        import traceback
         print("TOKEN ERROR:", e)
+        traceback.print_exc()
         return {"error": "Token creation failed"}
 
     return {

@@ -9,10 +9,32 @@
 <div class="container">
 
     <!-- SEARCH BAR -->
-    <form action="{{ url_for('main.search') }}" method="get" class="search-bar">
-        <input type="text" name="query" value="{{ query }}" placeholder="Tìm kiếm...">
-        <button>Tìm kiếm</button>
-    </form>
+    <div class="search-header-box">
+        <form action="{{ url_for('main.search') }}" method="get" class="search-bar" id="mainSearchForm">
+            <input type="hidden" name="search_type" id="searchTypeInput" value="{{ search_type or 'hybrid' }}">
+            <input type="text" name="query" value="{{ query }}" placeholder="Nhập câu truy vấn tự nhiên hoặc từ khóa cần tìm...">
+            <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
+        </form>
+
+        <!-- SEARCH MODE TABS -->
+        <div class="search-mode-container">
+            <div class="search-mode-tabs">
+                <div class="mode-tab {% if search_type == 'hybrid' or not search_type %}active{% endif %}" data-mode="hybrid">
+                    <span class="tab-icon">🤖</span>
+                    <span class="tab-label">Hỗn hợp (Hybrid)</span>
+                    <span class="tab-badge">Đề xuất</span>
+                </div>
+                <div class="mode-tab {% if search_type == 'keyword' %}active{% endif %}" data-mode="keyword">
+                    <span class="tab-icon">🔍</span>
+                    <span class="tab-label">Từ khóa (Keyword)</span>
+                </div>
+                <div class="mode-tab {% if search_type == 'semantic' %}active{% endif %}" data-mode="semantic">
+                    <span class="tab-icon">🧠</span>
+                    <span class="tab-label">Ngữ nghĩa (Semantic AI)</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="results-layout">
 

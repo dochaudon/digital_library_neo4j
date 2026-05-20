@@ -129,7 +129,7 @@ def get_university_by_title(title):
 def get_documents_by_author(author):
     query = """
     MATCH (d)-[:HAS_AUTHOR]->(a:Author)
-    WHERE toLower(a.name) CONTAINS toLower($author)
+    WHERE toLower(a.name) STARTS WITH toLower($author)
 
     RETURN
         d.id AS id,
@@ -148,7 +148,7 @@ def get_documents_by_author(author):
 def get_documents_by_subject(subject):
     query = """
     MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
-    WHERE toLower(s.name) CONTAINS toLower($subject)
+    WHERE toLower(s.name) STARTS WITH toLower($subject)
 
     RETURN
         d.id AS id,
@@ -167,7 +167,7 @@ def get_documents_by_subject(subject):
 def get_documents_by_keyword(keyword):
     query = """
     MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
-    WHERE toLower(k.name) CONTAINS toLower($keyword)
+    WHERE toLower(k.name) STARTS WITH toLower($keyword)
 
     RETURN
         d.id AS id,

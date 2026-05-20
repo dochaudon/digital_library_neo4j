@@ -38,7 +38,7 @@ def get_all_languages(q=None):
         RETURN 
             l.id AS id, 
             l.name AS name
-        ORDER BY l.name
+        ORDER BY toInteger(substring(l.id, 1)) DESC
         """
         return neo4j_conn.query(cypher, {"q": q})
 
@@ -47,7 +47,7 @@ def get_all_languages(q=None):
     RETURN 
         l.id AS id, 
         l.name AS name
-    ORDER BY l.name
+    ORDER BY toInteger(substring(l.id, 1)) DESC
     """
 
     return neo4j_conn.query(cypher)

@@ -1,0 +1,79 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/subject/group.css') }}">
+<!-- Vis.js -->
+<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+/* ── Custom Modal ── */
+.sg-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.sg-modal-overlay.active { display: flex; }
+.sg-modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    text-align: center;
+}
+.sg-modal h3 { margin: 0 0 10px; font-size: 1.1rem; color: #1e293b; }
+.sg-modal p  { margin: 0 0 22px; font-size: 0.92rem; color: #475569; line-height: 1.5; }
+.sg-modal-actions { display: flex; gap: 10px; justify-content: center; }
+.sg-modal-actions button {
+    padding: 9px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity .15s;
+}
+.sg-modal-actions button:hover { opacity: .85; }
+#sg-modal-confirm { background: #3b82f6; color: #fff; }
+#sg-modal-cancel  { background: #e2e8f0; color: #374151; }
+#sg-modal-confirm.danger { background: #ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="doc-container">
+    <div class="doc-header">
+        <div>
+            <h2>🔗 Nhóm Chủ Đề (Graph)</h2>
+            <p class="doc-count">Kéo thả các node với nhau để tạo liên kết (RELATED_TO).</p>
+        </div>
+        <a href="/admin/subjects" class="btn-add" style="background-color: #6b7280;">
+            <i class="fa fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <div class="graph-card">
+        <div id="subject-graph"></div>
+    </div>
+</section>
+
+<!-- Custom confirm modal (replaces browser confirm() to avoid blocking vis-network) -->
+<div class="sg-modal-overlay" id="sg-modal-overlay">
+    <div class="sg-modal">
+        <h3 id="sg-modal-title">Xác nhận</h3>
+        <p id="sg-modal-body"></p>
+        <div class="sg-modal-actions">
+            <button id="sg-modal-confirm">Xác nhận</button>
+            <button id="sg-modal-cancel">Hủy</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/pages/subject/group.js') }}?v=1.0.1"></script>
+{% endblock %}

@@ -295,21 +295,6 @@ MERGE (d)-[:PUBLISHED_IN]->(j);
 
 /* =======================
 RELATIONSHIP:
-AUTHOR - AUTHOR
-======================= */
-
-LOAD CSV WITH HEADERS FROM 'file:///rel_author_collab.csv' AS row
-
-MATCH (a1:Author {id: row.author1_id})
-MATCH (a2:Author {id: row.author2_id})
-
-WHERE a1.id < a2.id
-
-MERGE (a1)-[:COLLAB_WITH]->(a2);
-
-
-/* =======================
-RELATIONSHIP:
 SUBJECT - SUBJECT
 ======================= */
 
@@ -342,15 +327,7 @@ MERGE (d1)-[:RELATED_TO]->(d2);
 FULLTEXT INDEX
 ======================= */
 
-CREATE FULLTEXT INDEX documentTitleIndex IF NOT EXISTS
-FOR (n:Book|Article|Thesis)
-ON EACH [n.title];
-
-CREATE FULLTEXT INDEX documentSearchIndex IF NOT EXISTS
-FOR (n:Document)
-ON EACH [n.title, n.abstract];
-
 CREATE FULLTEXT INDEX documentFulltextIndex IF NOT EXISTS
 FOR (n:Book|Article|Thesis)
 ON EACH [n.title, n.abstract];
-
+

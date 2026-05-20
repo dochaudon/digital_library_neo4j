@@ -10,7 +10,7 @@
     <h2>{{ document.title }}</h2>
 
     {% if document.type %}
-        <span class="doc-type-link">{{ document.type }}</span>
+    <span class="doc-type-link">{{ document.type }}</span>
     {% endif %}
 </div>
 
@@ -19,12 +19,9 @@
     <!-- ================= LEFT ================= -->
     <div class="left-panel">
 
-        <img 
-            src="{{ document.image_url or url_for('static', filename='images/pdf.jpg') }}"
-            data-fallback="{{ url_for('static', filename='images/pdf.png') }}"
-            class="pdf-image"
-            onerror="this.onerror=null; this.src=this.dataset.fallback;"
-        >
+        <img src="{{ document.image_url or url_for('static', filename='images/pdf.jpg') }}"
+            data-fallback="{{ url_for('static', filename='images/pdf.png') }}" class="pdf-image"
+            onerror="this.onerror=null; this.src=this.dataset.fallback;">
 
     </div>
 
@@ -43,6 +40,25 @@
 
             <table class="doc-table">
 
+                <tr>
+                    <td>Tiêu đề</td>
+                    <td style="font-weight: 700;">{{ document.title }}</td>
+                </tr>
+
+                {% if document.journal %}
+                <tr>
+                    <td>Tạp chí</td>
+                    <td style="font-style: italic; color: #2563eb; font-weight: 600;">{{ document.journal }}</td>
+                </tr>
+                {% endif %}
+
+                {% if document.other_title %}
+                <tr>
+                    <td>Tiêu đề khác</td>
+                    <td>{{ document.other_title }}</td>
+                </tr>
+                {% endif %}
+
                 {% if document.year %}
                 <tr>
                     <td>Năm</td>
@@ -52,28 +68,42 @@
 
                 <!-- 🔥 AUTHOR SECTION (FINAL - ONE ROW PER PERSON) -->
                 {% set role_labels = {
-                    "author": "Tác giả",
-                    "contributor": "Đồng tác giả",
-                    "supervisor": "Giảng viên hướng dẫn",
-                    "editor": "Chủ biên"
+                "author": "Tác giả",
+                "contributor": "Đồng tác giả",
+                "supervisor": "Giảng viên hướng dẫn",
+                "editor": "Chủ biên"
                 } %}
 
                 {% if document.author_groups %}
-                    {% for role, people in document.author_groups.items() %}
-                        {% for p in people %}
+                {% for role, people in document.author_groups.items() %}
+                {% for p in people %}
 
-                        <tr>
-                            <td>{{ role_labels.get(role, role) }}</td>
-                            <td>
-                                {{ p.name }}
-                                {% if p.institution %}
-                                    ({{ p.institution }})
-                                {% endif %}
-                            </td>
-                        </tr>
+                <tr>
+                    <td>{{ role_labels.get(role, role) }}</td>
+                    <td>
+                        {{ p.name }}
+                        {% if p.institution %}
+                        ({{ p.institution }})
+                        {% endif %}
+                    </td>
+                </tr>
 
-                        {% endfor %}
-                    {% endfor %}
+                {% endfor %}
+                {% endfor %}
+                {% endif %}
+
+                {% if document.categories %}
+                <tr>
+                    <td>Danh mục</td>
+                    <td>{{ document.categories | join(', ') }}</td>
+                </tr>
+                {% endif %}
+
+                {% if document.languages %}
+                <tr>
+                    <td>Ngôn ngữ</td>
+                    <td>{{ document.languages | join(', ') }}</td>
+                </tr>
                 {% endif %}
 
                 {% if document.subjects %}
@@ -130,17 +160,17 @@
         <div id="pdf" class="tab-content">
 
             {% if document.file_url %}
-                <div class="pdf-actions">
-                    <a href="{{ document.file_url }}" target="_blank" class="pdf-link">
-                        📥 Tải xuống
-                    </a>
-                </div>
+            <div class="pdf-actions">
+                <a href="{{ document.file_url }}" target="_blank" class="pdf-link">
+                    📥 Tải xuống
+                </a>
+            </div>
 
-                <div class="pdf-viewer">
-                    <iframe src="{{ document.file_url }}"></iframe>
-                </div>
+            <div class="pdf-viewer">
+                <embed src="{{ document.file_url }}" type="application/pdf" width="100%" height="600px">
+            </div>
             {% else %}
-                <div class="empty-box">Không có file PDF</div>
+            <div class="empty-box">Không có file PDF</div>
             {% endif %}
 
         </div>
@@ -162,6 +192,9 @@
                     <div><span class="legend-box pink star"></span> Từ khóa</div>
                     <div><span class="legend-box cyan triangle-down"></span> Nhà xuất bản</div>
                     <div><span class="legend-box indigo hexagon"></span> Trường đại học</div>
+                    <div><span class="legend-box pentagon" style="background: #ef4444;"></span> Tạp chí</div>
+                    <div><span class="legend-box teal square" style="background: #14b8a6;"></span> Danh mục</div>
+                    <div><span class="legend-box slate circle" style="background: #64748b; border-radius: 50%;"></span> Ngôn ngữ</div>
                 </div>
 
                 <div id="graph-network"></div>
@@ -176,6 +209,44 @@
 
     </div>
 </div>
+
+<!-- ================= RELATED BY AUTHOR ================= -->
+{% if related_by_author %}
+<section class="related-section">
+    <div class="section-title">
+        <h3>📚 Tài liệu cùng tác giả</h3>
+    </div>
+
+    <div class="carousel-container">
+        <button class="carousel-control prev" id="carousel-prev">❮</button>
+
+        <div class="carousel-track-container">
+            <ul class="carousel-track" id="carousel-track">
+                {% for doc in related_by_author %}
+                <li class="carousel-slide">
+                    <a href="/document/{{ doc.id }}" class="carousel-card">
+                        <div class="carousel-img">
+                            <img src="{{ doc.image_url or url_for('static', filename='images/pdf.jpg') }}"
+                                onerror="this.src='{{ url_for('static', filename='images/pdf.png') }}'"
+                                alt="{{ doc.title }}">
+                        </div>
+                        <div class="carousel-info">
+                            <h4 title="{{ doc.title }}">{{ doc.title }}</h4>
+                            <div class="carousel-meta">
+                                <span class="carousel-year">{{ doc.year or '' }}</span>
+                                <span class="carousel-type tag-{{ doc.type|lower }}">{{ doc.type }}</span>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <button class="carousel-control next" id="carousel-next">❯</button>
+    </div>
+</section>
+{% endif %}
 
 <!-- ================= POPUP PREVIEW ================= -->
 <div id="graph-popup" class="graph-popup hidden">

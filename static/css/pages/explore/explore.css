@@ -28,9 +28,12 @@
 /* ================= LEFT PANEL ================= */
 .explore-left {
     background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 16px;
+    border: 2px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 20px;
+    height: 600px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
     overflow-y: auto;
 }
 
@@ -100,7 +103,7 @@
 #explore-graph {
     width: 100%;
     height: 100%;
-    background: #f9fafb;
+    background: #ffffff;
     border-radius: 12px;
 }
 
@@ -201,6 +204,9 @@
 .triangle-down {
     clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
 }
+.pentagon {
+    clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
 
 /* ================= GRAPH NOTE ================= */
 .graph-note {
@@ -210,7 +216,13 @@
 }
 .graph-wrapper {
     position: relative;
-    height: 500px;   /* 🔥 BẮT BUỘC */
+    height: 600px;   /* 🔥 BẮT BUỘC */
+    border: 2px solid #cbd5e1;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    background: #ffffff;
+    box-sizing: border-box;
 }
 /* ================= POPUP ================= */
 .graph-popup {
@@ -289,6 +301,31 @@
 
 .pagination button:hover {
     background: #1e40af;
+}
+
+/* ================= BACK BUTTON ================= */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: #ffffff;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-back:hover {
+    background-color: #f8fafc;
+    border-color: #94a3b8;
+    color: #1e293b;
+    transform: translateX(-3px);
 }
 
 /* ================= RESPONSIVE ================= */

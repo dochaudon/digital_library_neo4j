@@ -52,12 +52,11 @@ def qa_api():
         if not result:
             result = {}
 
-        # =========================
-        # RESPONSE FORMAT (EXTENDABLE)
-        # =========================
         return jsonify({
             "answer": result.get("answer", "Mình chưa có câu trả lời phù hợp."),
             "documents": result.get("documents", []),
+            "main_subject": result.get("main_subject"),
+            "related_subjects": result.get("related_subjects", []),
 
             # 🔥 optional (dùng cho Level 3/4 UI)
             "suggestions": result.get("suggestions", []),

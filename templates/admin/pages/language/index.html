@@ -31,6 +31,7 @@
 
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Tên ngôn ngữ</th>
                     <th>Thao tác</th>
                 </tr>
@@ -40,13 +41,14 @@
                 {% if languages %}
                     {% for l in languages %}
                     <tr>
+                        <td><strong>{{ l.id }}</strong></td>
                         <td>{{ l.name }}</td>
                         <td class="actions">
                             <a href="/admin/languages/edit/{{ l.id }}" class="btn-edit">Sửa</a>
                             <a href="/admin/languages/delete/{{ l.id }}"
                                class="btn-delete"
                                onclick="return confirm('Xóa ngôn ngữ?')">
-                               Xóa
+                                Xóa
                             </a>
                         </td>
 
@@ -54,7 +56,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="2">Không có dữ liệu</td>
+                        <td colspan="3">Không có dữ liệu</td>
                     </tr>
                 {% endif %}
             </tbody>

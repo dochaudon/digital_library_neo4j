@@ -38,7 +38,7 @@ def get_all_keywords(q=None):
         RETURN 
             k.id AS id, 
             k.name AS name
-        ORDER BY k.name
+        ORDER BY toInteger(substring(k.id, 1)) DESC
         """
         return neo4j_conn.query(cypher, {"q": q})
 
@@ -47,7 +47,7 @@ def get_all_keywords(q=None):
     RETURN 
         k.id AS id, 
         k.name AS name
-    ORDER BY k.name
+    ORDER BY toInteger(substring(k.id, 1)) DESC
     """
 
     return neo4j_conn.query(cypher)

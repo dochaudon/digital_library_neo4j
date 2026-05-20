@@ -44,7 +44,7 @@ def get_all_universities(q=None):
         RETURN 
             u.id AS id, 
             u.name AS name
-        ORDER BY u.name
+        ORDER BY toInteger(substring(u.id, 1)) DESC
         """
         return neo4j_conn.query(cypher, {"q": q})
 
@@ -53,7 +53,7 @@ def get_all_universities(q=None):
     RETURN 
         u.id AS id, 
         u.name AS name
-    ORDER BY u.name
+    ORDER BY toInteger(substring(u.id, 1)) DESC
     """
 
     return neo4j_conn.query(cypher)

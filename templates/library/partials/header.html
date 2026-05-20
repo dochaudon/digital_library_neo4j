@@ -6,6 +6,16 @@
             <span class="brand-icon">📚</span>
             <span class="brand-text">Thư Viện Số</span>
         </a>
+        
+        <!-- SEARCH BAR (Expanding) -->
+        <div class="header-search">
+            <form action="/search" method="GET" class="header-search-form" id="headerSearchForm">
+                <input type="text" name="query" placeholder="Tìm tài liệu..." class="header-search-input" id="headerSearchInput">
+                <button type="button" class="header-search-toggle" id="headerSearchToggle">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
 
         <!-- RIGHT -->
         <div class="header-right">
@@ -14,7 +24,7 @@
                 <div class="user-menu-container">
                     <div class="user-dropdown">
                         <button class="dropdown-btn">
-                            👤 {{ session.get("user")["username"] }}
+                            <i class="fas fa-user"></i> {{ session.get("user")["username"] }}
                             <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i>
                         </button>
                         <div class="dropdown-content">
@@ -37,8 +47,12 @@
             {% else %}
 
                 <!-- LOGIN / REGISTER -->
-                <a href="{{ url_for('auth.login_page') }}" class="auth-link">🔐 Đăng nhập</a>
-                <a href="{{ url_for('auth.register_page') }}" class="auth-link">📝 Đăng ký</a>
+                <a href="{{ url_for('auth.login_page') }}" class="auth-link">
+                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                </a>
+                <a href="{{ url_for('auth.register_page') }}" class="auth-link">
+                    <i class="fas fa-user-plus"></i> Đăng ký
+                </a>
 
             {% endif %}
 

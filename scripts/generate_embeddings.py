@@ -14,22 +14,20 @@ def run():
     if sys.platform == "win32":
         sys.stdout.reconfigure(encoding='utf-8')
 
-    # Fix #4: Fetch richer context — subjects, keywords, categories
+    # Fetch context — subjects, keywords
     query = """
     MATCH (d)
     WHERE d:Book OR d:Article OR d:Thesis
 
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
     OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
-    OPTIONAL MATCH (d)-[:HAS_CATEGORY]->(c:Category)
 
     RETURN
         d.id       AS id,
         d.title    AS title,
         d.abstract AS abstract,
         collect(DISTINCT s.name) AS subjects,
-        collect(DISTINCT k.name) AS keywords,
-        collect(DISTINCT c.name) AS categories
+        collect(DISTINCT k.name) AS keywords
     """
 
     docs = neo4j_conn.query(query)
@@ -41,8 +39,7 @@ def run():
             title=doc["title"],
             abstract=doc["abstract"],
             subjects=doc.get("subjects"),
-            keywords=doc.get("keywords"),
-            categories=doc.get("categories")
+            keywords=doc.get("keywords")
         )
         embedding = create_embedding(text)
 

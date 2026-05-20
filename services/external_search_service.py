@@ -17,7 +17,7 @@ def search_semantic_scholar(query: str, limit=5) -> list:
             "limit": limit,
             "fields": "title,authors,year,abstract,url"
         }
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(url, params=params, timeout=5)
         if response.status_code == 429:
             print("[External] Semantic Scholar rate limit hit.")
             return []
@@ -37,6 +37,7 @@ def search_semantic_scholar(query: str, limit=5) -> list:
                 "abstract": p.get("abstract"),
                 "url": p.get("url"),
                 "source": "Semantic Scholar",
+                "sources": ["semantic_scholar"],
                 "is_external": True
             })
         return results
@@ -49,7 +50,7 @@ def search_arxiv(query: str, limit=3) -> list:
     try:
         # arXiv API uses atom format (XML)
         url = f"http://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results={limit}"
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=5)
         response.raise_for_status()
         
         root = ET.fromstring(response.content)
@@ -73,6 +74,7 @@ def search_arxiv(query: str, limit=3) -> list:
                 "abstract": summary,
                 "url": url_link,
                 "source": "arXiv",
+                "sources": ["arxiv"],
                 "is_external": True
             })
         return results
@@ -90,8 +92,15 @@ def get_external_academic_papers(query: str, limit=5) -> list:
         print(f"[External] Cache hit for: {query}")
         return _query_cache[query]
 
-    # Làm sạch query
-    clean_query = re.sub(r'\b(tài liệu|cuốn sách|về|chủ đề|là|của)\b', '', query, flags=re.IGNORECASE).strip()
+    # Làm sạch query: loại bỏ các hư từ hội thoại
+    indicators = [
+        "tài liệu", "cuốn sách", "về", "chủ đề", "là", "của", "tìm", "kiếm", "bài báo", 
+        "luận văn", "sách", "giáo trình", "lĩnh vực", "cho", "mình", "tôi", "hệ thống",
+        "thư viện", "academic", "nội dung", "thuộc", "những", "các"
+    ]
+    pattern = rf'\b({"|".join(indicators)})\b'
+    clean_query = re.sub(pattern, '', query, flags=re.IGNORECASE)
+    clean_query = re.sub(r'\s+', ' ', clean_query).strip()
     
     # 1.5 Dịch sang Tiếng Anh để search API quốc tế
     english_query = translate_query_for_academic(clean_query)
@@ -111,7 +120,21 @@ def get_external_academic_papers(query: str, limit=5) -> list:
         arxiv_results = search_arxiv(english_query, limit=limit - len(all_results))
         all_results.extend(arxiv_results)
 
-        
+    # 2.5 Filter Relevance (Basic)
+    # Nếu query có keywords quan trọng, lọc bớt các kết quả External lệch hoàn toàn
+    important_keywords = [w for w in english_query.lower().split() if len(w) > 3]
+    if important_keywords:
+        filtered_external = []
+        for p in all_results:
+            title_lower = p['title'].lower()
+            # Nếu title chứa ít nhất một keyword quan trọng thì giữ lại hoặc nếu query quá ngắn thì giữ
+            if any(kw in title_lower for kw in important_keywords) or len(important_keywords) == 0:
+                filtered_external.append(p)
+            else:
+                print(f"[External] Filtering out unrelated paper: {p['title']}")
+                continue
+        all_results = filtered_external
+
     # 3. Cache & Return
     _query_cache[query] = all_results[:limit]
     return _query_cache[query]

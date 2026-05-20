@@ -57,6 +57,10 @@ def delete_author(id):
 # SUBJECT
 # =====================================================
 
+@metadata_admin.route("/subjects/group")
+def subject_group_page():
+    return render_template("admin/pages/subject/group.html")
+
 @metadata_admin.route("/subjects")
 def subject_page():
     page = int(request.args.get("page", 1))

@@ -65,9 +65,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!graphData || !graphData.nodes || graphData.nodes.length === 0) {
         document.getElementById("graph-network").innerHTML = "Không có dữ liệu liên kết";
-        return;
+    } else {
+        initGraph();
     }
 
+    initCarousel();
+});
+
+function initGraph() {
     const container = document.getElementById("graph-network");
 
     const centerId = graphData.center_id;
@@ -77,7 +82,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const mappedNodes = graphData.nodes.map((n, index) => {
         const group = n.group?.toLowerCase();
 
-        // OCD-friendly circular initialization
         let x = 0;
         let y = 0;
         let fixed = false;
@@ -87,7 +91,6 @@ document.addEventListener("DOMContentLoaded", function () {
             y = 0;
             fixed = { x: true, y: true };
         } else {
-            // Space items evenly around center
             const angle = (2 * Math.PI * (index - 1)) / (nodeCount - 1);
             x = radius * Math.cos(angle);
             y = radius * Math.sin(angle);
@@ -104,13 +107,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     const nodes = new vis.DataSet(mappedNodes);
-
     const edges = new vis.DataSet(graphData.edges);
 
     const data = { nodes, edges };
 
     const options = {
-
         nodes: {
             shape: "dot",
             size: 20,
@@ -122,25 +123,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 bold: { color: "#000" }
             },
             borderWidth: 2,
-            shadow: {
-                enabled: true,
-                color: "rgba(0,0,0,0.2)",
-                size: 10,
-                x: 3,
-                y: 3
-            },
-            scaling: {
-                label: { enabled: true, min: 14, max: 20 }
-            }
+            shadow: { enabled: true, color: "rgba(0,0,0,0.2)", size: 10, x: 3, y: 3 },
+            scaling: { label: { enabled: true, min: 14, max: 20 } }
         },
-
         edges: {
             width: 2,
             color: { color: "#cbd5e1", hover: "#64748b", highlight: "#2563eb" },
             smooth: { type: "continuous", roundness: 0.5 },
             arrows: { to: { enabled: false } }
         },
-
         groups: {
             book: { shape: "dot", color: { background: "#2563eb", border: "#1e40af" } },
             article: { shape: "square", color: { background: "#10b981", border: "#059669" } },
@@ -149,59 +140,37 @@ document.addEventListener("DOMContentLoaded", function () {
             subject: { shape: "diamond", color: { background: "#f97316", border: "#ea580c" } },
             keyword: { shape: "star", color: { background: "#ec4899", border: "#be185d" } },
             publisher: { shape: "triangleDown", color: { background: "#06b6d4", border: "#0891b2" } },
-            university: { shape: "hexagon", color: { background: "#6366f1", border: "#4f46e5" } }
+            university: { shape: "hexagon", color: { background: "#6366f1", border: "#4f46e5" } },
+            journal: {
+                shape: "image",
+                image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" width="30" height="30"><polygon points="15,3 27,12 22,26 8,26 3,12" fill="%23ef4444" stroke="%23b91c1c" stroke-width="2"/></svg>'
+            },
+            category: { shape: "box", color: { background: "#14b8a6", border: "#0d9488" } },
+            language: { shape: "ellipse", color: { background: "#64748b", border: "#475569" } }
         },
-
         physics: {
             enabled: true,
             solver: "forceAtlas2Based",
-            forceAtlas2Based: {
-                gravitationalConstant: -100,
-                springLength: 150,
-                springConstant: 0.05,
-                damping: 0.4
-            },
-            stabilization: {
-                iterations: 150,
-                updateInterval: 25
-            }
+            forceAtlas2Based: { gravitationalConstant: -100, springLength: 150, springConstant: 0.05, damping: 0.4 },
+            stabilization: { iterations: 150, updateInterval: 25 }
         },
-
-        interaction: {
-            hover: true,
-            tooltipDelay: 200,
-            zoomView: true,
-            dragNodes: true
-        }
+        interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragNodes: true }
     };
 
     window.network = new vis.Network(container, data, options);
-    // =========================
-    // CENTER GRAPH
-    // =========================
+
     network.once("stabilized", function () {
-    setTimeout(() => {
-        if (graphData.center_id) {
-            network.focus(graphData.center_id, {
-                scale: 1.2,
-                animation: true
-            });
-        } else {
-            network.fit({
-                animation: true
-            });
-        }
-    }, 100);
-});
+        setTimeout(() => {
+            if (graphData.center_id) {
+                network.focus(graphData.center_id, { scale: 1.2, animation: true });
+            } else {
+                network.fit({ animation: true });
+            }
+        }, 100);
+    });
 
-
-    // =========================
-    // CLICK → POPUP
-    // =========================
     network.on("click", async (params) => {
-
         if (!params.nodes.length) return;
-
         const node = nodes.get(params.nodes[0]);
         if (!node) return;
 
@@ -210,47 +179,94 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const popup = document.getElementById("graph-popup");
         popup.classList.remove("hidden");
-
         document.getElementById("popup-title").innerText = node.label.replace(/\n/g, " ");
 
         try {
             const res = await fetch(`/api/preview/${type}/${id}`);
             const data = await res.json();
-
             let html = "";
-
-            if (data.documents && data.documents.length > 0) {
-                data.documents.forEach(d => {
-                    html += `<div class="popup-item">${d.title}</div>`;
-                });
+            if (["book", "article", "thesis"].includes(type)) {
+                html = `
+                    <div class="popup-item" style="border-left: 3px solid #2563eb; padding-left: 10px; margin-bottom: 5px;">
+                        <strong>Năm xuất bản:</strong> ${data.data ? (data.data.year || 'N/A') : 'N/A'}
+                    </div>
+                `;
             } else {
-                html = "<p>Không có dữ liệu</p>";
+                if (data.documents && data.documents.length > 0) {
+                    data.documents.forEach(d => { html += `<div class="popup-item">${d.title}</div>`; });
+                } else {
+                    html = "<p>Không có dữ liệu</p>";
+                }
             }
-
             document.getElementById("popup-content").innerHTML = html;
-
         } catch (err) {
             document.getElementById("popup-content").innerHTML = "Lỗi tải dữ liệu";
         }
 
         document.getElementById("popup-view-btn").onclick = () => {
-            window.location.href = `/explore/${type}/${id}`;
+            if (["book", "article", "thesis"].includes(type)) {
+                window.location.href = `/document/${id}`;
+            } else {
+                window.location.href = `/explore/${type}/${id}`;
+            }
         };
     });
 
-
-    // =========================
-    // DOUBLE CLICK → EXPLORE
-    // =========================
     network.on("doubleClick", (params) => {
-
         if (!params.nodes.length) return;
-
         const node = nodes.get(params.nodes[0]);
         if (!node) return;
+        
+        if (["book", "article", "thesis"].includes(node.group)) {
+            window.location.href = `/document/${node.id}`;
+        } else {
+            window.location.href = `/explore/${node.group}/${node.id}`;
+        }
+    });
+}
 
-        const id = node.id;
-        window.location.href = `/explore/${node.group}/${id}`;
+function initCarousel() {
+    const track = document.getElementById('carousel-track');
+    const nextBtn = document.getElementById('carousel-next');
+    const prevBtn = document.getElementById('carousel-prev');
+
+    if (!track || !nextBtn || !prevBtn) return;
+
+    let currentPos = 0;
+    const slideWidth = 200; // 180 + 20 gap
+    const visibleCount = Math.floor(track.parentElement.clientWidth / slideWidth);
+    const totalSlides = track.children.length;
+
+    const updateButtons = () => {
+        prevBtn.disabled = currentPos === 0;
+        nextBtn.disabled = currentPos >= totalSlides - visibleCount;
+    };
+
+    nextBtn.addEventListener('click', () => {
+        if (currentPos < totalSlides - visibleCount) {
+            currentPos++;
+            track.style.transform = `translateX(-${currentPos * slideWidth}px)`;
+            updateButtons();
+        }
     });
 
-});
+    prevBtn.addEventListener('click', () => {
+        if (currentPos > 0) {
+            currentPos--;
+            track.style.transform = `translateX(-${currentPos * slideWidth}px)`;
+            updateButtons();
+        }
+    });
+
+    updateButtons();
+
+    // Responsive visible count
+    window.addEventListener('resize', () => {
+        const newVisibleCount = Math.floor(track.parentElement.clientWidth / slideWidth);
+        if (currentPos > totalSlides - newVisibleCount) {
+            currentPos = Math.max(0, totalSlides - newVisibleCount);
+            track.style.transform = `translateX(-${currentPos * slideWidth}px)`;
+        }
+        updateButtons();
+    });
+}

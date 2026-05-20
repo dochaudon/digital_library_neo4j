@@ -38,7 +38,7 @@ def get_all_categories(q=None):
         RETURN 
             c.id AS id, 
             c.name AS name
-        ORDER BY c.name
+        ORDER BY toInteger(substring(c.id, 1)) DESC
         """
         return neo4j_conn.query(cypher, {"q": q})
 
@@ -47,7 +47,7 @@ def get_all_categories(q=None):
     RETURN 
         c.id AS id, 
         c.name AS name
-    ORDER BY c.name
+    ORDER BY toInteger(substring(c.id, 1)) DESC
     """
 
     return neo4j_conn.query(cypher)

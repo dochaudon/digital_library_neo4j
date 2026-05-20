@@ -44,3 +44,11 @@ def check_password(hashed_password, password):
     except Exception as e:
         print("CHECK PASSWORD ERROR:", e)
         return False
+
+
+# =========================
+# VERIFY PASSWORD (ALIAS)
+# =========================
+def verify_password(hashed_password, password):
+    """Alias for check_password to standardize terminology."""
+    return check_password(hashed_password, password)

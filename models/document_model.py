@@ -1,197 +1,180 @@
 from database.neo4j_connection import neo4j_conn
 
-
-# =========================
-# TYPE RESOLVER
-# =========================
-TYPE_CASE = """
-CASE
-    WHEN d:Book THEN "Book"
-    WHEN d:Article THEN "Article"
-    WHEN d:Thesis THEN "Thesis"
-    ELSE coalesce(d.type, "Document")
-END
-"""
-
+# Consts for Type Mapping
 TYPE_CASE_RELATED = """
-CASE
-    WHEN related:Book THEN "Book"
-    WHEN related:Article THEN "Article"
-    WHEN related:Thesis THEN "Thesis"
-    ELSE coalesce(related.type, "Document")
-END
+    CASE 
+        WHEN "Book" IN labels(related) THEN "Book"
+        WHEN "Article" IN labels(related) THEN "Article"
+        WHEN "Thesis" IN labels(related) THEN "Thesis"
+        ELSE "Other"
+    END
 """
 
-
 # =========================
-# 🔥 GROUP AUTHOR ROLE (CORE)
+# GET ALL (PAGINATION)
 # =========================
-def group_authors(author_roles):
-    grouped = {
-        "author": [],
-        "contributor": [],
-        "supervisor": [],
-        "editor": []
-    }
-
-    for item in author_roles:
-        if not item or not item.get("name"):
-            continue
-
-        role = item.get("role") or "author"
-
-        if role not in grouped:
-            grouped[role] = []
-
-        grouped[role].append({
-            "name": item["name"],
-            "institution": item.get("institution")
-        })
-
-    return grouped
-
-
-# =========================
-# 🔥 GET DOCUMENT DETAIL (FINAL)
-# =========================
-def get_document_by_id(doc_id):
-
+def get_all_documents(skip=0, limit=20, q=None):
     query = f"""
     MATCH (d)
-    WHERE d.id = $id AND (d:Book OR d:Article OR d:Thesis)
-
-    RETURN
-        d.id AS id,
-        d.title AS title,
-        d.other_title AS other_title,
-        d.year AS year,
-        d.pages AS pages,
-        d.abstract AS abstract,
-        d.file_url AS file_url,
+    WHERE (d:Book OR d:Article OR d:Thesis)
+      AND ($q IS NULL OR d.title CONTAINS $q)
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+    OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
+    RETURN 
+        d.id AS id, 
+        d.title AS title, 
+        d.year AS year, 
         d.image_url AS image_url,
-        {TYPE_CASE} AS type,
-
-        [(d)-[r:HAS_AUTHOR]->(a:Author) | {{
-            name: a.name,
-            role: coalesce(r.role, "author")
-        }}] AS authors_info,
-
-        [(d)-[:HAS_SUBJECT]->(s:Subject) | s.name] AS subjects,
-        [(d)-[:HAS_KEYWORD]->(k:Keyword) | k.name] AS keywords,
-        [(d)-[:IN_CATEGORY]->(c:Category) | c.name] AS categories,
-        [(d)-[:IN_LANGUAGE]->(l:Language) | l.name] AS languages,
-        [(d)-[:PUBLISHED_BY]->(p) | p.name] AS publishers,
-        [(d)-[:OWNED_BY]->(u) | u.name] AS universities,
-        [(d)-[:PUBLISHED_IN]->(j:Journal) | j.name][0] AS journal
+        CASE 
+            WHEN "Book" IN labels(d) THEN "Book"
+            WHEN "Article" IN labels(d) THEN "Article"
+            WHEN "Thesis" IN labels(d) THEN "Thesis"
+            ELSE "Other"
+        END AS type,
+        collect(DISTINCT a.name) AS authors,
+        collect(DISTINCT s.name) AS subjects
+    ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
+    SKIP $skip LIMIT $limit
     """
+    return neo4j_conn.query(query, {"skip": skip, "limit": limit, "q": q})
 
 
+# =========================
+# GET BY ID
+# =========================
+def get_document_by_id(doc_id):
+    query = """
+    MATCH (d {id: $id})
+    OPTIONAL MATCH (d)-[ra:HAS_AUTHOR]->(a:Author)
+    OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
+    OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
+    OPTIONAL MATCH (d)-[:HAS_CATEGORY]->(c:Category)
+    OPTIONAL MATCH (d)-[:IN_LANGUAGE]->(l:Language)
+    OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Publisher)
+    OPTIONAL MATCH (d)-[:OWNED_BY]->(u:University)
+    OPTIONAL MATCH (d)-[:PUBLISHED_IN]->(j:Journal)
+    OPTIONAL MATCH (d)-[:RELATED_TO]->(rd)
+
+    RETURN 
+        d,
+        labels(d) AS doc_labels,
+        collect(DISTINCT {name: a.name, role: ra.role}) AS authors,
+        collect(DISTINCT s.name) AS subjects,
+        collect(DISTINCT k.name) AS keywords,
+        collect(DISTINCT c.name) AS categories,
+        collect(DISTINCT l.name) AS languages,
+        collect(DISTINCT p.name) AS publishers,
+        collect(DISTINCT u.name) AS universities,
+        j.name AS journal,
+        collect(DISTINCT rd.id) AS related_docs
+    """
     result = neo4j_conn.query(query, {"id": doc_id})
-
     if not result:
         return None
 
-    doc = result[0]
+    row = result[0]
+    doc = dict(row["d"])
+    
+    # Mapping labels to type
+    labels = row["doc_labels"]
+    if "Book" in labels: doc["type"] = "Book"
+    elif "Article" in labels: doc["type"] = "Article"
+    elif "Thesis" in labels: doc["type"] = "Thesis"
+    else: doc["type"] = "Other"
 
-    # 🔥 GROUP ROLE
-    doc["author_groups"] = group_authors(doc.get("authors_info", []))
+    # Grouping authors by role
+    groups = {}
+    for auth in row["authors"]:
+        role = auth["role"] or "author"
+        if role not in groups: groups[role] = []
+        groups[role].append(auth)
+
+    doc["author_groups"] = groups
+    doc["subjects"] = row["subjects"]
+    doc["keywords"] = row["keywords"]
+    doc["categories"] = row["categories"]
+    doc["languages"] = row["languages"]
+    doc["publishers"] = row["publishers"]
+    doc["universities"] = row["universities"]
+    doc["journal"] = row["journal"]
+    doc["related_docs"] = row["related_docs"]
+    doc["authors_info"] = row["authors"]
 
     return doc
 
 
-
 # =========================
-# GET ALL DOCUMENTS
+# GET BY TYPE
 # =========================
-def get_all_documents(skip=0, limit=20, q=None):
-    where_clause = "WHERE (d:Book OR d:Article OR d:Thesis)"
-    params = {"skip": skip, "limit": limit}
-    
-    if q:
-        where_clause += " AND toLower(d.title) CONTAINS toLower($q)"
-        params["q"] = q
-
+def get_documents_by_type(doc_types, skip=0, limit=20):
     query = f"""
     MATCH (d)
-    {where_clause}
-
+    WHERE ANY(label IN labels(d) WHERE label IN $types)
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
-
-    RETURN
-        d.id AS id,
-        d.title AS title,
-        d.year AS year,
+    OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
+    RETURN 
+        d.id AS id, 
+        d.title AS title, 
+        d.year AS year, 
         d.image_url AS image_url,
-        {TYPE_CASE} AS type,
-        collect(DISTINCT a.name) AS authors
-
-    ORDER BY d.year DESC
+        CASE 
+            WHEN "Book" IN labels(d) THEN "Book"
+            WHEN "Article" IN labels(d) THEN "Article"
+            WHEN "Thesis" IN labels(d) THEN "Thesis"
+            ELSE "Other"
+        END AS type,
+        collect(DISTINCT a.name) AS authors,
+        collect(DISTINCT s.name) AS subjects
+    ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     SKIP $skip LIMIT $limit
     """
-
-    return neo4j_conn.query(query, params)
+    return neo4j_conn.query(query, {"types": doc_types, "skip": skip, "limit": limit})
 
 
 # =========================
 # COUNT
 # =========================
 def count_documents(q=None):
-    where_clause = "WHERE (d:Book OR d:Article OR d:Thesis)"
-    params = {}
-    
-    if q:
-        where_clause += " AND toLower(d.title) CONTAINS toLower($q)"
-        params["q"] = q
-
-    query = f"""
+    query = """
     MATCH (d)
-    {where_clause}
+    WHERE (d:Book OR d:Article OR d:Thesis)
+      AND ($q IS NULL OR d.title CONTAINS $q)
     RETURN count(d) AS total
     """
-
-    result = neo4j_conn.query(query, params)
+    result = neo4j_conn.query(query, {"q": q})
     return result[0]["total"] if result else 0
 
 
 # =========================
-# BY TYPE
-# =========================
-def get_documents_by_type(doc_type, skip=0, limit=20):
-    query = f"""
-    MATCH (d)
-    WHERE $type IS NULL OR ANY(label IN labels(d) WHERE label IN $type)
-
-    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
-
-    RETURN
-        d.id AS id,
-        d.title AS title,
-        d.year AS year,
-        d.image_url AS image_url,
-        {TYPE_CASE} AS type,
-        collect(DISTINCT a.name) AS authors
-
-    ORDER BY d.year DESC
-    SKIP $skip LIMIT $limit
-    """
-
-    return neo4j_conn.query(query, {
-        "type": doc_type,
-        "skip": skip,
-        "limit": limit
-    })
-
-
-# =========================
-# RELATED
+# RELATED DOCUMENTS (GENERAL)
 # =========================
 def get_related_documents(doc_id, limit=5):
     query = f"""
-    MATCH (d {{id: $id}})-[:HAS_SUBJECT]->(s)<-[:HAS_SUBJECT]-(related)
+    MATCH (d {{id: $id}})-[:HAS_SUBJECT|HAS_KEYWORD]->(tag)<-[:HAS_SUBJECT|HAS_KEYWORD]-(related)
+    WHERE related <> d
+    RETURN DISTINCT
+        related.id AS id, 
+        related.title AS title, 
+        related.year AS year, 
+        related.image_url AS id_url,
+        {TYPE_CASE_RELATED} AS type,
+        count(tag) AS score
+    ORDER BY score DESC, related.year DESC
+    LIMIT $limit
+    """
+    return neo4j_conn.query(query, {"id": doc_id, "limit": limit})
+
+
+# =========================
+# RELATED BY AUTHOR (NEW)
+# =========================
+def get_related_documents_by_author(doc_id, limit=10):
+    query = f"""
+    MATCH (d {{id: $id}})-[:HAS_AUTHOR]->(a:Author)<-[:HAS_AUTHOR]-(related)
     WHERE related <> d
       AND (related:Book OR related:Article OR related:Thesis)
 
-    RETURN
+    RETURN DISTINCT
         related.id AS id,
         related.title AS title,
         related.year AS year,
@@ -201,8 +184,4 @@ def get_related_documents(doc_id, limit=5):
     ORDER BY related.year DESC
     LIMIT $limit
     """
-
-    return neo4j_conn.query(query, {
-        "id": doc_id,
-        "limit": limit
-    })
+    return neo4j_conn.query(query, {"id": doc_id, "limit": limit})

@@ -4,7 +4,7 @@
 
         <!-- ABOUT -->
         <div class="footer-col">
-            <h3>📚 Thư Viện Số</h3>
+            <h3><i class="fas fa-book-reader"></i> Thư Viện Số</h3>
             <p>
                 Hệ thống tìm kiếm <strong>ngữ nghĩa (Semantic Search)</strong> 
                 kết hợp <strong>Knowledge Graph</strong> cho tài liệu học thuật: 
@@ -14,44 +14,40 @@
 
         <!-- LINKS -->
         <div class="footer-col">
-            <h4>🔗 Liên kết</h4>
+            <h4><i class="fas fa-link"></i> Liên kết</h4>
             <ul>
-                <li><a href="{{ url_for('main.home') }}">🏠 Trang chủ</a></li>
-
-                <li><a href="/documents">📚 Tất cả tài liệu</a></li>
-
-                <li><a href="/documents?doc_type=Book">📘 Sách</a></li>
-
-                <li><a href="/documents?doc_type=Article">📰 Bài báo</a></li>
-
-                <li><a href="/documents?doc_type=Thesis">🎓 Luận văn</a></li>
-
-                <li><a href="{{ url_for('qa.qa_page') }}">🤖 Hỏi đáp</a></li>
+                <li><a href="{{ url_for('main.home') }}"><i class="fas fa-home"></i> Trang chủ</a></li>
+                <li><a href="/documents"><i class="fas fa-archive"></i> Tất cả tài liệu</a></li>
+                <li><a href="/documents?doc_type=Book"><i class="fas fa-book"></i> Sách</a></li>
+                <li><a href="/documents?doc_type=Article"><i class="fas fa-newspaper"></i> Bài báo</a></li>
+                <li><a href="/documents?doc_type=Thesis"><i class="fas fa-graduation-cap"></i> Luận văn</a></li>
+                <li><a href="{{ url_for('qa.qa_page') }}"><i class="fas fa-robot"></i> Hỏi đáp</a></li>
             </ul>
         </div>
 
         <!-- QUICK SEARCH -->
         <div class="footer-col">
-            <h4>⚡ Tìm nhanh</h4>
+            <h4><i class="fas fa-bolt"></i> Tìm nhanh</h4>
             <ul class="quick-search">
                 <li><a href="/search?query=AI">AI</a></li>
                 <li><a href="/search?query=Machine Learning">Machine Learning</a></li>
                 <li><a href="/search?query=Data Science">Data Science</a></li>
-                <li><a href="/search?query=Web">Web</a></li>
+                <li><a href="/search?query=Web">Web Development</a></li>
             </ul>
         </div>
 
         <!-- CONTACT -->
         <div class="footer-col">
-            <h4>📬 Liên hệ</h4>
-            <p>📧 contact@digitallibrary.com</p>
-            <p>📍 Nha Trang, Việt Nam</p>
+            <h4><i class="fas fa-envelope"></i> Liên hệ</h4>
+            <p><i class="fas fa-envelope-open-text" style="margin-right: 6px;"></i> contact@digitallibrary.com</p>
+            <p><i class="fas fa-map-marker-alt" style="margin-right: 8px;"></i> Nha Trang, Việt Nam</p>
 
             <!-- SOCIAL -->
             <div class="footer-social">
-                <a href="#">🌐</a>
-                <a href="#">📘</a>
-                <a href="#">🐦</a>
+                <a href="#"><i class="fab fa-chrome"></i></a>
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-github"></i></a>
             </div>
         </div>
 

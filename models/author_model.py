@@ -38,7 +38,7 @@ def get_all_authors(q=None):
         RETURN 
             a.id AS id, 
             a.name AS name
-        ORDER BY a.name
+        ORDER BY toInteger(substring(a.id, 1)) DESC
         """
         return neo4j_conn.query(cypher, {"q": q})
         
@@ -47,7 +47,7 @@ def get_all_authors(q=None):
     RETURN 
         a.id AS id, 
         a.name AS name
-    ORDER BY a.name
+    ORDER BY toInteger(substring(a.id, 1)) DESC
     """
 
     return neo4j_conn.query(cypher)

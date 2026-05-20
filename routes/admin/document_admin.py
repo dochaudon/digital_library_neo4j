@@ -3,7 +3,6 @@ import json
 from flask import Blueprint, request, render_template, redirect, url_for, jsonify
 from werkzeug.utils import secure_filename
 from database.neo4j_connection import neo4j_conn
-from services.graph_service import get_document_graph_service
 from services.document_service import (
     create_document_service,
     update_document_service,
@@ -25,12 +24,15 @@ def allowed(filename, allowed_set):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in allowed_set
 
 
+import uuid
+
 def save_upload(file, folder, allowed_set):
     if not file or file.filename == "":
         return None
     if not allowed(file.filename, allowed_set):
         return None
-    filename = secure_filename(file.filename)
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, filename)
     file.save(path)
@@ -75,6 +77,9 @@ def get_all_metadata():
         "universities": neo4j_conn.query(
             "MATCH (u:University) RETURN u.name AS name ORDER BY u.name"
         ),
+        "documents": neo4j_conn.query(
+            "MATCH (d) WHERE d:Book OR d:Article OR d:Thesis RETURN d.id AS id, d.title AS title ORDER BY d.title"
+        ),
     }
 
 
@@ -96,7 +101,6 @@ def list_page():
         documents=documents, page=page, total_pages=total_pages, q=q
     )
 
-
 # =========================
 # CREATE PAGE
 # =========================
@@ -115,9 +119,20 @@ def create_page():
 def edit_page(id):
     document = get_document_detail_service(id)
     metadata = get_all_metadata()
+    page = request.args.get("page", 1)
     return render_template("admin/pages/document/edit.html",
-                           document=document, metadata=metadata)
+                           document=document, metadata=metadata, page=page)
 
+
+def safe_json_loads(val, default=None):
+    if default is None:
+        default = []
+    if not val or val.strip() == "":
+        return default
+    try:
+        return json.loads(val)
+    except Exception:
+        return default
 
 # =========================
 # CREATE (POST)
@@ -134,13 +149,14 @@ def create():
     if file_url:
         data["file_url"] = file_url
 
-    # Parse JSON arrays từ form
-    data["authors_json"]      = json.loads(data.get("authors_json",      "[]"))
-    data["institutions_json"] = json.loads(data.get("institutions_json", "[]"))
-    data["subjects"]          = json.loads(data.get("subjects",          "[]"))
-    data["keywords"]          = json.loads(data.get("keywords",          "[]"))
-    data["categories"]        = json.loads(data.get("categories",        "[]"))
-    data["languages"]         = json.loads(data.get("languages",         "[]"))
+    # Parse JSON arrays từ form an toàn
+    data["authors_json"]      = safe_json_loads(data.get("authors_json"))
+    data["institutions_json"] = safe_json_loads(data.get("institutions_json"))
+    data["subjects"]          = safe_json_loads(data.get("subjects"))
+    data["keywords"]          = safe_json_loads(data.get("keywords"))
+    data["categories"]        = safe_json_loads(data.get("categories"))
+    data["languages"]         = safe_json_loads(data.get("languages"))
+    data["related_docs"]      = safe_json_loads(data.get("related_docs"))
 
     try:
         create_document_service(data)
@@ -156,6 +172,7 @@ def create():
 @document_admin.route("/update/<id>", methods=["POST"])
 def update(id):
     data = request.form.to_dict()
+    page = request.args.get("page", 1)
 
     image_url = save_upload(request.files.get("image_file"), UPLOAD_IMAGE_DIR, ALLOWED_IMAGES)
     file_url  = save_upload(request.files.get("doc_file"),   UPLOAD_FILE_DIR,  ALLOWED_FILES)
@@ -165,16 +182,17 @@ def update(id):
     if file_url:
         data["file_url"] = file_url
 
-    data["authors_json"]      = json.loads(data.get("authors_json",      "[]"))
-    data["institutions_json"] = json.loads(data.get("institutions_json", "[]"))
-    data["subjects"]          = json.loads(data.get("subjects",          "[]"))
-    data["keywords"]          = json.loads(data.get("keywords",          "[]"))
-    data["categories"]        = json.loads(data.get("categories",        "[]"))
-    data["languages"]         = json.loads(data.get("languages",         "[]"))
+    data["authors_json"]      = safe_json_loads(data.get("authors_json"))
+    data["institutions_json"] = safe_json_loads(data.get("institutions_json"))
+    data["subjects"]          = safe_json_loads(data.get("subjects"))
+    data["keywords"]          = safe_json_loads(data.get("keywords"))
+    data["categories"]        = safe_json_loads(data.get("categories"))
+    data["languages"]         = safe_json_loads(data.get("languages"))
+    data["related_docs"]      = safe_json_loads(data.get("related_docs"))
 
     try:
         update_document_service(id, data)
-        return redirect(url_for("document_admin.list_page"))
+        return redirect(url_for("document_admin.list_page", page=page))
     except Exception as e:
         print("UPDATE ERROR:", e)
         return "Update failed", 500
@@ -186,9 +204,10 @@ def update(id):
 # =========================
 @document_admin.route("/delete/<id>")
 def delete(id):
+    page = request.args.get("page", 1)
     try:
         delete_document_service(id)
-        return redirect(url_for("document_admin.list_page"))
+        return redirect(url_for("document_admin.list_page", page=page))
     except Exception as e:
         print("DELETE ERROR:", e)
         return "Delete failed", 500
@@ -199,7 +218,17 @@ def delete(id):
 # =========================
 @document_admin.route("/view/<id>")
 def view_page(id):
-    document   = get_document_detail_service(id)
-    graph_data = get_document_graph_service(id)
-    return render_template("admin/pages/document/detail.html",
-                           document=document, graph_data=graph_data)
+    document = get_document_detail_service(id)
+    if not document:
+        return "Không tìm thấy tài liệu", 404
+
+    page = request.args.get("page", 1)
+    from services.graph_service import get_graph_data
+    graph_data = get_graph_data(id)
+
+    return render_template(
+        "admin/pages/document/detail.html",
+        document=document,
+        graph_data=graph_data,
+        page=page
+    )

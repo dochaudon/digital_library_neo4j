@@ -1,4 +1,14 @@
 # pyrefly: ignore [missing-import]
+import os
+import sys
+
+if sys.platform.startswith('win'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 from flask import Flask
 from flask_jwt_extended import JWTManager
 
@@ -34,6 +44,8 @@ def create_app():
     # =========================
     # INIT EXTENSIONS
     # =========================
+    app.secret_key = os.getenv("SECRET_KEY", "super-secret-session-key-456")
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key-123")
     JWTManager(app)
     init_bcrypt(app)
 

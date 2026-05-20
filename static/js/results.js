@@ -1,5 +1,8 @@
 const checkboxes = document.querySelectorAll(".filter-type");
 const sortSelect = document.getElementById("sort-select");
+const modeTabs = document.querySelectorAll(".mode-tab");
+const searchTypeInput = document.getElementById("searchTypeInput");
+const mainSearchForm = document.getElementById("mainSearchForm");
 
 function applyFilters() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -22,12 +25,43 @@ function applyFilters() {
         urlParams.delete("sort");
     }
 
-    // 4. Always reset to page 1 when changing filters
+    // 4. Preserve search type
+    if (searchTypeInput && searchTypeInput.value) {
+        urlParams.set("search_type", searchTypeInput.value);
+    }
+
+    // 5. Always reset to page 1 when changing filters
     urlParams.set("page", "1");
 
-    // 5. Reload page with new parameters
+    // 6. Reload page with new parameters
     const newUrl = window.location.pathname + "?" + urlParams.toString();
     window.location.href = newUrl;
+}
+
+// Search Mode Tab interactions
+if (modeTabs && modeTabs.length > 0) {
+    modeTabs.forEach(tab => {
+        tab.addEventListener("click", function() {
+            // Remove active class from all tabs
+            modeTabs.forEach(t => t.classList.remove("active"));
+            
+            // Add active class to clicked tab
+            this.classList.add("active");
+            
+            // Get selected mode
+            const selectedMode = this.getAttribute("data-mode");
+            
+            // Set mode into hidden input
+            if (searchTypeInput) {
+                searchTypeInput.value = selectedMode;
+            }
+            
+            // Submit search form immediately to get new results
+            if (mainSearchForm) {
+                mainSearchForm.submit();
+            }
+        });
+    });
 }
 
 // Event listeners

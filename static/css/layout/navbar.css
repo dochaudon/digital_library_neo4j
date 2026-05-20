@@ -1,42 +1,54 @@
-/* ===== NAVBAR ===== */
+/* ==========================================================================
+   SITE NAVBAR - PREMIUM MINIMALIST NAV
+   ========================================================================== */
+
 .site-nav {
     background: #ffffff;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    position: sticky;
+    top: 71px; /* Dưới header 70px + border 1px */
+    z-index: 999;
 }
 
 /* container */
 .nav-inner {
     display: flex;
     align-items: center;
-    gap: 25px;
-    padding: 10px 0;
+    gap: 32px;
+    height: 48px;
+    padding: 0;
 }
 
 /* link */
 .nav-inner a {
     position: relative;
-    color: #333;
+    color: #475569;
     font-size: 14px;
-    font-weight: 500;
-    padding: 6px 2px;
-    transition: 0.3s;
+    font-weight: 600;
+    text-decoration: none;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 4px;
+    transition: all 0.25s ease;
 }
 
 /* hover effect */
 .nav-inner a:hover {
-    color: #0d3b66;
+    color: #3b82f6;
 }
 
-/* underline animation */
+/* underline sliding animation */
 .nav-inner a::after {
     content: "";
     position: absolute;
+    bottom: -1px;
     left: 0;
-    bottom: -3px;
     width: 0%;
-    height: 2px;
-    background: #0d3b66;
-    transition: 0.3s;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    border-radius: 3px 3px 0 0;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-inner a:hover::after {
@@ -45,10 +57,31 @@
 
 /* active link */
 .nav-inner a.active {
-    color: #0d3b66;
-    font-weight: 600;
+    color: #2563eb;
 }
 
 .nav-inner a.active::after {
     width: 100%;
+}
+
+/* Responsive horizontal scrolling on small screens */
+@media (max-width: 768px) {
+    .site-nav {
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .site-nav::-webkit-scrollbar {
+        display: none; /* Hide scrollbars for cleaner touch UI */
+    }
+
+    .nav-inner {
+        gap: 20px;
+        padding: 0 16px;
+    }
+    
+    .nav-inner a {
+        padding: 0 8px;
+    }
 }
