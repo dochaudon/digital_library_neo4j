@@ -3,36 +3,36 @@
 
         <!-- HOME -->
         <a href="{{ url_for('main.home') }}" class="{% if request.endpoint == 'main.home' %}active{% endif %}">
-            🏠 Trang chủ
+            <i class="fas fa-home" style="margin-right: 6px;"></i> Trang chủ
         </a>
 
         <!-- BOOK -->
         <a href="/documents?doc_type=Book"
             class="{% if request.path == '/documents' and request.args.get('doc_type') == 'Book' %}active{% endif %}">
-            📘 Sách
+            <i class="fas fa-book" style="margin-right: 6px;"></i> Sách
         </a>
 
         <!-- ARTICLE -->
         <a href="/documents?doc_type=Article"
             class="{% if request.path == '/documents' and request.args.get('doc_type') == 'Article' %}active{% endif %}">
-            📰 Bài báo
+            <i class="fas fa-newspaper" style="margin-right: 6px;"></i> Bài báo
         </a>
 
         <!-- THESIS -->
         <a href="/documents?doc_type=Thesis"
             class="{% if request.path == '/documents' and request.args.get('doc_type') == 'Thesis' %}active{% endif %}">
-            🎓 Luận văn
+            <i class="fas fa-graduation-cap" style="margin-right: 6px;"></i> Luận văn
         </a>
 
         <!-- ALL -->
         <a href="{{ url_for('main.documents_page') }}"
             class="{% if request.endpoint == 'main.documents_page' and not request.args.get('doc_type') %}active{% endif %}">
-            📚 Tất cả
+            <i class="fas fa-archive" style="margin-right: 6px;"></i> Tất cả
         </a>
 
         <!-- QA -->
         <a href="{{ url_for('qa.qa_page') }}" class="{% if request.endpoint == 'qa.qa_page' %}active{% endif %}">
-            🤖 Hỏi đáp
+            <i class="fas fa-robot" style="margin-right: 6px;"></i> Hỏi đáp
         </a>
 
     </div>

@@ -44,7 +44,7 @@ def get_all_publishers(q=None):
         RETURN 
             p.id AS id, 
             p.name AS name
-        ORDER BY p.name
+        ORDER BY toInteger(substring(p.id, 1)) DESC
         """
         return neo4j_conn.query(cypher, {"q": q})
 
@@ -53,7 +53,7 @@ def get_all_publishers(q=None):
     RETURN 
         p.id AS id, 
         p.name AS name
-    ORDER BY p.name
+    ORDER BY toInteger(substring(p.id, 1)) DESC
     """
 
     return neo4j_conn.query(cypher)

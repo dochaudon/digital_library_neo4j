@@ -1,0 +1,25 @@
+/* Subject Group Graph Styles */
+.graph-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+#subject-graph {
+    width: 100%;
+    /* 220px = top-navbar + doc-header + card padding + margins */
+    height: calc(100vh - 110px);
+    min-height: 400px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #f8fafc;
+}
+
+/* Customize vis-network manipulation GUI */
+div.vis-network div.vis-manipulation {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}

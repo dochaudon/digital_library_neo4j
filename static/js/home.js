@@ -110,3 +110,26 @@ document.querySelectorAll(".search-suggestions span").forEach(el => {
         window.location.href = `/search?query=${encodeURIComponent(value)}`;
     };
 });
+
+// ===== SUBJECT MODAL =====
+const subjectModal = document.getElementById("subject-modal");
+const btnSeeMore = document.getElementById("btn-see-more-subjects");
+const btnCloseModal = document.getElementById("close-modal");
+
+if (btnSeeMore) {
+    btnSeeMore.onclick = () => {
+        subjectModal.style.display = "flex";
+    };
+}
+
+if (btnCloseModal) {
+    btnCloseModal.onclick = () => {
+        subjectModal.style.display = "none";
+    };
+}
+
+window.onclick = (event) => {
+    if (event.target === subjectModal) {
+        subjectModal.style.display = "none";
+    }
+};

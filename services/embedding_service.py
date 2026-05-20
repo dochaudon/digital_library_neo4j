@@ -20,7 +20,22 @@ def create_embedding(text: str):
     embedding = model.encode(text)
     return embedding.tolist()
 
-def build_document_text(title=None, abstract=None):
+def build_document_text(title=None, abstract=None, subjects=None, keywords=None):
     title = title or ""
     abstract = abstract or ""
-    return f"{title}. {abstract}".strip()
+    
+    parts = [title, abstract]
+    
+    if subjects:
+        if isinstance(subjects, str):
+            parts.append(f"Subjects: {subjects}")
+        elif isinstance(subjects, list):
+            parts.append(f"Subjects: {', '.join(subjects)}")
+            
+    if keywords:
+        if isinstance(keywords, str):
+            parts.append(f"Keywords: {keywords}")
+        elif isinstance(keywords, list):
+            parts.append(f"Keywords: {', '.join(keywords)}")
+            
+    return ". ".join([p.strip() for p in parts if p.strip()]).strip()

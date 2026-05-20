@@ -50,36 +50,54 @@
 
 /* Card Style Form */
 .doc-form {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    border: 1px solid #f3f4f6;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    /* Khoảng cách thông thoáng giữa các khối thông tin */
 }
 
 .form-section {
-    margin-bottom: 30px;
+    background: white;
+    padding: 28px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f1f5f9;
+    margin-bottom: 0;
+    transition: all 0.25s ease-in-out;
+}
+
+.form-section:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
 }
 
 .section-title {
     font-size: 18px;
     font-weight: 600;
-    color: #374151;
-    margin-bottom: 15px;
+    color: #1e293b;
+    margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 10px;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 12px;
 }
 
 .section-title i {
-    color: #3b82f6;
+    color: #4f46e5;
+    /* Đổi màu xanh hiện đại hơn */
 }
 
 /* Grid Layout */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 28px 20px;
+    /* 28px vertical gap to space labels from previous inputs, 20px horizontal gap */
 }
 
 .full-width {
@@ -198,10 +216,23 @@
 }
 
 .remove-row-btn {
-    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    /* Khớp chính xác với chiều cao ô Input */
     color: #ef4444;
     cursor: pointer;
-    text-align: center;
+    margin-bottom: 20px;
+    /* Tạo khoảng lề dưới khớp 100% với form-group */
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.remove-row-btn:hover {
+    color: #dc2626;
+    transform: scale(1.18);
+    /* Hiệu ứng di chuột nổi bật */
 }
 
 /* Custom Select with "New" option */
@@ -226,11 +257,26 @@
 
 .cancel-btn {
     padding: 12px 25px;
-    background: #f3f4f6;
-    color: #4b5563;
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    /* Khung viền rõ nét không mờ nhạt */
     border-radius: 8px;
     font-weight: 600;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+    background: #f8fafc;
+    color: #1e293b;
+    border-color: #94a3b8;
+    /* Viền đậm hơn khi hover */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    /* Đổ bóng nhẹ tactile */
 }
 
 .submit-btn {

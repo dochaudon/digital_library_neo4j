@@ -193,8 +193,28 @@
 }
 
 /* TITLE */
+.title-cell {
+    max-width: 550px; /* Tăng giới hạn chiều rộng tiêu đề lên 550px sau khi đã xóa cột Tác giả */
+}
+
 .title-main {
     font-weight: 600;
+    color: #1e293b;
+    transition: color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Tự động thêm dấu ba chấm nếu tiêu đề quá dài */
+}
+
+.title-link {
+    text-decoration: none;
+    display: block; /* Đảm bảo hiệu ứng lan tỏa hết ô */
+    overflow: hidden;
+}
+
+.title-link:hover .title-main {
+    color: #2563eb;
+    text-decoration: underline;
 }
 
 .title-sub {

@@ -3,7 +3,8 @@ from models.document_model import (
     get_document_by_id,
     get_documents_by_type,
     count_documents,
-    get_related_documents
+    get_related_documents,
+    get_related_documents_by_author  # 🔥 RE-ADD
 )
 
 import uuid
@@ -71,6 +72,28 @@ def get_documents_by_type_service(doc_type, page=1, limit=20):
 def get_related_documents_service(doc_id, limit=5):
     return get_related_documents(doc_id, limit)
 
+def get_related_documents_by_author_service(doc_id, limit=10):  # 🔥 RE-ADD
+    return get_related_documents_by_author(doc_id, limit)
+
+
+# =========================
+# =========================
+# HELPER FOR AUTO-INCREMENT METADATA ID
+# =========================
+def ensure_metadata_node(label, prefix, name):
+    """Đảm bảo node metadata tồn tại, nếu chưa có thì tạo mới kèm ID tự sinh theo chuẩn prefix"""
+    if not name or not name.strip():
+        return
+    name = name.strip()
+    
+    # Kiểm tra xem đã có node cùng label và name chưa
+    query_check = f"MATCH (n:{label} {{name: $name}}) RETURN n.id AS id"
+    res = neo4j_conn.query(query_check, {"name": name})
+    if not res:
+        from services.metadata_service import get_next_metadata_id
+        next_id = get_next_metadata_id(label, prefix)
+        query_create = f"CREATE (n:{label} {{id: $id, name: $name}})"
+        neo4j_conn.query(query_create, {"id": next_id, "name": name})
 
 # =========================
 # CREATE DOCUMENT
@@ -86,8 +109,10 @@ def create_document_service(data):
 
     # 🔥 EMBEDDING
     doc_text = build_document_text(
-        data.get("title"),
-        data.get("abstract")
+        title=data.get("title"),
+        abstract=data.get("abstract"),
+        subjects=data.get("subjects"),
+        keywords=data.get("keywords")
     )
     embedding = create_embedding(doc_text)
 
@@ -127,6 +152,7 @@ def create_document_service(data):
         name = auth.get("name", "").strip()
         role = auth.get("role", "author").strip()
         if name:
+            ensure_metadata_node("Author", "A", name)
             neo4j_conn.query("""
             MERGE (a:Author {name: $name})
             WITH a
@@ -142,13 +168,16 @@ def create_document_service(data):
         if name:
             # Map role to specific relation or use ASSOCIATED_WITH
             rel_type = "ASSOCIATED_WITH"
-            label = "Publisher" if role == "publisher" else "University"
+            inst_label = "Publisher" if role == "publisher" else "University"
+            inst_prefix = "P" if role == "publisher" else "U"
 
             if role == "publisher": rel_type = "PUBLISHED_BY"
             elif role == "university": rel_type = "OWNED_BY"
 
+            ensure_metadata_node(inst_label, inst_prefix, name)
+
             query = f"""
-            MERGE (i:{label} {{name: $name}})
+            MERGE (i:{inst_label} {{name: $name}})
             WITH i
             MATCH (d {{id: $id}})
             MERGE (d)-[r:{rel_type}]->(i)
@@ -159,6 +188,7 @@ def create_document_service(data):
     # SUBJECTS
     for name in data.get("subjects", []):
         if name.strip():
+            ensure_metadata_node("Subject", "S", name)
             neo4j_conn.query("""
             MERGE (s:Subject {name: $name})
             WITH s
@@ -169,6 +199,7 @@ def create_document_service(data):
     # KEYWORDS
     for name in data.get("keywords", []):
         if name.strip():
+            ensure_metadata_node("Keyword", "K", name)
             neo4j_conn.query("""
             MERGE (k:Keyword {name: $name})
             WITH k
@@ -179,16 +210,18 @@ def create_document_service(data):
     # CATEGORIES
     for name in data.get("categories", []):
         if name.strip():
+            ensure_metadata_node("Category", "C", name)
             neo4j_conn.query("""
             MERGE (c:Category {name: $name})
             WITH c
             MATCH (d {id: $id})
-            MERGE (d)-[:IN_CATEGORY]->(c)
+            MERGE (d)-[:HAS_CATEGORY]->(c)
             """, {"name": name.strip(), "id": doc_id})
 
     # LANGUAGES
     for name in data.get("languages", []):
         if name.strip():
+            ensure_metadata_node("Language", "L", name)
             neo4j_conn.query("""
             MERGE (l:Language {name: $name})
             WITH l
@@ -199,6 +232,7 @@ def create_document_service(data):
     # JOURNAL (For Article)
     journal = data.get("journal", "").strip()
     if journal:
+        ensure_metadata_node("Journal", "J", journal)
         neo4j_conn.query("""
         MERGE (j:Journal {name: $name})
         WITH j
@@ -206,6 +240,15 @@ def create_document_service(data):
         MERGE (d)-[:PUBLISHED_IN]->(j)
         """, {"name": journal, "id": doc_id})
 
+    # RELATED DOCUMENTS (RELATED_TO)
+    related_docs = data.get("related_docs", [])
+    for rel_id in related_docs:
+        if rel_id.strip():
+            neo4j_conn.query("""
+            MATCH (d {id: $id}), (r {id: $rel_id})
+            WHERE (r:Book OR r:Article OR r:Thesis)
+            MERGE (d)-[:RELATED_TO]->(r)
+            """, {"id": doc_id, "rel_id": rel_id.strip()})
 
     reset_faiss_index()
     return doc_id
@@ -219,8 +262,10 @@ def update_document_service(doc_id, data):
 
     # 🔥 RE-EMBEDDING
     doc_text = build_document_text(
-        data.get("title"),
-        data.get("abstract")
+        title=data.get("title"),
+        abstract=data.get("abstract"),
+        subjects=data.get("subjects"),
+        keywords=data.get("keywords")
     )
     embedding = create_embedding(doc_text)
 
@@ -266,7 +311,7 @@ def update_document_service(doc_id, data):
 
     # RESET RELATIONS
     neo4j_conn.query("""
-    MATCH (d {id: $id})-[r:HAS_AUTHOR|HAS_SUBJECT|HAS_KEYWORD|IN_CATEGORY|IN_LANGUAGE|PUBLISHED_BY|OWNED_BY|PUBLISHED_IN]->()
+    MATCH (d {id: $id})-[r:HAS_AUTHOR|HAS_SUBJECT|HAS_KEYWORD|HAS_CATEGORY|IN_LANGUAGE|PUBLISHED_BY|OWNED_BY|PUBLISHED_IN|RELATED_TO]->()
     DELETE r
     """, {"id": doc_id})
 
@@ -277,6 +322,7 @@ def update_document_service(doc_id, data):
         name = auth.get("name", "").strip()
         role = auth.get("role", "author").strip()
         if name:
+            ensure_metadata_node("Author", "A", name)
             neo4j_conn.query("""
             MERGE (a:Author {name: $name})
             WITH a
@@ -291,13 +337,16 @@ def update_document_service(doc_id, data):
         role = inst.get("role", "other").strip()
         if name:
             rel_type = "ASSOCIATED_WITH"
-            label = "Publisher" if role == "publisher" else "University"
+            inst_label = "Publisher" if role == "publisher" else "University"
+            inst_prefix = "P" if role == "publisher" else "U"
 
             if role == "publisher": rel_type = "PUBLISHED_BY"
             elif role == "university": rel_type = "OWNED_BY"
 
+            ensure_metadata_node(inst_label, inst_prefix, name)
+
             query = f"""
-            MERGE (i:{label} {{name: $name}})
+            MERGE (i:{inst_label} {{name: $name}})
             WITH i
             MATCH (d {{id: $id}})
             MERGE (d)-[r:{rel_type}]->(i)
@@ -308,6 +357,7 @@ def update_document_service(doc_id, data):
     # SUBJECTS
     for name in data.get("subjects", []):
         if name.strip():
+            ensure_metadata_node("Subject", "S", name)
             neo4j_conn.query("""
             MERGE (s:Subject {name: $name})
             WITH s
@@ -318,6 +368,7 @@ def update_document_service(doc_id, data):
     # KEYWORDS
     for name in data.get("keywords", []):
         if name.strip():
+            ensure_metadata_node("Keyword", "K", name)
             neo4j_conn.query("""
             MERGE (k:Keyword {name: $name})
             WITH k
@@ -328,16 +379,18 @@ def update_document_service(doc_id, data):
     # CATEGORIES
     for name in data.get("categories", []):
         if name.strip():
+            ensure_metadata_node("Category", "C", name)
             neo4j_conn.query("""
             MERGE (c:Category {name: $name})
             WITH c
             MATCH (d {id: $id})
-            MERGE (d)-[:IN_CATEGORY]->(c)
+            MERGE (d)-[:HAS_CATEGORY]->(c)
             """, {"name": name.strip(), "id": doc_id})
 
     # LANGUAGES
     for name in data.get("languages", []):
         if name.strip():
+            ensure_metadata_node("Language", "L", name)
             neo4j_conn.query("""
             MERGE (l:Language {name: $name})
             WITH l
@@ -348,6 +401,7 @@ def update_document_service(doc_id, data):
     # JOURNAL (For Article)
     journal = data.get("journal", "").strip()
     if journal:
+        ensure_metadata_node("Journal", "J", journal)
         neo4j_conn.query("""
         MERGE (j:Journal {name: $name})
         WITH j
@@ -355,7 +409,15 @@ def update_document_service(doc_id, data):
         MERGE (d)-[:PUBLISHED_IN]->(j)
         """, {"name": journal, "id": doc_id})
 
-
+    # RE-ADD RELATED DOCUMENTS (RELATED_TO)
+    related_docs = data.get("related_docs", [])
+    for rel_id in related_docs:
+        if rel_id.strip():
+            neo4j_conn.query("""
+            MATCH (d {id: $id}), (r {id: $rel_id})
+            WHERE (r:Book OR r:Article OR r:Thesis)
+            MERGE (d)-[:RELATED_TO]->(r)
+            """, {"id": doc_id, "rel_id": rel_id.strip()})
 
     reset_faiss_index()
     return True
@@ -373,4 +435,3 @@ def delete_document_service(doc_id):
     result = neo4j_conn.query(query, {"id": doc_id})
     reset_faiss_index()
     return result
-

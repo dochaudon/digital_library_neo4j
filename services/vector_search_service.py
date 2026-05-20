@@ -112,6 +112,7 @@ def vector_search(query, filters=None, limit=20):
                     continue
                     
             doc_meta["score"] = score
+            doc_meta["priority"] = 50
             results.append(doc_meta)
             
     return results

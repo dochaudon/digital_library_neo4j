@@ -31,6 +31,7 @@
 
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Tên thể loại</th>
                     <th>Thao tác</th>
                 </tr>
@@ -40,13 +41,14 @@
                 {% if categories %}
                     {% for c in categories %}
                     <tr>
+                        <td><strong>{{ c.id }}</strong></td>
                         <td>{{ c.name }}</td>
                         <td class="actions">
                             <a href="/admin/categories/edit/{{ c.id }}" class="btn-edit">Sửa</a>
                             <a href="/admin/categories/delete/{{ c.id }}"
                                class="btn-delete"
                                onclick="return confirm('Xóa thể loại?')">
-                               Xóa
+                                Xóa
                             </a>
                         </td>
 
@@ -54,7 +56,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="2">Không có dữ liệu</td>
+                        <td colspan="3">Không có dữ liệu</td>
                     </tr>
                 {% endif %}
             </tbody>

@@ -38,7 +38,7 @@ def get_all_journals(q=None):
         RETURN 
             j.id AS id, 
             j.name AS name
-        ORDER BY j.name
+        ORDER BY toInteger(substring(j.id, 1)) DESC
         """
         return neo4j_conn.query(cypher, {"q": q})
 
@@ -47,7 +47,7 @@ def get_all_journals(q=None):
     RETURN 
         j.id AS id, 
         j.name AS name
-    ORDER BY j.name
+    ORDER BY toInteger(substring(j.id, 1)) DESC
     """
 
     return neo4j_conn.query(cypher)

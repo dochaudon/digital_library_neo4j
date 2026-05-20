@@ -13,26 +13,30 @@
 
     <div class="form-header">
         <h2 class="form-title">✏️ Chỉnh Sửa Tài Liệu</h2>
-        <a href="/admin/documents" class="cancel-btn" style="padding: 8px 15px; font-size: 14px;">Quay lại</a>
+        <a href="/admin/documents?page={{ page }}" class="cancel-btn" style="padding: 8px 15px; font-size: 14px;">Quay lại</a>
     </div>
 
     <!-- CHỌN LOẠI -->
     <div class="form-switch">
         <button class="type-btn {{ 'active' if document.type == 'Book' }}" data-type="book">Sách (Book)</button>
-        <button class="type-btn {{ 'active' if document.type == 'Article' }}" data-type="article">Bài báo (Article)</button>
-        <button class="type-btn {{ 'active' if document.type == 'Thesis' }}" data-type="thesis">Luận văn (Thesis)</button>
+        <button class="type-btn {{ 'active' if document.type == 'Article' }}" data-type="article">Bài báo
+            (Article)</button>
+        <button class="type-btn {{ 'active' if document.type == 'Thesis' }}" data-type="thesis">Luận văn
+            (Thesis)</button>
     </div>
 
 
-    <form id="main-doc-form" action="/admin/documents/update/{{ document.id }}" method="POST" enctype="multipart/form-data" class="doc-form">
-        
+    <form id="main-doc-form" action="/admin/documents/update/{{ document.id }}?page={{ page }}" method="POST"
+        enctype="multipart/form-data" class="doc-form">
+
         <input type="hidden" name="type" id="doc-type" value="{{ document.type }}">
         <input type="hidden" name="authors_json" id="authors-json-hidden">
         <input type="hidden" name="institutions_json" id="institutions-json-hidden">
-        <input type="hidden" name="subjects" id="subjects-hidden">
-        <input type="hidden" name="keywords" id="keywords-hidden">
+        <input type="hidden" name="subjects" id="subjects-hidden" value='{{ document.subjects|tojson }}'>
+        <input type="hidden" name="keywords" id="keywords-hidden" value='{{ document.keywords|tojson }}'>
         <input type="hidden" name="categories" id="categories-hidden">
         <input type="hidden" name="languages" id="languages-hidden">
+        <input type="hidden" name="related_docs" id="related-docs-hidden">
 
         <!-- THÔNG TIN CƠ BẢN -->
         <div class="form-section">
@@ -48,11 +52,13 @@
                 </div>
                 <div class="form-group full-width">
                     <label>Tên tài liệu / Nhan đề chính *</label>
-                    <input type="text" name="title" value="{{ document.title }}" required placeholder="Nhập tên tài liệu...">
+                    <input type="text" name="title" value="{{ document.title }}" required
+                        placeholder="Nhập tên tài liệu...">
                 </div>
                 <div class="form-group full-width">
                     <label>Nhan đề khác / Phụ đề</label>
-                    <input type="text" name="other_title" value="{{ document.other_title or '' }}" placeholder="Nhập nhan đề khác nếu có...">
+                    <input type="text" name="other_title" value="{{ document.other_title or '' }}"
+                        placeholder="Nhập nhan đề khác nếu có...">
                 </div>
                 <div class="form-group">
                     <label>Số trang</label>
@@ -60,7 +66,8 @@
                 </div>
                 <div class="form-group {{ 'hidden' if document.type != 'Article' }}" id="group-journal">
                     <label>Tên Tạp chí / Journal</label>
-                    <input type="text" name="journal" value="{{ document.journal or '' }}" list="journal-datalist" placeholder="Chọn hoặc nhập mới...">
+                    <input type="text" name="journal" value="{{ document.journal or '' }}" list="journal-datalist"
+                        placeholder="Chọn hoặc nhập mới...">
                 </div>
             </div>
         </div>
@@ -70,104 +77,123 @@
             <div class="section-title"><i class="fas fa-users"></i> Tác giả & Trách nhiệm</div>
             <div class="dynamic-container" id="author-list">
                 {% if document.authors_info %}
-                    {% for auth in document.authors_info %}
-                    {% if auth.name %}
-                    <div class="dynamic-row author-row" style="grid-template-columns: 2fr 1fr 40px;">
-                        <div class="form-group">
-                            <label>Tên tác giả</label>
-                            <input type="text" class="auth-name" value="{{ auth.name }}" placeholder="Tên tác giả" list="author-datalist">
-                        </div>
-                        <div class="form-group">
-                            <label>Vai trò</label>
-                            <select class="auth-role">
-                                <option value="author" {{ 'selected' if auth.role == 'author' }}>Tác giả chính</option>
-                                <option value="contributor" {{ 'selected' if auth.role == 'contributor' }}>Đồng tác giả</option>
-                                <option value="supervisor" {{ 'selected' if auth.role == 'supervisor' }}>Giảng viên hướng dẫn</option>
-                            </select>
-                        </div>
-                        <div class="remove-row-btn"><i class="fas fa-trash"></i></div>
+                {% for auth in document.authors_info %}
+                {% if auth.name %}
+                <div class="dynamic-row author-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên tác giả</label>
+                        <input type="text" class="auth-name" value="{{ auth.name }}" placeholder="Tên tác giả"
+                            list="author-datalist">
                     </div>
-                    {% endif %}
-                    {% endfor %}
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <select class="auth-role">
+                            <option value="author" {{ 'selected' if auth.role=='author' }}>Tác giả chính</option>
+                            <option value="contributor" {{ 'selected' if auth.role=='contributor' }}>Đồng tác giả
+                            </option>
+                            <option value="supervisor" {{ 'selected' if auth.role=='supervisor' }}>Giảng viên hướng dẫn
+                            </option>
+                        </select>
+                    </div>
+                    <div class="remove-row-btn"><i class="fas fa-trash"></i></div>
+                </div>
+                {% endif %}
+                {% endfor %}
                 {% else %}
-                    <div class="dynamic-row author-row" style="grid-template-columns: 2fr 1fr 40px;">
-                        <div class="form-group">
-                            <label>Tên tác giả</label>
-                            <input type="text" class="auth-name" placeholder="Tên tác giả" list="author-datalist">
-                        </div>
-                        <div class="form-group">
-                            <label>Vai trò</label>
-                            <select class="auth-role">
-                                <option value="author">Tác giả chính</option>
-                                <option value="contributor">Đồng tác giả</option>
-                                <option value="supervisor">Giảng viên hướng dẫn</option>
-                            </select>
-                        </div>
-                        <div style="padding-bottom: 12px;"></div>
+                <div class="dynamic-row author-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên tác giả</label>
+                        <input type="text" class="auth-name" placeholder="Tên tác giả" list="author-datalist">
                     </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <select class="auth-role">
+                            <option value="author">Tác giả chính</option>
+                            <option value="contributor">Đồng tác giả</option>
+                            <option value="supervisor">Giảng viên hướng dẫn</option>
+                        </select>
+                    </div>
+                    <div style="padding-bottom: 12px;"></div>
+                </div>
                 {% endif %}
             </div>
-            <button type="button" class="add-row-btn" id="add-author-btn"><i class="fas fa-plus"></i> Thêm tác giả</button>
+            <button type="button" class="add-row-btn" id="add-author-btn"><i class="fas fa-plus"></i> Thêm tác
+                giả</button>
         </div>
 
-        <!-- NXB & TRƯỜNG -->
-        <div class="form-section">
-            <div class="section-title"><i class="fas fa-university"></i> Nhà xuất bản & Trường học</div>
-            <div class="dynamic-container" id="inst-list">
-                <!-- Publishers -->
-                {% for name in document.publishers %}
-                <div class="dynamic-row inst-row" style="grid-template-columns: 2fr 1fr 40px;">
-                    <div class="form-group">
-                        <label>Tên NXB</label>
-                        <input type="text" class="inst-name" value="{{ name }}" placeholder="Tên nhà xuất bản" list="publisher-datalist">
-                    </div>
-                    <div class="form-group">
-                        <label>Loại</label>
-                        <select class="inst-role">
-                            <option value="publisher" selected>Nhà xuất bản</option>
-                            <option value="university">Trường đại học</option>
-                        </select>
-                    </div>
-                    <div class="remove-row-btn"><i class="fas fa-trash"></i></div>
-                </div>
-                {% endfor %}
-
-                <!-- Universities -->
+        <!-- TRƯỜNG HỌC (OWNED_BY) -->
+        <div class="form-section" id="group-university">
+            <div class="section-title"><i class="fas fa-university"></i> Trường học (University)</div>
+            <div class="dynamic-container" id="university-list">
                 {% for name in document.universities %}
-                <div class="dynamic-row inst-row" style="grid-template-columns: 2fr 1fr 40px;">
+                <div class="dynamic-row university-row" style="grid-template-columns: 2fr 1fr 40px;">
                     <div class="form-group">
-                        <label>Tên Trường</label>
-                        <input type="text" class="inst-name" value="{{ name }}" placeholder="Tên trường đại học" list="university-datalist">
+                        <label>Tên trường</label>
+                        <input type="text" class="uni-name" value="{{ name }}" placeholder="Tên trường đại học"
+                            list="university-datalist">
                     </div>
                     <div class="form-group">
-                        <label>Loại</label>
-                        <select class="inst-role">
-                            <option value="publisher">Nhà xuất bản</option>
-                            <option value="university" selected>Trường đại học</option>
-                        </select>
+                        <label>Vai trò</label>
+                        <input type="text" class="uni-role" value="university" readonly class="readonly">
                     </div>
                     <div class="remove-row-btn"><i class="fas fa-trash"></i></div>
                 </div>
                 {% endfor %}
 
-                {% if not document.publishers and not document.universities %}
-                    <div class="dynamic-row inst-row" style="grid-template-columns: 2fr 1fr 40px;">
-                        <div class="form-group">
-                            <label>Tên đơn vị</label>
-                            <input type="text" class="inst-name" placeholder="Tên NXB hoặc Trường" list="institution-datalist">
-                        </div>
-                        <div class="form-group">
-                            <label>Loại</label>
-                            <select class="inst-role">
-                                <option value="publisher">Nhà xuất bản</option>
-                                <option value="university">Trường đại học</option>
-                            </select>
-                        </div>
-                        <div style="padding-bottom: 12px;"></div>
+                {% if not document.universities %}
+                <div class="dynamic-row university-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên trường</label>
+                        <input type="text" class="uni-name" placeholder="Tên trường đại học" list="university-datalist">
                     </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <input type="text" class="uni-role" value="university" readonly class="readonly">
+                    </div>
+                    <div style="padding-bottom: 12px;"></div>
+                </div>
                 {% endif %}
             </div>
-            <button type="button" class="add-row-btn" id="add-inst-btn"><i class="fas fa-plus"></i> Thêm đơn vị</button>
+            <button type="button" class="add-row-btn" id="add-university-btn"><i class="fas fa-plus"></i> Thêm trường
+                học</button>
+        </div>
+
+        <!-- CƠ QUAN / NHÀ XUẤT BẢN (PUBLISHED_BY) -->
+        <div class="form-section {{ 'hidden' if document.type == 'Thesis' }}" id="group-publisher">
+            <div class="section-title"><i class="fas fa-building"></i> Cơ quan / Nhà xuất bản (Publisher)</div>
+            <div class="dynamic-container" id="publisher-list">
+                {% for name in document.publishers %}
+                <div class="dynamic-row publisher-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên cơ quan / NXB</label>
+                        <input type="text" class="pub-name" value="{{ name }}" placeholder="Tên cơ quan hoặc NXB"
+                            list="publisher-datalist">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <input type="text" class="pub-role" value="publisher" readonly class="readonly">
+                    </div>
+                    <div class="remove-row-btn"><i class="fas fa-trash"></i></div>
+                </div>
+                {% endfor %}
+
+                {% if not document.publishers %}
+                <div class="dynamic-row publisher-row" style="grid-template-columns: 2fr 1fr 40px;">
+                    <div class="form-group">
+                        <label>Tên cơ quan / NXB</label>
+                        <input type="text" class="pub-name" placeholder="Tên cơ quan hoặc NXB"
+                            list="publisher-datalist">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <input type="text" class="pub-role" value="publisher" readonly class="readonly">
+                    </div>
+                    <div style="padding-bottom: 12px;"></div>
+                </div>
+                {% endif %}
+            </div>
+            <button type="button" class="add-row-btn" id="add-publisher-btn"><i class="fas fa-plus"></i> Thêm cơ
+                quan/NXB</button>
         </div>
 
 
@@ -176,24 +202,43 @@
             <div class="section-title"><i class="fas fa-tags"></i> Phân loại & Metadata</div>
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Chủ đề (Cách nhau bằng dấu phẩy)</label>
-                    <input type="text" id="subjects-input" value="{{ document.subjects|join(', ') }}" placeholder="VD: Công nghệ, Lịch sử..." list="subject-datalist">
+                    <label>Chủ đề (Nhập & Nhấn Enter hoặc Dấu Phẩy)</label>
+                    <input type="text" id="subjects-input" placeholder="VD: Công nghệ, Lịch sử..." list="subject-datalist">
+                    <div id="subjects-tags" class="selected-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
                 </div>
                 <div class="form-group">
-                    <label>Từ khóa (Cách nhau bằng dấu phẩy)</label>
-                    <input type="text" id="keywords-input" value="{{ document.keywords|join(', ') }}" placeholder="VD: AI, ML, Data..." list="keyword-datalist">
+                    <label>Từ khóa (Nhập & Nhấn Enter hoặc Dấu Phẩy)</label>
+                    <input type="text" id="keywords-input" placeholder="VD: AI, ML, Data..." list="keyword-datalist">
+                    <div id="keywords-tags" class="selected-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
                 </div>
                 <div class="form-group">
                     <label>Danh mục / Category</label>
-                    <input type="text" id="categories-input" value="{{ document.categories|join(', ') }}" placeholder="VD: Giáo trình, Sách tham khảo..." list="category-datalist">
+                    <input type="text" id="categories-input" value="{{ document.categories[0] if document.categories else '' }}" placeholder="VD: Giáo trình, Sách tham khảo..." list="category-datalist">
                 </div>
                 <div class="form-group">
                     <label>Ngôn ngữ</label>
-                    <input type="text" id="languages-input" value="{{ document.languages|join(', ') }}" placeholder="VD: Tiếng Việt, Tiếng Anh..." list="language-datalist">
+                    <input type="text" id="languages-input" value="{{ document.languages[0] if document.languages else '' }}" placeholder="VD: Tiếng Việt, Tiếng Anh..." list="language-datalist">
                 </div>
                 <div class="form-group full-width">
                     <label>Tóm tắt nội dung (Abstract)</label>
-                    <textarea name="abstract" placeholder="Nhập tóm tắt ngắn gọn nội dung tài liệu...">{{ document.abstract }}</textarea>
+                    <textarea name="abstract"
+                        placeholder="Nhập tóm tắt ngắn gọn nội dung tài liệu...">{{ document.abstract }}</textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label>Tài liệu liên quan (RELATED_TO)</label>
+                    <div class="relation-autocomplete-container" style="position: relative; width: 100%;">
+                        <input type="text" id="related-docs-search"
+                            placeholder="Nhập ID hoặc Tiêu đề để tìm và liên kết tài liệu..."
+                            style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; box-sizing: border-box; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#cbd5e1'">
+                        <div id="related-docs-suggestions" class="autocomplete-suggestions"
+                            style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); display: none; margin-top: 4px;">
+                        </div>
+                    </div>
+                    <div id="related-docs-tags" class="selected-tags-container"
+                        style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                        <!-- Thẻ Tag tài liệu liên quan sẽ tự động xuất hiện ở đây -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -206,7 +251,8 @@
                     <i class="fas fa-image"></i>
                     <span>Thay đổi ảnh bìa</span>
                     <input type="file" name="image_file" id="image-input" class="hidden" accept="image/*">
-                    <img id="image-preview" src="{{ document.image_url or '' }}" class="preview-img" style="{{ 'display: block;' if document.image_url }}">
+                    <img id="image-preview" src="{{ document.image_url or '' }}" class="preview-img"
+                        style="{{ 'display: block;' if document.image_url }}">
                 </div>
                 <div class="upload-box" onclick="document.getElementById('file-input').click()">
                     <i class="fas fa-file-pdf"></i>
@@ -221,7 +267,7 @@
 
         <!-- ACTIONS -->
         <div class="form-footer">
-            <a href="/admin/documents" class="cancel-btn">Hủy bỏ</a>
+            <a href="/admin/documents?page={{ page }}" class="cancel-btn">Hủy bỏ</a>
             <button type="submit" class="submit-btn"><span id="submit-text">Cập nhật {{ document.type }}</span></button>
         </div>
 
@@ -258,10 +304,30 @@
 </datalist>
 
 <script>
-    document.getElementById('file-input').addEventListener('change', function() {
+    document.getElementById('file-input').addEventListener('change', function () {
         if (this.files[0]) {
             document.getElementById('file-info').textContent = 'Mới chọn: ' + this.files[0].name;
         }
     });
+
+    // Cung cấp danh sách tài liệu hiện có (loại trừ tài liệu hiện tại) cho JS tìm kiếm
+    window.allDocuments = [
+        {% for doc in metadata.documents %}
+        {% if doc.id != document.id %}
+        { id: "{{ doc.id }}", title: {{ doc.title | tojson }} },
+        {% endif %}
+        {% endfor %}
+    ];
+
+    // Các tài liệu đang liên quan hiện tại để hiển thị sẵn các thẻ Tag
+    window.initialRelatedDocs = [
+        {% if document.related_docs %}
+        {% for doc in metadata.documents %}
+        {% if doc.id in document.related_docs %}
+        { id: "{{ doc.id }}", title: {{ doc.title | tojson }} },
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+    ];
 </script>
 {% endblock %}

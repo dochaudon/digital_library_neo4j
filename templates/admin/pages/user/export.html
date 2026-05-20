@@ -1,0 +1,109 @@
+{% extends 'admin/layouts/base_admin.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/user/export.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="export-container">
+
+    <!-- HEADER -->
+    <div class="export-header">
+        <div>
+            <h2>📂 Xuất dữ liệu Neo4j ra CSV</h2>
+            <p class="export-count">Sao lưu và tải toàn bộ cơ sở dữ liệu đồ thị dưới dạng các tệp CSV</p>
+        </div>
+    </div>
+
+    <!-- PRIMARY ZIP ACTION CARD -->
+    <div class="zip-action-card">
+        <div class="zip-card-content">
+            <div class="zip-icon-wrapper">
+                <i class="fa fa-file-archive"></i>
+            </div>
+            <div class="zip-text-wrapper">
+                <h3>Xuất Trọn Bộ 19 Tệp CSV</h3>
+                <p>Nén toàn bộ các node thực thể và mối quan hệ thành một tệp ZIP duy nhất để tải xuống nhanh chóng.</p>
+            </div>
+        </div>
+        <div class="zip-button-wrapper">
+            <a href="{{ url_for('user_admin.download_export', file='all') }}" class="btn-zip-download">
+                <i class="fa fa-cloud-download-alt"></i> Tải xuống toàn bộ (.ZIP)
+            </a>
+        </div>
+    </div>
+
+    <div class="tables-grid">
+        <!-- NODE ENTITIES CARD -->
+        <div class="table-section-card">
+            <div class="section-title">
+                <i class="fa fa-cubes"></i> Dữ liệu Thực thể (Nodes)
+            </div>
+            <table class="export-table">
+                <thead>
+                    <tr>
+                        <th>Tên tệp</th>
+                        <th>Mô tả dữ liệu</th>
+                        <th>Số lượng</th>
+                        <th class="text-right">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in nodes_stats %}
+                    <tr>
+                        <td class="filename-cell"><code>{{ item.filename }}</code></td>
+                        <td>{{ item.description }}</td>
+                        <td>
+                            <span class="count-badge node-badge">
+                                {{ "{:,}".format(item.count) }} dòng
+                            </span>
+                        </td>
+                        <td class="text-right">
+                            <a href="{{ url_for('user_admin.download_export', file=item.filename) }}" class="btn-csv-download">
+                                <i class="fa fa-download"></i> Tải CSV
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- RELATIONSHIPS CARD -->
+        <div class="table-section-card">
+            <div class="section-title">
+                <i class="fa fa-share-alt"></i> Dữ liệu Mối quan hệ (Relationships)
+            </div>
+            <table class="export-table">
+                <thead>
+                    <tr>
+                        <th>Tên tệp</th>
+                        <th>Mô tả dữ liệu</th>
+                        <th>Số lượng</th>
+                        <th class="text-right">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in rels_stats %}
+                    <tr>
+                        <td class="filename-cell"><code>{{ item.filename }}</code></td>
+                        <td>{{ item.description }}</td>
+                        <td>
+                            <span class="count-badge rel-badge">
+                                {{ "{:,}".format(item.count) }} dòng
+                            </span>
+                        </td>
+                        <td class="text-right">
+                            <a href="{{ url_for('user_admin.download_export', file=item.filename) }}" class="btn-csv-download">
+                                <i class="fa fa-download"></i> Tải CSV
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</section>
+{% endblock %}

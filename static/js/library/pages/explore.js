@@ -5,24 +5,63 @@ let edges = null;
 let currentType = null;
 let currentId = null;
 
+// =========================
+// HISTORY STACK & BACK NAVIGATION
+// =========================
+let exploreHistory = [];
+let originalDocUrl = "";
+
+// Capture referrer document or initial document state
+if (document.referrer && document.referrer.includes("/document/")) {
+    originalDocUrl = document.referrer;
+} else if (ENTITY_TYPE === "document") {
+    originalDocUrl = `/document/${ENTITY_ID}`;
+}
 
 // =========================
 // INIT
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
     loadEntity(ENTITY_TYPE, ENTITY_ID);
+
+    // Bind custom Back button
+    const btnBack = document.getElementById("btn-back");
+    if (btnBack) {
+        btnBack.addEventListener("click", handleBackClick);
+    }
 });
 
+function handleBackClick() {
+    if (exploreHistory.length > 0) {
+        const prev = exploreHistory.pop();
+        loadEntity(prev.type, prev.id, 1, true);
+    } else {
+        if (originalDocUrl) {
+            window.location.href = originalDocUrl;
+        } else {
+            // Fallback to home page if no history
+            window.location.href = "/";
+        }
+    }
+}
 
 // =========================
 // LOAD ENTITY
 // =========================
-async function loadEntity(type, id, page = 1) {
+async function loadEntity(type, id, page = 1, isBack = false) {
 
     type = type?.toLowerCase();
 
+    // Push the current entity to history BEFORE updating it (if not backtrack)
+    if (!isBack && currentType && currentId) {
+        exploreHistory.push({ type: currentType, id: currentId });
+    }
+
     currentType = type;
     currentId = id;
+
+    // Dynamically replace the browser URL so refresh/copy works
+    window.history.replaceState(null, "", `/explore/${type}/${id}`);
 
     closePopup();
 
@@ -47,14 +86,15 @@ async function loadLeft(type, id, page = 1) {
     let html = "";
 
     // ===== ENTITY LIST =====
-    if (["author", "subject", "keyword", "publisher", "university"].includes(entityType)) {
+    if (["author", "subject", "keyword", "publisher", "university", "journal"].includes(entityType)) {
 
         const titleMap = {
             author: "📚 Tác giả",
             subject: "📂 Chủ đề",
             keyword: "🏷️ Từ khóa",
             publisher: "🏢 Nhà xuất bản",
-            university: "🎓 Trường đại học"
+            university: "🎓 Trường đại học",
+            journal: "📰 Tạp chí"
         };
 
         const displayName = data.name || "N/A";
@@ -82,13 +122,36 @@ async function loadLeft(type, id, page = 1) {
 
         const d = data.data;
 
+        html += `<h3 style="margin-bottom: 15px; color: #1e293b; font-size: 1.25rem;">${d.title || "Tài liệu không tên"}</h3>`;
+
+        if (d.journal && d.journal !== "N/A") {
+            html += `<p style="margin-bottom: 8px;">📰 <strong>Tạp chí:</strong> ${d.journal}</p>`;
+        }
+        if (d.year && d.year !== "N/A") {
+            html += `<p style="margin-bottom: 8px;">📅 <strong>Năm:</strong> ${d.year}</p>`;
+        }
+
+        const cleanAuthors = d.authors ? d.authors.filter(x => x && x !== "N/A") : [];
+        if (cleanAuthors.length > 0) {
+            html += `<p style="margin-bottom: 8px;">👤 <strong>Tác giả:</strong> ${cleanAuthors.join(", ")}</p>`;
+        }
+
+        const cleanSubjects = d.subjects ? d.subjects.filter(x => x && x !== "N/A") : [];
+        if (cleanSubjects.length > 0) {
+            html += `<p style="margin-bottom: 8px;">📂 <strong>Chủ đề:</strong> ${cleanSubjects.join(", ")}</p>`;
+        }
+
+        const cleanPublishers = d.publishers ? d.publishers.filter(x => x && x !== "N/A") : [];
+        if (cleanPublishers.length > 0) {
+            html += `<p style="margin-bottom: 8px;">🏢 <strong>Nhà xuất bản:</strong> ${cleanPublishers.join(", ")}</p>`;
+        }
+
+        const cleanUniversities = d.universities ? d.universities.filter(x => x && x !== "N/A") : [];
+        if (cleanUniversities.length > 0) {
+            html += `<p style="margin-bottom: 8px;">🎓 <strong>Trường đại học:</strong> ${cleanUniversities.join(", ")}</p>`;
+        }
+
         html += `
-            <h3>${d.title || "N/A"}</h3>
-            <p>📅 ${d.year || "N/A"}</p>
-            <p>👤 ${d.authors?.join(", ") || "N/A"}</p>
-            <p>📂 ${d.subjects?.join(", ") || "N/A"}</p>
-            ${d.publishers && d.publishers.length > 0 ? `<p>🏢 ${d.publishers.join(", ")}</p>` : ""}
-            ${d.universities && d.universities.length > 0 ? `<p>🎓 ${d.universities.join(", ")}</p>` : ""}
             <br>
             <a class="btn-detail" href="/document/${d.id}">
                 Xem chi tiết
@@ -196,7 +259,13 @@ function renderGraph(graphData) {
             subject: { shape: "diamond", color: { background: "#f97316", border: "#ea580c" } },
             keyword: { shape: "star", color: { background: "#ec4899", border: "#be185d" } },
             publisher: { shape: "triangleDown", color: { background: "#06b6d4", border: "#0891b2" } },
-            university: { shape: "hexagon", color: { background: "#6366f1", border: "#4f46e5" } }
+            university: { shape: "hexagon", color: { background: "#6366f1", border: "#4f46e5" } },
+            journal: {
+                shape: "image",
+                image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" width="30" height="30"><polygon points="15,3 27,12 22,26 8,26 3,12" fill="%23ef4444" stroke="%23b91c1c" stroke-width="2"/></svg>'
+            },
+            category: { shape: "box", color: { background: "#14b8a6", border: "#0d9488" } },
+            language: { shape: "ellipse", color: { background: "#64748b", border: "#475569" } }
         },
 
         physics: {
@@ -252,7 +321,7 @@ function getLabel(node) {
         return truncate(node.title || node.label);
     }
 
-    if (["subject", "keyword", "publisher", "university"].includes(group)) {
+    if (["subject", "keyword", "publisher", "university", "journal", "category", "language"].includes(group)) {
         return node.name || node.label;
     }
 
@@ -347,7 +416,7 @@ function onNodeDoubleClick(params) {
     const type = node.group?.toLowerCase();
     const id = node.id;
 
-    window.location.href = `/explore/${type}/${id}`;
+    loadEntity(type, id);
 }
 
 
@@ -370,13 +439,13 @@ function renderPagination(type, id, page, total) {
     let html = `<div class="pagination">`;
 
     if (page > 1) {
-        html += `<button onclick="loadEntity('${type}','${id}',${page-1})">«</button>`;
+        html += `<button onclick="loadEntity('${type}','${id}',${page - 1})">«</button>`;
     }
 
     html += `<span>Trang ${page} / ${totalPages}</span>`;
 
     if (page < totalPages) {
-        html += `<button onclick="loadEntity('${type}','${id}',${page+1})">»</button>`;
+        html += `<button onclick="loadEntity('${type}','${id}',${page + 1})">»</button>`;
     }
 
     html += `</div>`;

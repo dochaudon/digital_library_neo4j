@@ -13,10 +13,14 @@
         <div>
             <h2>🏷 Quản Lý Chủ Đề</h2>
         </div>
-
-        <a href="/admin/subjects/create" class="btn-add">
-            + Thêm Chủ Đề
-        </a>
+        <div style="display: flex; gap: 10px;">
+            <a href="/admin/subjects/group" class="btn-add" style="background-color: #10b981;">
+                <i class="fa fa-project-diagram"></i> Nhóm Chủ Đề
+            </a>
+            <a href="/admin/subjects/create" class="btn-add">
+                + Thêm Chủ Đề
+            </a>
+        </div>
     </div>
 
     <!-- SEARCH -->
@@ -31,6 +35,7 @@
 
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Tên chủ đề</th>
                     <th>Thao tác</th>
                 </tr>
@@ -40,13 +45,14 @@
                 {% if subjects %}
                     {% for s in subjects %}
                     <tr>
+                        <td><strong>{{ s.id }}</strong></td>
                         <td>{{ s.name }}</td>
                         <td class="actions">
                             <a href="/admin/subjects/edit/{{ s.id }}" class="btn-edit">Sửa</a>
                             <a href="/admin/subjects/delete/{{ s.id }}"
                                class="btn-delete"
                                onclick="return confirm('Xóa chủ đề?')">
-                               Xóa
+                                Xóa
                             </a>
                         </td>
 
@@ -54,7 +60,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="2">Không có dữ liệu</td>
+                        <td colspan="3">Không có dữ liệu</td>
                     </tr>
                 {% endif %}
             </tbody>

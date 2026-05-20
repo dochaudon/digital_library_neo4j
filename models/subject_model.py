@@ -23,7 +23,6 @@ def create_subject(data):
         "name": name.strip()
     })
 
-
     return result[0] if result else None
 
 
@@ -38,7 +37,7 @@ def get_all_subjects(q=None):
         RETURN 
             s.id AS id, 
             s.name AS name
-        ORDER BY s.name
+        ORDER BY toInteger(substring(s.id, 1)) DESC
         """
         return neo4j_conn.query(cypher, {"q": q})
 
@@ -47,7 +46,7 @@ def get_all_subjects(q=None):
     RETURN 
         s.id AS id, 
         s.name AS name
-    ORDER BY s.name
+    ORDER BY toInteger(substring(s.id, 1)) DESC
     """
 
     return neo4j_conn.query(cypher)

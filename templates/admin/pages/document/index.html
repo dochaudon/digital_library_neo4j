@@ -32,7 +32,6 @@
             <thead>
                 <tr>
                     <th>Tiêu đề</th>
-                    <th>Tác giả</th>
                     <th>Năm</th>
                     <th>Loại</th>
                     <th>Thao tác</th>
@@ -45,13 +44,10 @@
 
                     <!-- TITLE -->
                     <td class="title-cell">
-                        <div class="title-main">{{ doc.title }}</div>
+                        <a href="/admin/documents/view/{{ doc.id }}?page={{ page }}" class="title-link">
+                            <div class="title-main">{{ doc.title }}</div>
+                        </a>
                         <div class="title-sub">ID: {{ doc.id }}</div>
-                    </td>
-
-                    <!-- AUTHOR -->
-                    <td>
-                        {{ doc.authors|join(', ') if doc.authors else '—' }}
                     </td>
 
                     <!-- YEAR -->
@@ -66,9 +62,9 @@
 
                     <!-- ACTION -->
                     <td class="actions">
-                        <a href="/admin/documents/view/{{ doc.id }}" class="btn-view">Xem</a>
-                        <a href="/admin/documents/edit/{{ doc.id }}" class="btn-edit">Sửa</a>
-                        <a href="/admin/documents/delete/{{ doc.id }}" class="btn-delete">Xóa</a>
+                        <a href="/admin/documents/view/{{ doc.id }}?page={{ page }}" class="btn-view">Xem</a>
+                        <a href="/admin/documents/edit/{{ doc.id }}?page={{ page }}" class="btn-edit">Sửa</a>
+                        <a href="/admin/documents/delete/{{ doc.id }}?page={{ page }}" class="btn-delete" onclick="return confirm('Bạn có chắc chắn muốn xóa tài liệu này?');">Xóa</a>
                     </td>
 
                 </tr>

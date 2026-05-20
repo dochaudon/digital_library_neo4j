@@ -4,19 +4,52 @@ import re
 
 FULLTEXT_INDEX = "documentFulltextIndex"
 
-SUBJECT_MAPPINGS = {
-    "công nghệ thông tin": "Công nghệ thông tin",
-    "cntt": "Công nghệ thông tin",
-    "it": "Công nghệ thông tin",
-    "ai": "Artificial Intelligence",
-    "trí tuệ nhân tạo": "Artificial Intelligence",
-    "học máy": "Machine Learning",
-    "deep learning": "Deep Learning",
-    "kinh tế": "Economics",
-    "toán học": "Mathematics",
-    "vật lý": "Physics",
-    "hóa học": "Chemistry",
-    "sinh học": "Biology"
+SUBJECT_ALIASES = {
+    "Công nghệ thông tin": [
+        "công nghệ thông tin", "information technology", "it", "cntt", "it chuyên nghiệp"
+    ],
+    "Artificial Intelligence": [
+        "trí tuệ nhân tạo", "artificial intelligence", "ai", "thông minh nhân tạo"
+    ],
+    "Machine Learning": [
+        "học máy", "machine learning", "ml"
+    ],
+    "Deep Learning": [
+        "học sâu", "deep learning"
+    ],
+    "Economics": [
+        "kinh tế", "economics", "economic", "economy", "kinh doanh", "quản trị kinh doanh"
+    ],
+    "Mathematics": [
+        "toán học", "mathematics", "math", "toán"
+    ],
+    "Physics": [
+        "vật lý", "physics", "vật lí"
+    ],
+    "Chemistry": [
+        "hóa học", "chemistry", "hóa"
+    ],
+    "Biology": [
+        "sinh học", "biology", "sinh"
+    ],
+    "Cyber Security": [
+        "an ninh mạng", "cyber security", "cybersecurity", "bảo mật"
+    ],
+    "Data Science": [
+        "khoa học dữ liệu", "data science"
+    ],
+    "Education": [
+        "giáo dục", "education", "giảng dạy"
+    ],
+    "Environment": [
+        "môi trường", "environment", "khí hậu", "climate", "biến đổi khí hậu", "bền vững"
+    ],
+    "Law": [
+        "luật", "pháp luật", "law", "jurisprudence", "pháp lý"
+    ],
+    "Medicine": [
+        "y học", "medicine", "y tế", "sức khỏe", "điều dưỡng"
+    ]
 }
 
 TITLE_QA_INTENTS = [
@@ -41,10 +74,76 @@ CASE
     ELSE coalesce(node.type, "Document")
 END
 """
+def resolve_subject(text):
+    """Tìm chủ đề chính xác dựa trên danh sách aliases."""
+    text_lower = text.lower()
+    for official_name, aliases in SUBJECT_ALIASES.items():
+        if any(alias in text_lower for alias in aliases):
+            return official_name
+    return None
+
+def expand_subject_relationship(query_text):
+    """
+    Trực tiếp truy vấn Neo4j để tìm chủ đề và các chủ đề liên quan (1..2 hops).
+    Tận dụng đồ thị tri thức (Knowledge Graph) thực sự của hệ thống.
+    """
+    if not query_text:
+        return None
+
+    # 1. Lấy toàn bộ danh sách các Subject hiện có trong database để đối chiếu
+    cypher_all = "MATCH (s:Subject) RETURN s.name AS name, s.id AS id"
+    try:
+        all_subjects = neo4j_conn.query(cypher_all)
+    except Exception as e:
+        print(f"[Graph Expansion] Error fetching subjects: {e}")
+        return None
+
+    if not all_subjects:
+        return None
+
+    # 2. Tìm xem có từ khóa nào khớp với tên Subject (không phân biệt hoa thường)
+    detected_subject = None
+    query_lower = query_text.lower()
+    for s in all_subjects:
+        s_name = s["name"]
+        # Khớp từ đầy đủ để tránh match sai (ví dụ "AI" trong "tail")
+        pattern = rf"\b{re.escape(s_name.lower())}\b"
+        if re.search(pattern, query_lower):
+            detected_subject = s_name
+            break
+
+    # Fallback dùng resolve_subject aliases nếu không khớp trực tiếp
+    if not detected_subject:
+        detected_subject = resolve_subject(query_text)
+
+    if not detected_subject:
+        return None
+
+    # 3. Truy vấn các chủ đề liên quan (:RELATED_TO) trong khoảng 1..2 bước di chuyển (hops)
+    cypher_related = """
+    MATCH (s:Subject)
+    WHERE toLower(s.name) = toLower($subject)
+    MATCH (s)-[:RELATED_TO*1..2]-(rs:Subject)
+    WHERE toLower(rs.name) <> toLower($subject)
+    RETURN DISTINCT rs.name AS name, rs.id AS id
+    """
+    try:
+        related_rows = neo4j_conn.query(cypher_related, {"subject": detected_subject})
+        related_names = [r["name"] for r in related_rows]
+        related_ids = [r["id"] for r in related_rows]
+        print(f"[Graph Expansion] Detected Subject: {detected_subject} | Related: {related_names}")
+        return {
+            "main_subject": detected_subject,
+            "related_subjects": related_names,
+            "related_subject_ids": related_ids
+        }
+    except Exception as e:
+        print(f"[Graph Expansion] Cypher error: {e}")
+        return None
 def normalize_doc(doc):
-    """Chuẩn hóa metadata của document."""
+    """Chuẩn hóa metadata của document với kiểu dữ liệu an toàn và đa nguồn."""
     
-    # Resolve type from labels if missing
+    # Resolve type
     doc_type = doc.get("type")
     if not doc_type and doc.get("labels"):
         labels = doc.get("labels")
@@ -52,12 +151,39 @@ def normalize_doc(doc):
         elif "Article" in labels: doc_type = "Article"
         elif "Thesis" in labels: doc_type = "Thesis"
 
+    # Safe numeric casting (Anti-crash)
+    try:
+        year_val = doc.get("year")
+        year = int(year_val) if year_val and str(year_val).strip() else 0
+    except:
+        year = 0
+        
+    try:
+        score_val = doc.get("score")
+        score = float(score_val) if score_val is not None else 0.0
+    except:
+        score = 0.0
+        
+    try:
+        priority_val = doc.get("priority")
+        priority = int(priority_val) if priority_val is not None else 0
+    except:
+        priority = 0
+
+    # Multi-source tracking (List instead of String)
+    sources = doc.get("sources", [])
+    if not isinstance(sources, list):
+        sources = [sources] if sources else []
+        
+    primary_source = doc.get("source")
+    if primary_source and primary_source not in sources:
+        sources.append(primary_source)
+
     return {
         "id": doc.get("id"),
         "title": doc.get("title", "Không có tiêu đề"),
         "type": doc_type or "Document",
-        "year": doc.get("year"),
-
+        "year": year,
         "authors": doc.get("authors") or [],
         "publishers": doc.get("publishers") or [],
         "universities": doc.get("universities") or [],
@@ -65,7 +191,10 @@ def normalize_doc(doc):
         "keywords": doc.get("keywords") or [],
         "abstract": doc.get("abstract", ""),
         "image_url": doc.get("image_url") or "/static/images/pdf.jpg",
-        "score": doc.get("score", 0),
+        "score": score,
+        "priority": priority,
+        "sources": list(set(sources)), # Unique sources
+        "retrieval_stage": doc.get("retrieval_stage", "unknown"),
         "vector_score": doc.get("vector_score", 0),
         "fulltext_score": doc.get("fulltext_score", 0),
         "graph_score": doc.get("graph_score", 0),
@@ -76,7 +205,7 @@ def normalize_doc(doc):
 
 def search_title_index(query):
     cypher = f"""
-    CALL db.index.fulltext.queryNodes("documentTitleIndex", $q)
+    CALL db.index.fulltext.queryNodes("documentFulltextIndex", $q)
     YIELD node, score
     RETURN
         node.id AS id,
@@ -123,7 +252,10 @@ def search_fulltext(query, filters=None, limit=20):
         [(node)-[:PUBLISHED_BY]->(p) | p.name] AS publishers,
         [(node)-[:OWNED_BY]->(u) | u.name] AS universities,
         score AS score,
-        'fulltext' AS source
+        80 AS priority,
+        'fulltext' AS source,
+        ['fulltext'] AS sources,
+        'fulltext_match' AS retrieval_stage
 
     ORDER BY score DESC
     LIMIT $limit
@@ -176,7 +308,8 @@ def search_graph(filters, query="", limit=20):
             ANY(x IN authors WHERE toLower(x) CONTAINS toLower($author)))
 
         AND ($subject IS NULL OR
-            ANY(x IN subjects WHERE toLower(x) CONTAINS toLower($subject)))
+            ANY(x IN subjects WHERE toLower(x) CONTAINS toLower($subject)) OR
+            ($subject_aliases IS NOT NULL AND ANY(x IN subjects WHERE toLower(x) IN $subject_aliases)))
 
         AND ($publisher IS NULL OR
             ANY(x IN publishers WHERE toLower(x) CONTAINS toLower($publisher)))
@@ -197,12 +330,16 @@ def search_graph(filters, query="", limit=20):
             WHEN d:Thesis THEN "Thesis"
         END AS type,
         authors,
+        subjects,
         publishers,
         universities,
         1 AS score,
-        'graph' AS source
+        100 AS priority,
+        'graph' AS source,
+        ['graph'] AS sources,
+        'graph_metadata_match' AS retrieval_stage
 
-    ORDER BY d.year DESC
+    ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     SKIP $skip
     LIMIT $limit
     """
@@ -211,6 +348,7 @@ def search_graph(filters, query="", limit=20):
         "doc_type": filters.get("doc_type"),
         "author": filters.get("author"),
         "subject": filters.get("subject"),
+        "subject_aliases": [s.lower() for s in filters.get("subject_aliases", [])],
         "publisher": filters.get("publisher"),
         "university": filters.get("university"),
         "year": filters.get("year"),
@@ -225,22 +363,32 @@ def search_graph(filters, query="", limit=20):
 # =========================
 # HYBRID SEARCH
 # =========================
-def hybrid_search(query="", filters=None, limit=20):
+def hybrid_search(query="", filters=None, limit=20, original_query=None, search_type="hybrid"):
 
     filters = filters or {}
+    if not original_query:
+        original_query = query
 
-    results_fulltext = search_fulltext(query, filters, limit)
-    
-    # Only call search_graph if we have specific filters or no query
-    # to avoid pulling all documents of a type into a keyword search
-    has_specific_filters = any(k for k in filters if k not in ["doc_type", "skip"] and filters[k])
-    
-    if has_specific_filters or not query:
-        results_graph = search_graph(filters, query, limit)
-    else:
+    if search_type == "keyword":
+        results_fulltext = search_fulltext(query, filters, limit)
+        has_specific_filters = any(k for k in filters if k not in ["doc_type", "skip"] and filters[k])
+        if has_specific_filters or not query:
+            results_graph = search_graph(filters, query, limit)
+        else:
+            results_graph = []
+        results_vector = []
+    elif search_type == "semantic":
+        results_fulltext = []
         results_graph = []
-        
-    results_vector = vector_search(query, filters=filters, limit=limit)
+        results_vector = vector_search(original_query, filters=filters, limit=limit)
+    else: # hybrid
+        results_fulltext = search_fulltext(query, filters, limit)
+        has_specific_filters = any(k for k in filters if k not in ["doc_type", "skip"] and filters[k])
+        if has_specific_filters or not query:
+            results_graph = search_graph(filters, query, limit)
+        else:
+            results_graph = []
+        results_vector = vector_search(original_query, filters=filters, limit=limit)
 
     merged = {}
     
@@ -253,6 +401,11 @@ def hybrid_search(query="", filters=None, limit=20):
                 
     w1 = 0.6  # Trọng số cho Fulltext
     w2 = 0.4  # Trọng số cho Vector
+ 
+    # Nếu query có chủ đề cụ thể, giảm mạnh trọng số Vector để tránh nhiễu chéo lĩnh vực
+    if filters.get("subject"):
+        w1 = 0.95
+        w2 = 0.05
 
     # FULLTEXT
     for item in results_fulltext:
@@ -262,41 +415,143 @@ def hybrid_search(query="", filters=None, limit=20):
         merged[item["id"]] = normalize_doc(item)
 
 
-    # GRAPH
+    # GRAPH (Priority 100)
     for item in results_graph:
         item_norm = normalize_doc(item)
-        item_norm["graph_score"] = 0.1 # Constant for graph match in hybrid
-
-        if item_norm["id"] in merged:
-            merged[item_norm["id"]]["score"] += 0.1
-            merged[item_norm["id"]]["graph_score"] = 0.1
-            merged[item_norm["id"]]["explanation"].append("Khớp thông tin trong đồ thị kiến thức (Graph)")
+        
+        doc_id = item_norm["id"]
+        if doc_id in merged:
+            # Gộp sources nếu đã tồn tại
+            merged[doc_id]["sources"] = list(set(merged[doc_id]["sources"] + item_norm["sources"]))
+            merged[doc_id]["priority"] = max(merged[doc_id].get("priority", 0), 100)
         else:
-            item_norm["score"] = 0.1
+            merged[doc_id] = item_norm
             item_norm["explanation"] = ["Tìm thấy qua liên kết dữ liệu"]
             merged[item_norm["id"]] = item_norm
 
 
-    # VECTOR
+    # VECTOR (Priority 40)
     for item in results_vector:
-        v_score = item.get("score", 0)
-        item_norm = normalize_doc(item)
-        item_norm["vector_score"] = v_score
-        weighted_score = v_score * w2
-
-        if item_norm["id"] in merged:
-            merged[item_norm["id"]]["score"] += weighted_score
-            merged[item_norm["id"]]["vector_score"] = v_score
-            merged[item_norm["id"]]["explanation"].append(f"Khớp ngữ nghĩa (Độ tương đồng: {v_score:.2f})")
+        doc_id = item["id"]
+        if doc_id in merged:
+            merged[doc_id]["sources"] = list(set(merged[doc_id]["sources"] + ["vector"]))
+            merged[doc_id]["vector_score"] = item.get("score", 0)
         else:
-            item_norm["score"] = weighted_score
+            item_norm = normalize_doc(item)
+            item_norm["priority"] = 40
+            item_norm["sources"] = ["vector"]
             item_norm["explanation"] = [f"Tìm thấy qua tìm kiếm ngữ nghĩa (AI)"]
-            merged[item_norm["id"]] = item_norm
+            merged[doc_id] = item_norm
 
 
+
+    # 2. PRIORITY BOOSTING (Metadata Match vs Keyword Match)
+    has_metadata_filter = any(filters.get(k) for k in ["subject", "author", "university", "keyword"])
+    
+    for doc in list(merged.values()):
+        title_lower = doc["title"].lower()
+        query_lower = original_query.lower()
+        priority = doc.get("priority", 0)
+
+        # 1. EXACT TITLE BOOST (Priority 150)
+        if query_lower == title_lower:
+            doc["priority"] = 150
+            doc["retrieval_stage"] = "exact_title_match"
+        
+        # 2. PARTIAL TITLE BOOST (Priority 130)
+        elif query_lower in title_lower and len(query_lower) > 3:
+            doc["priority"] = max(doc["priority"], 130)
+            doc["retrieval_stage"] = "partial_title_match"
+
+        # 3. EXACT METADATA BOOST (Priority 120)
+        else:
+            target_subject = filters.get("subject")
+            subject_aliases = [s.lower() for s in filters.get("subject_aliases", [])]
+            doc_subjects = [s.lower() for s in doc.get("subjects", [])]
+
+            is_exact_subject = False
+            if target_subject and target_subject.lower() in doc_subjects: is_exact_subject = True
+            if subject_aliases and any(s in doc_subjects for s in subject_aliases): is_exact_subject = True
+
+            if is_exact_subject:
+                doc["priority"] = 120
+                doc["retrieval_stage"] = "exact_metadata_match"
+            elif filters.get("university") and any(filters["university"].lower() in u.lower() for u in doc.get("universities", [])):
+                doc["priority"] = 120
+                doc["retrieval_stage"] = "exact_metadata_match"
+
+            # PARTIAL METADATA / STRONG TITLE BOOST (Priority 100)
+            elif filters.get("subject") and filters["subject"].lower() in title_lower:
+                doc["priority"] = max(doc["priority"], 100)
+                doc["retrieval_stage"] = "metadata_title_match"
+
+        # VECTOR DEMOTION (If metadata query is active)
+        merged[doc["id"]] = doc
+
+    # Enforce metadata filters on all merged results
+    filtered_merged = {}
+    for doc_id, doc in merged.items():
+        # doc_type filter
+        doc_type_filter = filters.get("doc_type")
+        if doc_type_filter:
+            if isinstance(doc_type_filter, str):
+                doc_type_filter = [doc_type_filter]
+            if doc.get("type") not in doc_type_filter:
+                continue
+
+        # author filter
+        auth_filter = filters.get("author")
+        if auth_filter:
+            doc_authors = [a.lower() for a in doc.get("authors", [])]
+            if not any(auth_filter.lower() in a for a in doc_authors):
+                continue
+
+        # subject / subject_aliases filter
+        subj_filter = filters.get("subject")
+        subj_aliases = [s.lower() for s in filters.get("subject_aliases", [])]
+        if subj_filter:
+            doc_subjects = [s.lower() for s in doc.get("subjects", [])]
+            matches_subj = any(subj_filter.lower() in s for s in doc_subjects)
+            matches_aliases = any(s in doc_subjects for s in subj_aliases)
+            if not (matches_subj or matches_aliases):
+                continue
+
+        # publisher filter
+        pub_filter = filters.get("publisher")
+        if pub_filter:
+            doc_publishers = [p.lower() for p in doc.get("publishers", [])]
+            if not any(pub_filter.lower() in p for p in doc_publishers):
+                continue
+
+        # university filter
+        univ_filter = filters.get("university")
+        if univ_filter:
+            doc_univs = [u.lower() for u in doc.get("universities", [])]
+            if not any(univ_filter.lower() in u for u in doc_univs):
+                continue
+
+        # year filter
+        year_filter = filters.get("year")
+        if year_filter:
+            try:
+                if int(doc.get("year", 0)) != int(year_filter):
+                    continue
+            except (ValueError, TypeError):
+                pass
+
+        filtered_merged[doc_id] = doc
+
+    merged = filtered_merged
 
     results = list(merged.values())
-    results.sort(key=lambda x: (-x.get("score", 0), -(x.get("year") or 0)))
+
+    # PRIORITY-BASED RERANKING
+    # 120: Exact Metadata, 100: Partial/Title Metadata, 80: Fulltext, 40: Vector
+    results.sort(key=lambda x: (
+        -x.get("priority", 0),
+        -x.get("score", 0),
+        -(x.get("year", 0))
+    ))
 
     return results[:limit]
 
@@ -304,7 +559,7 @@ def hybrid_search(query="", filters=None, limit=20):
 # =========================
 # MAIN SEARCH PIPELINE
 # =========================
-def search_documents(query="", filters=None, limit=20):
+def search_documents(query="", filters=None, limit=20, search_type="hybrid"):
 
     filters = filters or {}
 
@@ -324,6 +579,35 @@ def search_documents(query="", filters=None, limit=20):
     parsed_query, parsed_filters = parse_query(query)
     filters.update(parsed_filters)
 
+    # Subject Relationship Expansion
+    original_parsed_query = parsed_query
+    expansion = expand_subject_relationship(query)
+    if expansion:
+        main_subj = expansion["main_subject"]
+        related_subjs = expansion["related_subjects"]
+        
+        # Chỉ set subject filter nếu chưa được set từ caller (parse_filters của qa_service)
+        if not filters.get("subject"):
+            filters["subject"] = main_subj
+        
+        # Luôn thêm subject_aliases để mở rộng graph search
+        if "subject_aliases" not in filters:
+            filters["subject_aliases"] = []
+            
+        for rs in related_subjs:
+            if rs.lower() not in [x.lower() for x in filters["subject_aliases"]]:
+                filters["subject_aliases"].append(rs)
+                
+        # Chỉ expand Lucene query khi KHÔNG có subject filter cứng
+        # (vì nếu có subject filter, graph search đã đảm bảo độ chính xác)
+        if related_subjs and not filters.get("subject"):
+            expansion_terms = " OR ".join([f'"{rs}"' for rs in related_subjs[:3]])
+            if parsed_query:
+                parsed_query = f'({parsed_query}) OR {expansion_terms}'
+            else:
+                parsed_query = expansion_terms
+            print(f"[Graph Expansion] Expanded Lucene query to: {parsed_query}")
+
     # Import inline để tránh circular import với qa_service
     from services.qa_service import detect_intent, extract_title
 
@@ -340,14 +624,14 @@ def search_documents(query="", filters=None, limit=20):
         if results:
             return [normalize_doc(r) for r in results]
 
-    # 3. HYBRID SEARCH
-    print("[Pipeline] Hybrid Search")
-    results = hybrid_search(parsed_query, filters, limit)
+    # 3. HYBRID SEARCH (Delegates matching to hybrid_search based on search_type)
+    print(f"[Pipeline] Performing search of type: {search_type}")
+    results = hybrid_search(parsed_query, filters, limit, original_query=original_parsed_query, search_type=search_type)
 
-    # 4. GRAPH SEARCH (Fallback if hybrid is thin but we have filters)
+    # 4. GRAPH SEARCH (Fallback if results are thin but we have filters)
     if not results and any(filters.values()):
         print("[Pipeline] Fallback to Graph Search")
-        results = search_graph(filters, parsed_query, limit)
+        results = search_graph(filters, original_parsed_query, limit)
 
 
     # 5. WEAK QA INTENT Fallback
@@ -356,7 +640,6 @@ def search_documents(query="", filters=None, limit=20):
         results = search_title_index(title)
         if results:
             return [normalize_doc(r) for r in results]
-
 
     return results
 
@@ -372,67 +655,56 @@ def parse_query(query):
     filters = {}
     text = query.lower()
 
-    # SUBJECT mapping (Priority)
-    for key, val in SUBJECT_MAPPINGS.items():
-        if key in text:
-            filters["subject"] = val
-            # Now we can remove the subject key from text to avoid it being in query
-            text = text.replace(key, "")
+    # 1. SUBJECT RESOLUTION
+    resolved_subj = resolve_subject(text)
+    if resolved_subj:
+        filters["subject"] = resolved_subj
+        filters["subject_aliases"] = SUBJECT_ALIASES.get(resolved_subj, [])
+        # Remove the matched subject part from text to avoid over-filtering titles in search_graph
+        for alias in filters["subject_aliases"] + [resolved_subj]:
+            text = re.sub(rf'\b{re.escape(alias)}\b', ' ', text, flags=re.IGNORECASE)
 
-            
-    # YEAR
+    # 2. KEYWORD Extraction
+    kw_match = re.search(r'(?:từ khóa|keyword)\s+([^\s?]+)', text)
+    if kw_match:
+        filters["keyword"] = kw_match.group(1).strip()
 
+    # 3. UNIVERSITY Extraction
+    inst_match = re.search(r'(?:trường|đại học|học viện|university|institute)\s+([^\s?]+(?:\s+[^\s?]+){0,2})', text)
+    if inst_match:
+        filters["university"] = inst_match.group(1).strip()
+        # Xóa phần đã khớp để không bị tác giả bắt lại
+        text = text.replace(inst_match.group(0), "")
+
+    # 4. YEAR
     year_match = re.search(r'\b(19|20)\d{2}\b', text)
     if year_match:
         filters["year"] = int(year_match.group())
         text = text.replace(year_match.group(), "")
 
-    # TYPE
+    # 5. TYPE
     if "luận văn" in text:
         filters["doc_type"] = "Thesis"
-        text = text.replace("luận văn", "")
     elif "sách" in text or "giáo trình" in text:
         filters["doc_type"] = "Book"
-        text = text.replace("sách", "").replace("giáo trình", "")
     elif "bài báo" in text:
         filters["doc_type"] = "Article"
-        text = text.replace("bài báo", "")
 
-    # LANGUAGE
-    if "tiếng anh" in text:
-        filters["language"] = "English"
-        text = text.replace("tiếng anh", "")
-    elif "tiếng việt" in text:
-        filters["language"] = "Vietnamese"
-        text = text.replace("tiếng việt", "")
-
-    # PUBLISHER / UNIVERSITY
-    if "bách khoa" in text:
-        filters["institution"] = "Bách Khoa"
-        text = text.replace("bách khoa", "")
-
-
-
-    # AUTHOR
-    author_match = re.search(r'của\s+(.+)', text)
+    # 6. AUTHOR
+    author_match = re.search(r'(?:tác giả|của|bởi)\s+([^\s?]+(?:\s+[^\s?]+){0,2})', text)
     if author_match:
         filters["author"] = author_match.group(1).strip()
-        text = text.replace(author_match.group(0), "")
 
     # Remove INDICATOR words from text query
     indicator_words = [
-        "chủ đề", "lĩnh vực", "về", "tài liệu", "cuốn sách", "bài báo", "luận văn",
+        "chủ đề", "lĩnh vực", "về", "tài liệu", "cuốn sách", "sách", "giáo trình", "bài báo", "luận văn",
         "từ khóa", "trường", "đại học", "học viện", "nhà xuất bản", "nxb", "có", "các", "những",
         "thuộc về", "thuộc", "là", "theo", "mang", "gồm", "của", "viết", "viết bởi", "được"
     ]
     for w in indicator_words:
-        # Use regex for word boundary to avoid partial matches
         text = re.sub(rf'\b{w}\b', ' ', text, flags=re.IGNORECASE)
 
-
-
     text = re.sub(r'\s+', ' ', text).strip()
-
     return text, filters
 
 
@@ -473,7 +745,8 @@ def strict_search(query="", filters=None, limit=20):
             ANY(x IN authors WHERE toLower(x) CONTAINS toLower($author)))
 
         AND ($subject IS NULL OR
-            ANY(x IN subjects WHERE toLower(x) CONTAINS toLower($subject)))
+            ANY(x IN subjects WHERE toLower(x) CONTAINS toLower($subject)) OR
+            ($subject_aliases IS NOT NULL AND ANY(x IN subjects WHERE toLower(x) IN $subject_aliases)))
 
         AND ($keyword IS NULL OR
             ANY(x IN keywords WHERE toLower(x) CONTAINS toLower($keyword)))
@@ -483,10 +756,9 @@ def strict_search(query="", filters=None, limit=20):
             WHERE toLower(l.name) CONTAINS toLower($language)
         })
 
-        AND ($institution IS NULL OR EXISTS {
-            MATCH (d)-[:PUBLISHED_BY|OWNED_BY]->(i)
-            WHERE (i:Publisher OR i:University)
-            AND toLower(i.name) CONTAINS toLower($institution)
+        AND ($university IS NULL OR EXISTS {
+            MATCH (d)-[:OWNED_BY]->(i:University)
+            WHERE toLower(i.name) CONTAINS toLower($university)
         })
 
     RETURN
@@ -503,7 +775,7 @@ def strict_search(query="", filters=None, limit=20):
         [(d)-[:OWNED_BY]->(u) | u.name] AS universities,
         1 AS score
 
-    ORDER BY d.year DESC
+    ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     SKIP $skip
     LIMIT $limit
     """
@@ -514,9 +786,10 @@ def strict_search(query="", filters=None, limit=20):
         "year": filters.get("year"),
         "author": filters.get("author"),
         "subject": filters.get("subject"),
+        "subject_aliases": [s.lower() for s in filters.get("subject_aliases", [])],
         "keyword": filters.get("keyword"),
         "language": filters.get("language"),
-        "institution": filters.get("institution"),
+        "university": filters.get("university"),
         "skip": filters.get("skip", 0),
         "limit": limit
     })
@@ -572,7 +845,7 @@ def get_latest_documents(limit=20):
         END AS type,
         collect(DISTINCT a.name) AS authors
 
-    ORDER BY d.year DESC
+    ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     LIMIT $limit
     """
 
