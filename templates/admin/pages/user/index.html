@@ -40,22 +40,26 @@
                         <td>{{ u.email }}</td>
                         <td>{{ u.role or 'user' }}</td>
                         <td>
-                            {% if u.is_active %}
-                                <span class="status active">Active</span>
+                            {% if u.status == 'active' or u.status == None %}
+                                <span class="status active" style="color: #059669; background: #d1fae5; padding: 4px 8px; border-radius: 4px;">Active</span>
                             {% else %}
-                                <span class="status inactive">Inactive</span>
+                                <span class="status inactive" style="color: #dc2626; background: #fee2e2; padding: 4px 8px; border-radius: 4px;">Banned</span>
                             {% endif %}
                         </td>
-                        <td class="actions">
-                            <a href="/admin/users/toggle/{{ u.id }}"
-                               class="btn-toggle">
-                               Toggle
+                        <td class="actions" style="display: flex; gap: 8px;">
+                            <a href="/admin/users/toggle_role/{{ u.id }}"
+                               class="btn-toggle"
+                               title="Thay đổi quyền Admin/User"
+                               style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none;"
+                               onclick="return confirm('Bạn có chắc chắn thay đổi quyền của người dùng này?')">
+                               {% if u.role == 'admin' %} Demote {% else %} Promote {% endif %}
                             </a>
-
-                            <a href="/admin/users/delete/{{ u.id }}"
-                               class="btn-delete"
-                               onclick="return confirm('Delete user?')">
-                               Delete
+                            <a href="/admin/users/toggle/{{ u.id }}"
+                               class="btn-toggle"
+                               title="Cấm hoặc bỏ cấm người dùng"
+                               style="background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none;"
+                               onclick="return confirm('Bạn có chắc chắn muốn cấm/bỏ cấm người dùng này?')">
+                               {% if u.status == 'active' or u.status == None %} Ban {% else %} Unban {% endif %}
                             </a>
                         </td>
                     </tr>

@@ -92,8 +92,8 @@ def list_page():
     q     = request.args.get("q", "")
     limit = 10
 
-    documents   = get_documents_service(page, limit, q=q)
-    total       = count_documents_service(q=q)
+    documents   = get_documents_service(page, limit, q=q, include_hidden=True)
+    total       = count_documents_service(q=q, include_hidden=True)
     total_pages = (total // limit) + (1 if total % limit else 0)
 
     return render_template(
@@ -214,6 +214,35 @@ def delete(id):
 
 
 # =========================
+# TOGGLE STATUS (AJAX)
+# =========================
+@document_admin.route("/toggle-status/<id>", methods=["POST"])
+def toggle_status(id):
+    try:
+        document = get_document_detail_service(id)
+        if not document:
+            return jsonify({"success": False, "error": "Document not found"}), 404
+        
+        current_status = document.get("status") or "active"
+        new_status = "hidden" if current_status == "active" else "active"
+        
+        query = """
+        MATCH (d {id: $id})
+        SET d.status = $status
+        RETURN d
+        """
+        neo4j_conn.query(query, {"id": id, "status": new_status})
+        
+        from services.vector_search_service import reset_faiss_index
+        reset_faiss_index()
+        
+        return jsonify({"success": True, "new_status": new_status})
+    except Exception as e:
+        print("TOGGLE STATUS ERROR:", e)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# =========================
 # VIEW
 # =========================
 @document_admin.route("/view/<id>")
@@ -224,7 +253,7 @@ def view_page(id):
 
     page = request.args.get("page", 1)
     from services.graph_service import get_graph_data
-    graph_data = get_graph_data(id)
+    graph_data = get_graph_data(id, include_hidden=True)
 
     return render_template(
         "admin/pages/document/detail.html",

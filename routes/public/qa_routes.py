@@ -51,16 +51,32 @@ def qa_api():
         # fallback tránh None
         if not result:
             result = {}
+            
+        from services.graph_service import get_multi_document_graph_service
+        
+        documents = result.get("documents", [])
+        graph_data = {"nodes": [], "edges": []}
+        
+        if documents:
+            doc_ids = [doc.get("id") for doc in documents if doc.get("id")]
+            if doc_ids:
+                try:
+                    graph_data = get_multi_document_graph_service(doc_ids)
+                except Exception as e:
+                    print("QA GRAPH ERROR:", e)
 
         return jsonify({
             "answer": result.get("answer", "Mình chưa có câu trả lời phù hợp."),
-            "documents": result.get("documents", []),
+            "documents": documents,
             "main_subject": result.get("main_subject"),
             "related_subjects": result.get("related_subjects", []),
 
             # 🔥 optional (dùng cho Level 3/4 UI)
             "suggestions": result.get("suggestions", []),
-            "explanation": result.get("explanation", None)
+            "explanation": result.get("explanation", None),
+            
+            # 🔥 data cho graph component ở frontend
+            "graph_data": graph_data
         }), 200
 
     except Exception as e:

@@ -59,22 +59,37 @@ def change_password_service(user_id, password):
 
 
 # =========================
-# DEACTIVATE USER (SOFT DELETE)
+# TOGGLE STATUS (BAN / UNBAN)
 # =========================
-def deactivate_user_service(user_id):
-
+def toggle_status_service(user_id):
     user = get_user_by_id(user_id)
     if not user:
         return {"error": "User not found"}
 
     if user.get("role") == "admin":
-        return {"error": "Cannot deactivate admin"}
+        return {"error": "Cannot ban admin"}
 
-    if user.get("status") == "inactive":
-        return {"message": "User already inactive"}
-
+    new_status = "active" if user.get("status") == "inactive" else "inactive"
+    
     return {
-        "id": deactivate_user(user_id)
+        "id": update_user(user_id, {"status": new_status}),
+        "new_status": new_status
+    }
+
+
+# =========================
+# TOGGLE ROLE (ADMIN / USER)
+# =========================
+def toggle_role_service(user_id):
+    user = get_user_by_id(user_id)
+    if not user:
+        return {"error": "User not found"}
+
+    new_role = "user" if user.get("role") == "admin" else "admin"
+    
+    return {
+        "id": update_user(user_id, {"role": new_role}),
+        "new_role": new_role
     }
 
 

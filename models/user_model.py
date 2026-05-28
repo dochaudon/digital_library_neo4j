@@ -174,3 +174,81 @@ def delete_user(user_id):
 
     result = neo4j_conn.query(query, {"id": user_id})
     return result[0]["deleted"] if result else 0
+
+
+# =========================
+# BOOKMARK DOCUMENT
+# =========================
+def add_bookmark(user_id, doc_id):
+    query = """
+    MATCH (u:User {id: $user_id})
+    MATCH (d {id: $doc_id})
+    WHERE d:Book OR d:Article OR d:Thesis OR d:Document
+    MERGE (u)-[r:BOOKMARKED]->(d)
+    ON CREATE SET r.created_at = datetime()
+    RETURN r
+    """
+    result = neo4j_conn.query(query, {"user_id": user_id, "doc_id": doc_id})
+    return True if result else False
+
+
+# =========================
+# REMOVE BOOKMARK
+# =========================
+def remove_bookmark(user_id, doc_id):
+    query = """
+    MATCH (u:User {id: $user_id})-[r:BOOKMARKED]->(d {id: $doc_id})
+    DELETE r
+    """
+    neo4j_conn.query(query, {"user_id": user_id, "doc_id": doc_id})
+    return True
+
+
+# =========================
+# CHECK BOOKMARK STATUS
+# =========================
+def is_bookmarked(user_id, doc_id):
+    query = """
+    MATCH (u:User {id: $user_id})-[r:BOOKMARKED]->(d {id: $doc_id})
+    RETURN r LIMIT 1
+    """
+    result = neo4j_conn.query(query, {"user_id": user_id, "doc_id": doc_id})
+    return True if result else False
+
+
+# =========================
+# GET BOOKMARKED DOCUMENTS
+# =========================
+def count_bookmarked_documents(user_id):
+    query = """
+    MATCH (u:User {id: $user_id})-[r:BOOKMARKED]->(d)
+    WHERE (d:Book OR d:Article OR d:Thesis OR d:Document)
+      AND (d.status IS NULL OR d.status = 'active')
+    RETURN count(d) AS total
+    """
+    result = neo4j_conn.query(query, {"user_id": user_id})
+    return result[0]["total"] if result else 0
+
+def get_bookmarked_documents(user_id, skip=0, limit=20):
+    query = """
+    MATCH (u:User {id: $user_id})-[r:BOOKMARKED]->(d)
+    WHERE (d:Book OR d:Article OR d:Thesis OR d:Document)
+      AND (d.status IS NULL OR d.status = 'active')
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+    RETURN 
+        d.id AS id, 
+        d.title AS title, 
+        d.year AS year, 
+        d.image_url AS image_url,
+        CASE 
+            WHEN "Book" IN labels(d) THEN "Book"
+            WHEN "Article" IN labels(d) THEN "Article"
+            WHEN "Thesis" IN labels(d) THEN "Thesis"
+            ELSE "Other"
+        END AS type,
+        collect(DISTINCT a.name) AS authors,
+        r.created_at AS bookmarked_at
+    ORDER BY r.created_at DESC
+    SKIP $skip LIMIT $limit
+    """
+    return neo4j_conn.query(query, {"user_id": user_id, "skip": skip, "limit": limit})

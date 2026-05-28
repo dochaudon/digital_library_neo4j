@@ -19,35 +19,36 @@ from services.vector_search_service import reset_faiss_index
 # =========================
 # GET LIST (PAGINATION)
 # =========================
-def get_documents_service(page=1, limit=20, doc_type=None, q=None):
+def get_documents_service(page=1, limit=20, doc_type=None, q=None, include_hidden=False):
     if doc_type and isinstance(doc_type, str):
         doc_type = [doc_type]
         
     skip = (page - 1) * limit
 
     if doc_type:
-        return get_documents_by_type(doc_type, skip, limit)
+        return get_documents_by_type(doc_type, skip, limit, include_hidden)
 
-    return get_all_documents(skip, limit, q)
+    return get_all_documents(skip, limit, q, include_hidden)
 
 
 # =========================
 # COUNT
 # =========================
-def count_documents_service(doc_type=None, q=None):
+def count_documents_service(doc_type=None, q=None, include_hidden=False):
     if doc_type and isinstance(doc_type, str):
         doc_type = [doc_type]
         
     if not doc_type:
-        return count_documents(q)
+        return count_documents(q, include_hidden)
 
     query = """
     MATCH (d)
-    WHERE $type IS NULL OR ANY(label IN labels(d) WHERE label IN $type)
+    WHERE ($type IS NULL OR ANY(label IN labels(d) WHERE label IN $type))
+      AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     RETURN count(d) AS total
     """
 
-    result = neo4j_conn.query(query, {"type": doc_type})
+    result = neo4j_conn.query(query, {"type": doc_type, "include_hidden": include_hidden})
     return result[0]["total"] if result else 0
 
 
@@ -74,6 +75,20 @@ def get_related_documents_service(doc_id, limit=5):
 
 def get_related_documents_by_author_service(doc_id, limit=10):  # 🔥 RE-ADD
     return get_related_documents_by_author(doc_id, limit)
+
+def get_similar_documents_service(doc_id, limit=10):
+    """Tìm tài liệu tương tự dựa trên FAISS embedding. Nếu không tìm thấy, dự phòng bằng Graph."""
+    from services.vector_search_service import get_similar_documents_by_embedding
+    similar = get_similar_documents_by_embedding(doc_id, limit)
+    if not similar:
+        # Dự phòng bằng cách lấy tài liệu cùng chủ đề/từ khóa từ Graph DB
+        return get_related_documents_service(doc_id, limit)
+    return similar
+
+def get_semantic_recommendations_service(doc_id, limit=10):
+    """Tìm kiếm đề xuất dựa trên vector embedding (Semantic Search)"""
+    from services.vector_search_service import get_similar_documents_by_embedding
+    return get_similar_documents_by_embedding(doc_id, limit)
 
 
 # =========================
@@ -127,6 +142,7 @@ def create_document_service(data):
         file_url: $file_url,
         image_url: $image_url,
         embedding: $embedding,
+        status: $status,
         created_at: datetime()
     }})
     RETURN d
@@ -141,7 +157,8 @@ def create_document_service(data):
         "abstract": data.get("abstract"),
         "file_url": data.get("file_url"),
         "image_url": data.get("image_url"),
-        "embedding": embedding
+        "embedding": embedding,
+        "status": data.get("status") or "active"
     }
 
     neo4j_conn.query(query, params)
@@ -276,6 +293,7 @@ def update_document_service(doc_id, data):
         "d.pages = $pages",
         "d.abstract = $abstract",
         "d.embedding = $embedding",
+        "d.status = $status",
         "d.updated_at = datetime()"
     ]
     
@@ -286,7 +304,8 @@ def update_document_service(doc_id, data):
         "year": int(data.get("year")) if data.get("year") else None,
         "pages": data.get("pages"),
         "abstract": data.get("abstract"),
-        "embedding": embedding
+        "embedding": embedding,
+        "status": data.get("status") or "active"
     }
 
     if data.get("image_url"):

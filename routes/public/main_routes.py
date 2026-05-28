@@ -4,7 +4,8 @@ from services.document_service import (
     get_documents_service,
     get_document_detail_service,
     count_documents_service,
-    get_related_documents_by_author_service  # 🔥 RE-ADD
+    get_semantic_recommendations_service,
+    get_related_documents_service
 )
 
 from services.search_service import search_documents, get_latest_documents
@@ -100,6 +101,24 @@ def search():
 
     results = results_all[skip: skip + limit]
 
+    # Xây dựng mô tả tiêu đề tìm kiếm cho giao diện
+    search_desc_parts = []
+    if query:
+        search_desc_parts.append(f'"{query}"')
+    if filters.get("author"):
+        search_desc_parts.append(f'Tác giả: "{filters["author"]}"')
+    if filters.get("subject"):
+        search_desc_parts.append(f'Chủ đề: "{filters["subject"]}"')
+    if filters.get("publisher"):
+        search_desc_parts.append(f'Nhà xuất bản: "{filters["publisher"]}"')
+    if filters.get("university"):
+        search_desc_parts.append(f'Trường đại học: "{filters["university"]}"')
+    if filters.get("year"):
+        search_desc_parts.append(f'Năm: {filters["year"]}')
+
+
+    search_desc = " + ".join(search_desc_parts) if search_desc_parts else "Tất cả tài liệu"
+
     return render_template(
         "library/pages/results.html",
         query=query,
@@ -108,7 +127,8 @@ def search():
         page=page,
         total_pages=total_pages,
         sort=sort,
-        search_type=search_type
+        search_type=search_type,
+        search_desc=search_desc
     )
 
 
@@ -119,19 +139,29 @@ def search():
 def document_detail(id):
     document = get_document_detail_service(id)
 
-    if not document:
+    if not document or document.get("status") == "hidden":
         return "Không tìm thấy tài liệu", 404
 
     graph_data = get_graph_data(id)
     
-    # 🔥 RE-ADD
-    related_by_author = get_related_documents_by_author_service(id)
+    # Tìm các đề xuất đề cử từ hai cơ chế Semantic Search và Graph Search, gộp và loại bỏ trùng lặp
+    semantic_documents = get_semantic_recommendations_service(id, limit=10)
+    graph_documents = get_related_documents_service(id, limit=10)
+
+    seen = {id}
+    related_documents = []
+    for doc in graph_documents + semantic_documents:
+        doc_id = doc.get("id")
+        if doc_id and doc_id not in seen:
+            seen.add(doc_id)
+            related_documents.append(doc)
+    related_documents = related_documents[:10]
 
     return render_template(
         "library/pages/document/detail.html",
         document=document,
         graph_data=graph_data,
-        related_by_author=related_by_author
+        related_documents=related_documents
     )
 
 

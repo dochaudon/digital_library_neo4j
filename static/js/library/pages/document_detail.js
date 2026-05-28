@@ -69,7 +69,19 @@ document.addEventListener("DOMContentLoaded", function () {
         initGraph();
     }
 
-    initCarousel();
+    initCarousels();
+
+    // Toggle Legend on click
+    const toggleLegend = document.querySelector('.toggle-legend');
+    if (toggleLegend) {
+        const btn = toggleLegend.querySelector('.legend-btn');
+        if (btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // prevent closing immediately if clicking outside is handled
+                toggleLegend.classList.toggle('is-open');
+            });
+        }
+    }
 });
 
 function initGraph() {
@@ -130,7 +142,13 @@ function initGraph() {
             width: 2,
             color: { color: "#cbd5e1", hover: "#64748b", highlight: "#2563eb" },
             smooth: { type: "continuous", roundness: 0.5 },
-            arrows: { to: { enabled: false } }
+            arrows: { to: { enabled: false } },
+            font: {
+                size: 11,
+                color: "#475569",
+                face: "Inter, sans-serif",
+                align: "middle"
+            }
         },
         groups: {
             book: { shape: "dot", color: { background: "#2563eb", border: "#1e40af" } },
@@ -151,7 +169,7 @@ function initGraph() {
         physics: {
             enabled: true,
             solver: "forceAtlas2Based",
-            forceAtlas2Based: { gravitationalConstant: -100, springLength: 150, springConstant: 0.05, damping: 0.4 },
+            forceAtlas2Based: { gravitationalConstant: -200, springLength: 250, springConstant: 0.03, damping: 0.4 },
             stabilization: { iterations: 150, updateInterval: 25 }
         },
         interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragNodes: true }
@@ -225,48 +243,75 @@ function initGraph() {
     });
 }
 
-function initCarousel() {
-    const track = document.getElementById('carousel-track');
-    const nextBtn = document.getElementById('carousel-next');
-    const prevBtn = document.getElementById('carousel-prev');
+function initCarousels() {
+    const containers = document.querySelectorAll('.carousel-container');
+    containers.forEach(container => {
+        const track = container.querySelector('.carousel-track');
+        const nextBtn = container.querySelector('.carousel-control.next');
+        const prevBtn = container.querySelector('.carousel-control.prev');
 
-    if (!track || !nextBtn || !prevBtn) return;
+        if (!track || !nextBtn || !prevBtn) return;
 
-    let currentPos = 0;
-    const slideWidth = 200; // 180 + 20 gap
-    const visibleCount = Math.floor(track.parentElement.clientWidth / slideWidth);
-    const totalSlides = track.children.length;
+        const slideWidth = 200; // 180 + 20 gap
+        const totalSlides = track.children.length;
 
-    const updateButtons = () => {
-        prevBtn.disabled = currentPos === 0;
-        nextBtn.disabled = currentPos >= totalSlides - visibleCount;
-    };
+        const getVisibleCount = () => {
+            const trackContainer = container.querySelector('.carousel-track-container');
+            return trackContainer ? Math.floor(trackContainer.clientWidth / slideWidth) : 1;
+        };
 
-    nextBtn.addEventListener('click', () => {
-        if (currentPos < totalSlides - visibleCount) {
-            currentPos++;
-            track.style.transform = `translateX(-${currentPos * slideWidth}px)`;
-            updateButtons();
-        }
-    });
+        const updateButtons = () => {
+            const visibleCount = getVisibleCount();
+            const canScroll = totalSlides > visibleCount;
+            prevBtn.disabled = !canScroll;
+            nextBtn.disabled = !canScroll;
+        };
 
-    prevBtn.addEventListener('click', () => {
-        if (currentPos > 0) {
-            currentPos--;
-            track.style.transform = `translateX(-${currentPos * slideWidth}px)`;
-            updateButtons();
-        }
-    });
+        let isAnimating = false;
 
-    updateButtons();
+        nextBtn.addEventListener('click', () => {
+            const visibleCount = getVisibleCount();
+            if (totalSlides <= visibleCount || isAnimating) return;
+            isAnimating = true;
 
-    // Responsive visible count
-    window.addEventListener('resize', () => {
-        const newVisibleCount = Math.floor(track.parentElement.clientWidth / slideWidth);
-        if (currentPos > totalSlides - newVisibleCount) {
-            currentPos = Math.max(0, totalSlides - newVisibleCount);
-            track.style.transform = `translateX(-${currentPos * slideWidth}px)`;
-        }
+            track.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            track.style.transform = `translateX(-${slideWidth}px)`;
+
+            setTimeout(() => {
+                track.style.transition = 'none';
+                track.appendChild(track.firstElementChild);
+                track.style.transform = 'translateX(0)';
+                // Force reflow
+                track.offsetHeight;
+                isAnimating = false;
+            }, 500);
+        });
+
+        prevBtn.addEventListener('click', () => {
+            const visibleCount = getVisibleCount();
+            if (totalSlides <= visibleCount || isAnimating) return;
+            isAnimating = true;
+
+            track.style.transition = 'none';
+            track.insertBefore(track.lastElementChild, track.firstElementChild);
+            track.style.transform = `translateX(-${slideWidth}px)`;
+            
+            // Force reflow
+            track.offsetHeight;
+
+            track.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            track.style.transform = 'translateX(0)';
+
+            setTimeout(() => {
+                isAnimating = false;
+            }, 500);
+        });
+
         updateButtons();
+
+        // Responsive update
+        window.addEventListener('resize', () => {
+            updateButtons();
+        });
     });
 }

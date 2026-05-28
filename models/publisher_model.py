@@ -12,22 +12,14 @@ def create_publisher(data):
     cypher = """
     CREATE (p:Publisher {
         id: $id,
-        name: $name,
-        address: $address,
-        email: $email,
-        phone: $phone,
-        website: $website
+        name: $name
     })
     RETURN p.id AS id, p.name AS name
     """
 
     result = neo4j_conn.query(cypher, {
         "id": data.get("id"),
-        "name": name.strip(),
-        "address": data.get("address"),
-        "email": data.get("email"),
-        "phone": data.get("phone"),
-        "website": data.get("website")
+        "name": name.strip()
     })
 
     return result[0] if result else None
@@ -67,11 +59,7 @@ def get_publisher_by_id(pub_id):
     MATCH (p:Publisher {id: $id})
     RETURN 
         p.id AS id, 
-        p.name AS name,
-        p.address AS address,
-        p.email AS email,
-        p.phone AS phone,
-        p.website AS website
+        p.name AS name
     """
 
     result = neo4j_conn.query(cypher, {"id": pub_id})
@@ -89,21 +77,13 @@ def update_publisher(pub_id, data):
 
     cypher = """
     MATCH (p:Publisher {id: $id})
-    SET p.name = $name,
-        p.address = $address,
-        p.email = $email,
-        p.phone = $phone,
-        p.website = $website
+    SET p.name = $name
     RETURN p.id AS id, p.name AS name
     """
 
     result = neo4j_conn.query(cypher, {
         "id": pub_id,
-        "name": name.strip(),
-        "address": data.get("address"),
-        "email": data.get("email"),
-        "phone": data.get("phone"),
-        "website": data.get("website")
+        "name": name.strip()
     })
 
     return result[0] if result else None

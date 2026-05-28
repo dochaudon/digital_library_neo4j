@@ -3,7 +3,8 @@ from flask import Blueprint, request, render_template, redirect, session, Respon
 from services.user_service import (
     get_users_service,
     delete_user_service,
-    deactivate_user_service
+    toggle_status_service,
+    toggle_role_service
 )
 from services.export_service import (
     get_export_stats_service,
@@ -54,11 +55,34 @@ def delete_user(id):
 
 
 # =====================================================
-# TOGGLE ACTIVE
+# TOGGLE ACTIVE (BAN / UNBAN)
 # =====================================================
 @user_admin.route("/toggle/<id>")
 def toggle_user(id):
-    deactivate_user_service(id)
+    if "user" not in session or session["user"].get("role") != "admin":
+        return redirect(url_for("auth.login_page"))
+        
+    # User cannot ban themselves
+    if session["user"]["id"] == id:
+        return redirect("/admin/users")
+
+    toggle_status_service(id)
+    return redirect("/admin/users")
+
+
+# =====================================================
+# TOGGLE ROLE (ADMIN / USER)
+# =====================================================
+@user_admin.route("/toggle_role/<id>")
+def toggle_role(id):
+    if "user" not in session or session["user"].get("role") != "admin":
+        return redirect(url_for("auth.login_page"))
+        
+    # User cannot demote themselves
+    if session["user"]["id"] == id:
+        return redirect("/admin/users")
+
+    toggle_role_service(id)
     return redirect("/admin/users")
 
 

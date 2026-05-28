@@ -43,13 +43,7 @@ input.addEventListener("input", function () {
 
                 // 👉 CLICK → đi detail
                 div.onclick = () => {
-                    if (item.type === "Book") {
-                        window.location.href = `/book/${item.id}`;
-                    } else if (item.type === "Article") {
-                        window.location.href = `/article/${item.id}`;
-                    } else {
-                        window.location.href = `/thesis/${item.id}`;
-                    }
+                    window.location.href = `/document/${item.id}`;
                 };
 
                 box.appendChild(div);

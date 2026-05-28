@@ -216,3 +216,40 @@
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 768px) {
+    .admin-dashboard {
+        padding: 15px 0; /* Let admin-content padding handle it */
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .welcome-text h1 {
+        font-size: 20px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
+
+    .actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+}

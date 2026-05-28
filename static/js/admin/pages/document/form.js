@@ -20,7 +20,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Update Hidden Input
             docTypeInput.value = type.charAt(0).toUpperCase() + type.slice(1);
-            submitBtnText.textContent = `Lưu ${docTypeInput.value}`;
+            const typeMap = {
+                book: "Sách",
+                article: "Bài báo",
+                thesis: "Luận văn"
+            };
+            submitBtnText.textContent = `Lưu ${typeMap[type] || docTypeInput.value}`;
 
             // Toggle Groups
             if (type === "article") {

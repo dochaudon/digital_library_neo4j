@@ -1,23 +1,30 @@
 <header class="site-header">
     <div class="container header-inner">
 
-        <!-- LEFT: Logo -->
+        <!-- MOBILE NAV BUTTON (Left) -->
+        <button class="hamburger-btn mobile-nav-btn" id="hamburgerNavBtn" aria-label="Mở menu điều hướng">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <!-- LEFT: Logo (Centered on Mobile) -->
         <a href="{{ url_for('main.home') }}" class="brand">
             <span class="brand-icon">📚</span>
             <span class="brand-text">Thư Viện Số</span>
         </a>
-        
+
         <!-- SEARCH BAR (Expanding) -->
         <div class="header-search">
             <form action="/search" method="GET" class="header-search-form" id="headerSearchForm">
-                <input type="text" name="query" placeholder="Tìm tài liệu..." class="header-search-input" id="headerSearchInput">
+                <input type="text" name="query" placeholder="Tìm tài liệu (VD: Python cơ bản)..." class="header-search-input" id="headerSearchInput">
                 <button type="button" class="header-search-toggle" id="headerSearchToggle">
                     <i class="fas fa-search"></i>
                 </button>
             </form>
         </div>
 
-        <!-- RIGHT -->
+        <!-- RIGHT (desktop) -->
         <div class="header-right">
 
             {% if session.get("user") %}
@@ -35,6 +42,9 @@
                             {% endif %}
                             <a href="/profile">
                                 <i class="fas fa-user-circle"></i> Trang cá nhân
+                            </a>
+                            <a href="/bookmarks">
+                                <i class="fas fa-bookmark"></i> Tài liệu đã lưu
                             </a>
                             <div class="dropdown-divider"></div>
                             <a href="{{ url_for('auth.logout') }}" class="logout-item">
@@ -58,5 +68,118 @@
 
         </div>
 
+
+        <!-- MOBILE USER BUTTON (Right) -->
+        <button class="hamburger-btn mobile-user-btn" id="hamburgerUserBtn" aria-label="Mở menu người dùng">
+            <i class="fas fa-user-circle"></i>
+        </button>
+
     </div>
 </header>
+
+<!-- MOBILE MENU OVERLAY (backdrop) -->
+<div class="mobile-overlay" id="mobileOverlay"></div>
+
+<!-- MOBILE SIDE DRAWER (NAV - LEFT) -->
+<div class="mobile-drawer drawer-left" id="mobileDrawerNav">
+
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+        <a href="{{ url_for('main.home') }}" class="brand">
+            <span class="brand-icon">📚</span>
+            <span class="brand-text">Menu</span>
+        </a>
+        <button class="drawer-close" id="drawerCloseNav" aria-label="Đóng menu">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Search -->
+    <div class="drawer-search">
+        <form action="/search" method="GET">
+            <div class="drawer-search-inner">
+                <i class="fas fa-search"></i>
+                <input type="text" name="query" placeholder="Tìm tài liệu...">
+            </div>
+        </form>
+    </div>
+
+    <!-- Mobile Nav Links -->
+    <nav class="drawer-nav">
+        <a href="{{ url_for('main.home') }}" class="drawer-link {% if request.endpoint == 'main.home' %}active{% endif %}">
+            <i class="fas fa-home"></i> Trang chủ
+        </a>
+        <a href="/documents?doc_type=Book"
+            class="drawer-link {% if request.path == '/documents' and request.args.get('doc_type') == 'Book' %}active{% endif %}">
+            <i class="fas fa-book"></i> Sách
+        </a>
+        <a href="/documents?doc_type=Article"
+            class="drawer-link {% if request.path == '/documents' and request.args.get('doc_type') == 'Article' %}active{% endif %}">
+            <i class="fas fa-newspaper"></i> Bài báo
+        </a>
+        <a href="/documents?doc_type=Thesis"
+            class="drawer-link {% if request.path == '/documents' and request.args.get('doc_type') == 'Thesis' %}active{% endif %}">
+            <i class="fas fa-graduation-cap"></i> Luận văn
+        </a>
+        <a href="{{ url_for('main.documents_page') }}"
+            class="drawer-link {% if request.endpoint == 'main.documents_page' and not request.args.get('doc_type') %}active{% endif %}">
+            <i class="fas fa-archive"></i> Tất cả tài liệu
+        </a>
+        <a href="{{ url_for('qa.qa_page') }}"
+            class="drawer-link {% if request.endpoint == 'qa.qa_page' %}active{% endif %}">
+            <i class="fas fa-robot"></i> Hỏi đáp AI
+        </a>
+    </nav>
+</div>
+
+<!-- MOBILE SIDE DRAWER (AUTH - RIGHT) -->
+<div class="mobile-drawer drawer-right" id="mobileDrawerAuth">
+    
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+        <span class="brand-text" style="font-size: 16px; margin-left: 10px;">Tài khoản</span>
+        <button class="drawer-close" id="drawerCloseAuth" aria-label="Đóng menu">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Mobile User Section -->
+    <div class="drawer-user">
+        {% if session.get("user") %}
+            <div class="drawer-user-info">
+                <div class="drawer-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="drawer-user-text">
+                    <div class="drawer-username">{{ session.get("user")["username"] }}</div>
+                    <div class="drawer-role">{{ session.get("user")["role"] | capitalize }}</div>
+                </div>
+            </div>
+            {% if session.get("user")["role"] == "admin" %}
+                <a href="/admin/documents" class="drawer-user-link">
+                    <i class="fas fa-cog"></i> Quản trị hệ thống
+                </a>
+            {% endif %}
+            <a href="/profile" class="drawer-user-link">
+                <i class="fas fa-user-circle"></i> Trang cá nhân
+            </a>
+            <a href="/bookmarks" class="drawer-user-link">
+                <i class="fas fa-bookmark"></i> Tài liệu đã lưu
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="drawer-user-link logout-item">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </a>
+        {% else %}
+            <div style="padding: 10px 10px 20px 10px; color: #64748b; font-size: 14px; text-align: center;">
+                Vui lòng đăng nhập để sử dụng đầy đủ các tính năng.
+            </div>
+            <a href="{{ url_for('auth.login_page') }}" class="drawer-auth-btn">
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            </a>
+            <a href="{{ url_for('auth.register_page') }}" class="drawer-auth-btn primary">
+                <i class="fas fa-user-plus"></i> Đăng ký ngay
+            </a>
+        {% endif %}
+    </div>
+
+</div>

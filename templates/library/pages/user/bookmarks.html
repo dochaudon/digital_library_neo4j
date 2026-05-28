@@ -2,6 +2,23 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/document/document.css') }}">
+<style>
+    .bookmarks-empty {
+        text-align: center;
+        padding: 50px 20px;
+        color: #64748b;
+        font-size: 1.1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px dashed #cbd5e1;
+        margin-top: 20px;
+    }
+    .bookmarks-empty i {
+        font-size: 3rem;
+        color: #94a3b8;
+        margin-bottom: 15px;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -10,10 +27,11 @@
 
     <div class="books-wrapper">
 
-        <div class="books-header">
-            <h2>📚 Danh sách tài liệu</h2>
+        <div class="books-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2><i class="fas fa-bookmark" style="color: #ef4444; margin-right: 8px;"></i>Tài liệu đã lưu</h2>
         </div>
 
+        {% if documents %}
         <div class="books-list">
 
             {% for d in documents %}
@@ -45,7 +63,6 @@
                     <!-- AUTHOR -->
                     <p class="book-author">
                         Tác giả:
-
                         {% if d.authors %}
                             {% for a in d.authors %}
                                 {% if a %}
@@ -59,21 +76,9 @@
                         {% endif %}
                     </p>
 
-                    <!-- SUBJECT -->
-                    {% if d.subjects %}
-                    <p class="book-subject">
-                        Chủ đề:
-                        {% for s in d.subjects %}
-                            <a href="/search?subject={{ s }}">
-                                {{ s }}
-                            </a>{% if not loop.last %}, {% endif %}
-                        {% endfor %}
-                    </p>
-                    {% endif %}
-
                     <!-- FOOTER -->
                     <div class="book-footer">
-                        <span>📅 {{ d.year or 'N/A' }}</span>
+                        <span>📅 Xuất bản: {{ d.year or 'N/A' }}</span>
                     </div>
 
                 </div>
@@ -82,15 +87,19 @@
             {% endfor %}
 
         </div>
+        
+        {% include 'library/components/pagination.html' %}
+        
+        {% else %}
+        <div class="bookmarks-empty">
+            <i class="far fa-folder-open"></i>
+            <p>Bạn chưa lưu tài liệu nào.</p>
+            <a href="/explore" class="btn btn-primary" style="margin-top: 15px; display: inline-block; padding: 8px 16px; background: #2563eb; color: white; border-radius: 6px; text-decoration: none;">Khám phá tài liệu</a>
+        </div>
+        {% endif %}
 
     </div>
 
-    {% include 'library/components/pagination.html' %}
-
 </div>
 
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/pages/document.js') }}"></script>
 {% endblock %}

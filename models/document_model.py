@@ -13,11 +13,12 @@ TYPE_CASE_RELATED = """
 # =========================
 # GET ALL (PAGINATION)
 # =========================
-def get_all_documents(skip=0, limit=20, q=None):
+def get_all_documents(skip=0, limit=20, q=None, include_hidden=False):
     query = f"""
     MATCH (d)
     WHERE (d:Book OR d:Article OR d:Thesis)
       AND ($q IS NULL OR d.title CONTAINS $q)
+      AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
     RETURN 
@@ -25,6 +26,7 @@ def get_all_documents(skip=0, limit=20, q=None):
         d.title AS title, 
         d.year AS year, 
         d.image_url AS image_url,
+        d.status AS status,
         CASE 
             WHEN "Book" IN labels(d) THEN "Book"
             WHEN "Article" IN labels(d) THEN "Article"
@@ -36,7 +38,7 @@ def get_all_documents(skip=0, limit=20, q=None):
     ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     SKIP $skip LIMIT $limit
     """
-    return neo4j_conn.query(query, {"skip": skip, "limit": limit, "q": q})
+    return neo4j_conn.query(query, {"skip": skip, "limit": limit, "q": q, "include_hidden": include_hidden})
 
 
 # =========================
@@ -106,10 +108,11 @@ def get_document_by_id(doc_id):
 # =========================
 # GET BY TYPE
 # =========================
-def get_documents_by_type(doc_types, skip=0, limit=20):
+def get_documents_by_type(doc_types, skip=0, limit=20, include_hidden=False):
     query = f"""
     MATCH (d)
     WHERE ANY(label IN labels(d) WHERE label IN $types)
+      AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
     RETURN 
@@ -117,6 +120,7 @@ def get_documents_by_type(doc_types, skip=0, limit=20):
         d.title AS title, 
         d.year AS year, 
         d.image_url AS image_url,
+        d.status AS status,
         CASE 
             WHEN "Book" IN labels(d) THEN "Book"
             WHEN "Article" IN labels(d) THEN "Article"
@@ -128,20 +132,21 @@ def get_documents_by_type(doc_types, skip=0, limit=20):
     ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     SKIP $skip LIMIT $limit
     """
-    return neo4j_conn.query(query, {"types": doc_types, "skip": skip, "limit": limit})
+    return neo4j_conn.query(query, {"types": doc_types, "skip": skip, "limit": limit, "include_hidden": include_hidden})
 
 
 # =========================
 # COUNT
 # =========================
-def count_documents(q=None):
+def count_documents(q=None, include_hidden=False):
     query = """
     MATCH (d)
     WHERE (d:Book OR d:Article OR d:Thesis)
       AND ($q IS NULL OR d.title CONTAINS $q)
+      AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     RETURN count(d) AS total
     """
-    result = neo4j_conn.query(query, {"q": q})
+    result = neo4j_conn.query(query, {"q": q, "include_hidden": include_hidden})
     return result[0]["total"] if result else 0
 
 
@@ -150,15 +155,50 @@ def count_documents(q=None):
 # =========================
 def get_related_documents(doc_id, limit=5):
     query = f"""
-    MATCH (d {{id: $id}})-[:HAS_SUBJECT|HAS_KEYWORD]->(tag)<-[:HAS_SUBJECT|HAS_KEYWORD]-(related)
-    WHERE related <> d
-    RETURN DISTINCT
+    MATCH (d {{id: $id}})
+    MATCH (related)
+    WHERE (related:Book OR related:Article OR related:Thesis) AND related <> d
+    
+    // 1. Direct document relation score (weight 15)
+    WITH d, related
+    OPTIONAL MATCH (d)-[:RELATED_TO]-(related)
+    WITH d, related, 
+         CASE WHEN (d)-[:RELATED_TO]-(related) THEN 15 ELSE 0 END AS rel_score
+         
+    // 2. Shared author score (weight 5)
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)<-[:HAS_AUTHOR]-(related)
+    WITH d, related, rel_score, 
+         count(distinct a) * 5 AS author_score
+         
+    // 3. Subject relation path score (0 to 3 hops)
+    OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s1:Subject), (related)-[:HAS_SUBJECT]->(s2:Subject)
+    WITH d, related, rel_score, author_score, s1, s2
+    OPTIONAL MATCH p = shortestPath((s1)-[:RELATED_TO*0..3]-(s2))
+    WITH d, related, rel_score, author_score,
+         max(CASE 
+             WHEN p IS NULL THEN 0
+             WHEN length(p) = 0 THEN 8
+             WHEN length(p) = 1 THEN 6
+             WHEN length(p) = 2 THEN 4
+             WHEN length(p) = 3 THEN 2
+             ELSE 0
+         END) AS subject_score
+         
+    // 4. Shared keyword score (weight 3)
+    OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)<-[:HAS_KEYWORD]-(related)
+    WITH related, rel_score, author_score, subject_score, 
+         count(distinct k) * 3 AS keyword_score
+         
+    WITH related, (rel_score + author_score + subject_score + keyword_score) AS final_score
+    WHERE final_score > 0
+    
+    RETURN 
         related.id AS id, 
         related.title AS title, 
         related.year AS year, 
-        related.image_url AS id_url,
+        related.image_url AS image_url,
         {TYPE_CASE_RELATED} AS type,
-        count(tag) AS score
+        final_score AS score
     ORDER BY score DESC, related.year DESC
     LIMIT $limit
     """

@@ -29,6 +29,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnBack) {
         btnBack.addEventListener("click", handleBackClick);
     }
+
+    // Toggle Legend on click
+    const toggleLegend = document.querySelector('.toggle-legend');
+    if (toggleLegend) {
+        const btn = toggleLegend.querySelector('.legend-btn');
+        if (btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleLegend.classList.toggle('is-open');
+            });
+        }
+    }
 });
 
 function handleBackClick() {
@@ -86,7 +98,7 @@ async function loadLeft(type, id, page = 1) {
     let html = "";
 
     // ===== ENTITY LIST =====
-    if (["author", "subject", "keyword", "publisher", "university", "journal"].includes(entityType)) {
+    if (["author", "subject", "keyword", "publisher", "university", "journal", "category", "language"].includes(entityType)) {
 
         const titleMap = {
             author: "📚 Tác giả",
@@ -94,7 +106,9 @@ async function loadLeft(type, id, page = 1) {
             keyword: "🏷️ Từ khóa",
             publisher: "🏢 Nhà xuất bản",
             university: "🎓 Trường đại học",
-            journal: "📰 Tạp chí"
+            journal: "📰 Tạp chí",
+            category: "📁 Danh mục",
+            language: "🌐 Ngôn ngữ"
         };
 
         const displayName = data.name || "N/A";
@@ -122,37 +136,74 @@ async function loadLeft(type, id, page = 1) {
 
         const d = data.data;
 
-        html += `<h3 style="margin-bottom: 15px; color: #1e293b; font-size: 1.25rem;">${d.title || "Tài liệu không tên"}</h3>`;
+        html += `<div class="explore-doc-card">`;
+        html += `   <h3 class="explore-doc-title">${d.title || "Tài liệu không tên"}</h3>`;
+        html += `   <div style="display: flex; gap: 15px; align-items: flex-start;">`;
+        
+        // Thumbnail Image
+        const imgUrl = d.image_url || '/static/images/pdf.png';
+        html += `       <div class="explore-doc-thumb" style="flex-shrink: 0;">`;
+        html += `           <img src="${imgUrl}" onerror="this.onerror=null; this.src='/static/images/pdf.png';" style="width: 85px; height: 115px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">`;
+        html += `       </div>`;
+        
+        // Metadata Info Column
+        html += `       <div class="explore-doc-meta" style="flex: 1;">`;
+
+        const addMetaItem = (icon, label, value) => {
+            if (value && value !== "N/A") {
+                return `
+                    <div class="explore-doc-meta-item">
+                        <span class="icon">${icon}</span>
+                        <strong>${label}:</strong>
+                        <span>${value}</span>
+                    </div>
+                `;
+            }
+            return "";
+        };
 
         if (d.journal && d.journal !== "N/A") {
-            html += `<p style="margin-bottom: 8px;">📰 <strong>Tạp chí:</strong> ${d.journal}</p>`;
+            html += addMetaItem("📰", "Tạp chí", d.journal);
         }
         if (d.year && d.year !== "N/A") {
-            html += `<p style="margin-bottom: 8px;">📅 <strong>Năm:</strong> ${d.year}</p>`;
+            html += addMetaItem("📅", "Năm", d.year);
         }
 
         const cleanAuthors = d.authors ? d.authors.filter(x => x && x !== "N/A") : [];
         if (cleanAuthors.length > 0) {
-            html += `<p style="margin-bottom: 8px;">👤 <strong>Tác giả:</strong> ${cleanAuthors.join(", ")}</p>`;
+            html += addMetaItem("👤", "Tác giả", cleanAuthors.join(", "));
         }
 
         const cleanSubjects = d.subjects ? d.subjects.filter(x => x && x !== "N/A") : [];
         if (cleanSubjects.length > 0) {
-            html += `<p style="margin-bottom: 8px;">📂 <strong>Chủ đề:</strong> ${cleanSubjects.join(", ")}</p>`;
+            html += addMetaItem("📂", "Chủ đề", cleanSubjects.join(", "));
         }
 
         const cleanPublishers = d.publishers ? d.publishers.filter(x => x && x !== "N/A") : [];
         if (cleanPublishers.length > 0) {
-            html += `<p style="margin-bottom: 8px;">🏢 <strong>Nhà xuất bản:</strong> ${cleanPublishers.join(", ")}</p>`;
+            html += addMetaItem("🏢", "Nhà xuất bản", cleanPublishers.join(", "));
         }
 
         const cleanUniversities = d.universities ? d.universities.filter(x => x && x !== "N/A") : [];
         if (cleanUniversities.length > 0) {
-            html += `<p style="margin-bottom: 8px;">🎓 <strong>Trường đại học:</strong> ${cleanUniversities.join(", ")}</p>`;
+            html += addMetaItem("🎓", "Trường ĐH", cleanUniversities.join(", "));
         }
 
+        const cleanCategories = d.categories ? d.categories.filter(x => x && x !== "N/A") : [];
+        if (cleanCategories.length > 0) {
+            html += addMetaItem("📁", "Danh mục", cleanCategories.join(", "));
+        }
+
+        const cleanLanguages = d.languages ? d.languages.filter(x => x && x !== "N/A") : [];
+        if (cleanLanguages.length > 0) {
+            html += addMetaItem("🌐", "Ngôn ngữ", cleanLanguages.join(", "));
+        }
+
+        html += `       </div>`;
+        html += `   </div>`;
+        html += `</div>`;
+
         html += `
-            <br>
             <a class="btn-detail" href="/document/${d.id}">
                 Xem chi tiết
             </a>
@@ -248,7 +299,13 @@ function renderGraph(graphData) {
         edges: {
             width: 2,
             color: { color: "#cbd5e1", hover: "#64748b", highlight: "#2563eb" },
-            smooth: { type: "continuous", roundness: 0.5 }
+            smooth: { type: "continuous", roundness: 0.5 },
+            font: {
+                size: 11,
+                color: "#475569",
+                face: "Inter, sans-serif",
+                align: "middle"
+            }
         },
 
         groups: {
@@ -272,9 +329,9 @@ function renderGraph(graphData) {
             enabled: true,
             solver: "forceAtlas2Based",
             forceAtlas2Based: {
-                gravitationalConstant: -100,
-                springLength: 150,
-                springConstant: 0.05,
+                gravitationalConstant: -200,
+                springLength: 250,
+                springConstant: 0.03,
                 damping: 0.4
             },
             stabilization: {
@@ -301,7 +358,11 @@ function renderGraph(graphData) {
     }
 
     setTimeout(() => {
-        network.fit({ animation: true });
+        if (centerId) {
+            network.focus(centerId, { scale: 1.2, animation: { duration: 800, easingFunction: "easeInOutQuad" } });
+        } else {
+            network.fit({ animation: true });
+        }
     }, 100);
 }
 
@@ -309,23 +370,29 @@ function renderGraph(graphData) {
 // =========================
 // LABEL FIX
 // =========================
-function getLabel(node) {
+function formatLabel(text) {
+    if (!text) return "";
+    const max = 25;
+    let result = "";
+    for (let i = 0; i < text.length; i += max) {
+        result += text.substring(i, i + max) + "\n";
+    }
+    return result.trim();
+}
 
+function getLabel(node) {
     const group = node.group?.toLowerCase();
+    let rawLabel = node.label;
 
     if (group === "author") {
-        return node.name || node.label;
+        rawLabel = node.name || node.label;
+    } else if (["book", "article", "thesis"].includes(group)) {
+        rawLabel = node.title || node.label;
+    } else if (["subject", "keyword", "publisher", "university", "journal", "category", "language"].includes(group)) {
+        rawLabel = node.name || node.label;
     }
 
-    if (["book", "article", "thesis"].includes(group)) {
-        return truncate(node.title || node.label);
-    }
-
-    if (["subject", "keyword", "publisher", "university", "journal", "category", "language"].includes(group)) {
-        return node.name || node.label;
-    }
-
-    return node.label;
+    return formatLabel(rawLabel);
 }
 
 
@@ -379,7 +446,12 @@ async function onNodeClick(params) {
     // ===== ENTITY =====
     titleEl.innerText = "Tài liệu liên quan";
     contentEl.innerHTML = "Đang tải...";
-    btn.style.display = "none";
+    
+    btn.style.display = "block";
+    btn.innerText = "Khám phá";
+    btn.onclick = () => {
+        loadEntity(type, id);
+    };
 
     const res = await fetch(`/api/preview/${type}/${id}`);
     const data = await res.json();

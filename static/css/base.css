@@ -11,6 +11,7 @@ body {
     background: #f5f7fa;
     color: #333;
     line-height: 1.5;
+    -webkit-text-size-adjust: 100%; /* Prevent iOS font scaling */
 }
 
 /* ===== CONTAINER ===== */
@@ -78,4 +79,26 @@ img {
 /* ===== SHADOW ===== */
 .shadow {
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* ===== RESPONSIVE BASE ===== */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+    }
+
+    .main-content {
+        padding: 14px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: 100%;
+        padding: 0 12px;
+    }
+
+    .main-content {
+        padding: 10px 0;
+    }
 }

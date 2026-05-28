@@ -21,14 +21,16 @@ def get_preview(entity_type, entity_id):
         "keyword": "HAS_KEYWORD",
         "publisher": "PUBLISHED_BY",
         "university": "OWNED_BY",
-        "journal": "PUBLISHED_IN"
+        "journal": "PUBLISHED_IN",
+        "category": "HAS_CATEGORY",
+        "language": "IN_LANGUAGE"
     }
 
     # ===== DOCUMENT =====
     if entity_type in ["document", "book", "article", "thesis"]:
         query = """
         MATCH (d)
-        WHERE d.id = $id
+        WHERE d.id = $id AND (d.status IS NULL OR d.status = 'active')
         RETURN 
             d.id AS id,
             coalesce(d.title, d.name) AS title,
@@ -49,6 +51,7 @@ def get_preview(entity_type, entity_id):
     query = f"""
     {ENTITY_MATCH}
     MATCH (e)<-[:{rel}]-(d)
+    WHERE d.status IS NULL OR d.status = 'active'
     RETURN 
         d.id AS id,
         coalesce(d.title, d.name) AS title,
@@ -83,29 +86,36 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
         "keyword": "HAS_KEYWORD",
         "publisher": "PUBLISHED_BY",
         "university": "OWNED_BY",
-        "journal": "PUBLISHED_IN"
+        "journal": "PUBLISHED_IN",
+        "category": "HAS_CATEGORY",
+        "language": "IN_LANGUAGE"
     }
 
     # ===== DOCUMENT =====
     if entity_type in ["document", "book", "article", "thesis"]:
         query = """
         MATCH (d)
-        WHERE d.id = $id
+        WHERE d.id = $id AND (d.status IS NULL OR d.status = 'active')
         OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
         OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
         OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Publisher)
         OPTIONAL MATCH (d)-[:OWNED_BY]->(u:University)
         OPTIONAL MATCH (d)-[:PUBLISHED_IN]->(j:Journal)
+        OPTIONAL MATCH (d)-[:HAS_CATEGORY]->(c:Category)
+        OPTIONAL MATCH (d)-[:IN_LANGUAGE]->(l:Language)
 
         RETURN
             d.id AS id,
             coalesce(d.title, d.name) AS title,
             d.year AS year,
+            d.image_url AS image_url,
             collect(DISTINCT a.name) AS authors,
             collect(DISTINCT s.name) AS subjects,
             collect(DISTINCT p.name) AS publishers,
             collect(DISTINCT u.name) AS universities,
-            j.name AS journal
+            j.name AS journal,
+            collect(DISTINCT c.name) AS categories,
+            collect(DISTINCT l.name) AS languages
         """
 
         result = neo4j_conn.query(query, {"id": entity_id})
@@ -124,6 +134,7 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
     query = f"""
     {ENTITY_MATCH}
     MATCH (e)<-[:{rel}]-(d)
+    WHERE d.status IS NULL OR d.status = 'active'
     RETURN 
         d.id AS id,
         coalesce(d.title, d.name) AS title,
@@ -142,6 +153,7 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
     count_query = f"""
     {ENTITY_MATCH}
     MATCH (e)<-[:{rel}]-(d)
+    WHERE d.status IS NULL OR d.status = 'active'
     RETURN count(d) AS total
     """
 
@@ -187,7 +199,9 @@ def get_graph_by_entity(entity_type, entity_id):
         "keyword": "HAS_KEYWORD",
         "publisher": "PUBLISHED_BY",
         "university": "OWNED_BY",
-        "journal": "PUBLISHED_IN"
+        "journal": "PUBLISHED_IN",
+        "category": "HAS_CATEGORY",
+        "language": "IN_LANGUAGE"
     }
 
     if entity_type not in relation_map:
@@ -198,6 +212,7 @@ def get_graph_by_entity(entity_type, entity_id):
     query = f"""
     {ENTITY_MATCH}
     MATCH (e)<-[:{rel}]-(d)
+    WHERE d.status IS NULL OR d.status = 'active'
     RETURN e, collect(d) AS docs, collect(labels(d)) AS labels_list
     """
 
@@ -251,7 +266,8 @@ def get_graph_by_entity(entity_type, entity_id):
 
         edges.append({
             "from": e_id,
-            "to": doc_id
+            "to": doc_id,
+            "label": rel
         })
 
     return {

@@ -365,3 +365,90 @@ body {
     background-color: #fee2e2 !important;
     transform: translateY(-1px);
 }
+
+/* TABLE RESPONSIVE WRAPPER */
+@media (max-width: 992px) {
+    .doc-table, .export-table, .table-responsive table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE (MOBILE & TABLET)
+   ═══════════════════════════════════════════════════════════ */
+
+/* OVERLAY BACKDROP */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    z-index: 85; /* Below sidebar (90) but above content */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.is-visible {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (max-width: 992px) {
+    /* Header adjustments */
+    .admin-header {
+        padding: 0 16px;
+    }
+    
+    .admin-header .logo {
+        font-size: 1.15rem;
+    }
+
+    .admin-header .right span {
+        display: none; /* Hide admin username text */
+    }
+
+    .logout {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    /* Sidebar becomes a drawer */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        max-width: 80vw;
+        height: 100dvh;
+        z-index: 90;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(-100%);
+    }
+
+    .sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    /* Admin content takes full width */
+    .admin-content {
+        padding: 20px 16px;
+    }
+
+    .doc-search {
+        flex-direction: column;
+    }
+
+    .doc-search button {
+        justify-content: center;
+        padding: 12px;
+    }
+}

@@ -12,22 +12,14 @@ def create_university(data):
     cypher = """
     CREATE (u:University {
         id: $id,
-        name: $name,
-        address: $address,
-        email: $email,
-        phone: $phone,
-        website: $website
+        name: $name
     })
     RETURN u.id AS id, u.name AS name
     """
 
     result = neo4j_conn.query(cypher, {
         "id": data.get("id"),
-        "name": name.strip(),
-        "address": data.get("address"),
-        "email": data.get("email"),
-        "phone": data.get("phone"),
-        "website": data.get("website")
+        "name": name.strip()
     })
 
     return result[0] if result else None
@@ -67,11 +59,7 @@ def get_university_by_id(uni_id):
     MATCH (u:University {id: $id})
     RETURN 
         u.id AS id, 
-        u.name AS name,
-        u.address AS address,
-        u.email AS email,
-        u.phone AS phone,
-        u.website AS website
+        u.name AS name
     """
 
     result = neo4j_conn.query(cypher, {"id": uni_id})
@@ -89,21 +77,13 @@ def update_university(uni_id, data):
 
     cypher = """
     MATCH (u:University {id: $id})
-    SET u.name = $name,
-        u.address = $address,
-        u.email = $email,
-        u.phone = $phone,
-        u.website = $website
+    SET u.name = $name
     RETURN u.id AS id, u.name AS name
     """
 
     result = neo4j_conn.query(cypher, {
         "id": uni_id,
-        "name": name.strip(),
-        "address": data.get("address"),
-        "email": data.get("email"),
-        "phone": data.get("phone"),
-        "website": data.get("website")
+        "name": name.strip()
     })
 
     return result[0] if result else None
