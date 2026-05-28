@@ -69,7 +69,11 @@ SET
     d.pages = row.pages,
     d.image_url = row.image_url,
     d.file_url = row.file_url,
-    d.abstract = row.abstract;
+    d.abstract = row.abstract,
+    d.status = CASE
+        WHEN row.status IS NOT NULL AND row.status <> "" THEN row.status
+        ELSE "active"
+    END;
 
 
 /* =======================
@@ -185,6 +189,22 @@ MERGE (j:Journal {id: row.id})
 
 SET
     j.name = row.name;
+
+
+/* =======================
+IMPORT USER
+======================= */
+
+LOAD CSV WITH HEADERS FROM 'file:///node_user.csv' AS row
+
+MERGE (u:User {id: row.id})
+
+SET
+    u.username = row.username,
+    u.email = row.email,
+    u.password = row.password,
+    u.role = row.role,
+    u.status = row.status;
 
 
 /* =======================
@@ -304,8 +324,22 @@ MATCH (s1:Subject {id: row.subject1_id})
 MATCH (s2:Subject {id: row.subject2_id})
 
 WHERE s1.id <> s2.id
-
 MERGE (s1)-[:RELATED_TO]->(s2);
+
+
+/* =======================
+RELATIONSHIP:
+USER - DOCUMENT (BOOKMARK)
+======================= */
+
+LOAD CSV WITH HEADERS FROM 'file:///rel_user_document.csv' AS row
+
+MATCH (u:User {id: row.user_id})
+MATCH (d {id: row.doc_id})
+WHERE d:Book OR d:Article OR d:Thesis OR d:Document
+
+MERGE (u)-[r:BOOKMARKED]->(d)
+ON CREATE SET r.created_at = datetime();
 
 
 /* =======================
@@ -320,7 +354,7 @@ MATCH (d2:Document {id: row.doc2_id})
 
 WHERE d1.id <> d2.id
 
-MERGE (d1)-[:RELATED_TO]->(d2);
+MERGE (d1)-[:RELATED_TO]-(d2);
 
 
 /* =======================

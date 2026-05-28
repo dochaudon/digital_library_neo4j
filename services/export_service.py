@@ -24,7 +24,7 @@ EXPORT_CONFIG = {
     "node_document.csv": {
         "description": "Dữ liệu Tài liệu chính (Book/Article/Thesis)",
         "category": "node",
-        "headers": ["id", "title", "alternative_title", "year", "pages", "abstract", "file_url", "image_url", "type"],
+        "headers": ["id", "title", "alternative_title", "year", "pages", "abstract", "file_url", "image_url", "type", "status"],
         "query": """
             MATCH (n)
             WHERE n:Book OR n:Article OR n:Thesis
@@ -42,7 +42,8 @@ EXPORT_CONFIG = {
                     WHEN "Article" IN labels(n) THEN "Article"
                     WHEN "Thesis" IN labels(n) THEN "Thesis"
                     ELSE "Other"
-                END AS type
+                END AS type,
+                coalesce(n.status, "active") AS status
         """,
         "count_query": "MATCH (n) WHERE n:Book OR n:Article OR n:Thesis RETURN count(n) AS c"
     },
@@ -70,17 +71,8 @@ EXPORT_CONFIG = {
     "node_publisher.csv": {
         "description": "Dữ liệu Nhà xuất bản (Publisher Nodes)",
         "category": "node",
-        "headers": ["id", "name", "address", "email", "phone", "website"],
-        "query": """
-            MATCH (n:Publisher) 
-            RETURN 
-                coalesce(n.id, n.name) AS id, 
-                n.name AS name, 
-                n.address AS address, 
-                n.email AS email, 
-                n.phone AS phone, 
-                n.website AS website
-        """,
+        "headers": ["id", "name"],
+        "query": "MATCH (n:Publisher) RETURN coalesce(n.id, n.name) AS id, n.name AS name",
         "count_query": "MATCH (n:Publisher) RETURN count(n) AS c"
     },
     "node_subject.csv": {
@@ -93,18 +85,16 @@ EXPORT_CONFIG = {
     "node_university.csv": {
         "description": "Dữ liệu Trường đại học / Tổ chức (University Nodes)",
         "category": "node",
-        "headers": ["id", "name", "address", "email", "phone", "website"],
-        "query": """
-            MATCH (n:University) 
-            RETURN 
-                coalesce(n.id, n.name) AS id, 
-                n.name AS name, 
-                n.address AS address, 
-                n.email AS email, 
-                n.phone AS phone, 
-                n.website AS website
-        """,
+        "headers": ["id", "name"],
+        "query": "MATCH (n:University) RETURN coalesce(n.id, n.name) AS id, n.name AS name",
         "count_query": "MATCH (n:University) RETURN count(n) AS c"
+    },
+    "node_user.csv": {
+        "description": "Dữ liệu Người dùng (User Nodes)",
+        "category": "node",
+        "headers": ["id", "username", "email", "password", "role", "status"],
+        "query": "MATCH (u:User) RETURN coalesce(u.id, '') AS id, coalesce(u.username, '') AS username, coalesce(u.email, '') AS email, coalesce(u.password, '') AS password, coalesce(u.role, 'user') AS role, coalesce(u.status, 'active') AS status",
+        "count_query": "MATCH (u:User) RETURN count(u) AS c"
     },
     "rel_document_author.csv": {
         "description": "Quan hệ Tài liệu - Tác giả (HAS_AUTHOR)",
@@ -218,6 +208,17 @@ EXPORT_CONFIG = {
             RETURN coalesce(s1.id, s1.name) AS subject1_id, coalesce(s2.id, s2.name) AS subject2_id
         """,
         "count_query": "MATCH (s1:Subject)-[:RELATED_TO]->(s2:Subject) RETURN count(*) AS c"
+    },
+    "rel_user_document.csv": {
+        "description": "Quan hệ Người dùng lưu Tài liệu (BOOKMARKED)",
+        "category": "relationship",
+        "headers": ["user_id", "doc_id"],
+        "query": """
+            MATCH (u:User)-[r:BOOKMARKED]->(d)
+            WHERE (d:Book OR d:Article OR d:Thesis OR d:Document)
+            RETURN u.id AS user_id, d.id AS doc_id
+        """,
+        "count_query": "MATCH (u:User)-[:BOOKMARKED]->(d) WHERE (d:Book OR d:Article OR d:Thesis OR d:Document) RETURN count(*) AS c"
     }
 }
 

@@ -16,13 +16,10 @@
         <a href="/admin/documents?page={{ page }}" class="cancel-btn" style="padding: 8px 15px; font-size: 14px;">Quay lại</a>
     </div>
 
-    <!-- CHỌN LOẠI -->
     <div class="form-switch">
-        <button class="type-btn {{ 'active' if document.type == 'Book' }}" data-type="book">Sách (Book)</button>
-        <button class="type-btn {{ 'active' if document.type == 'Article' }}" data-type="article">Bài báo
-            (Article)</button>
-        <button class="type-btn {{ 'active' if document.type == 'Thesis' }}" data-type="thesis">Luận văn
-            (Thesis)</button>
+        <button class="type-btn {{ 'active' if document.type == 'Book' }}" data-type="book">Sách</button>
+        <button class="type-btn {{ 'active' if document.type == 'Article' }}" data-type="article">Bài báo</button>
+        <button class="type-btn {{ 'active' if document.type == 'Thesis' }}" data-type="thesis">Luận văn</button>
     </div>
 
 
@@ -63,6 +60,13 @@
                 <div class="form-group">
                     <label>Số trang</label>
                     <input type="text" name="pages" value="{{ document.pages or '' }}" placeholder="VD: 250">
+                </div>
+                <div class="form-group">
+                    <label>Trạng thái tài liệu</label>
+                    <select name="status" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; box-sizing: border-box;">
+                        <option value="active" {{ 'selected' if document.status == 'active' or not document.status }}>Hoạt động (Active)</option>
+                        <option value="hidden" {{ 'selected' if document.status == 'hidden' }}>Ẩn (Hidden)</option>
+                    </select>
                 </div>
                 <div class="form-group {{ 'hidden' if document.type != 'Article' }}" id="group-journal">
                     <label>Tên Tạp chí / Journal</label>
@@ -268,7 +272,12 @@
         <!-- ACTIONS -->
         <div class="form-footer">
             <a href="/admin/documents?page={{ page }}" class="cancel-btn">Hủy bỏ</a>
-            <button type="submit" class="submit-btn"><span id="submit-text">Cập nhật {{ document.type }}</span></button>
+            <button type="submit" class="submit-btn"><span id="submit-text">Cập nhật 
+                {% if document.type == "Book" %}Sách
+                {% elif document.type == "Article" %}Bài báo
+                {% elif document.type == "Thesis" %}Luận văn
+                {% else %}{{ document.type }}{% endif %}
+            </span></button>
         </div>
 
     </form>

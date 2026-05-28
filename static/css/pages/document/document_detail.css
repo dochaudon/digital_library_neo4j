@@ -177,7 +177,36 @@
     position: absolute;
     top: 10px;
     left: 10px;
-    background: rgba(255, 255, 255, 0.8);
+    z-index: 10;
+}
+
+/* BUTTON */
+.legend-btn {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.legend-btn:hover {
+    background: #ffffff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* CONTENT CONTAINER */
+.legend-content {
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     padding: 12px 15px;
@@ -185,19 +214,34 @@
     font-size: 13px;
     box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    z-index: 10;
     min-width: 150px;
-    transition: transform 0.3s ease;
+    margin-top: 8px;
+    display: none; /* hidden by default */
+    transform-origin: top left;
 }
 
-.graph-legend:hover {
-    transform: translateY(-5px);
+/* Show content when legend wrapper is toggled via JS class .is-open */
+.toggle-legend.is-open .legend-content {
+    display: block;
+    animation: slideDownFade 0.2s ease forwards;
 }
 
-.graph-legend div {
+@keyframes slideDownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.legend-content div {
     margin-bottom: 6px;
     display: flex;
     align-items: center;
+
 }
 
 .graph-legend hr {
@@ -602,4 +646,151 @@
     background-color: #dc2626;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE - DOCUMENT DETAIL PAGE
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+    .detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .left-panel {
+        justify-content: center;
+    }
+
+    .pdf-image {
+        max-width: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .doc-header {
+        padding: 12px 14px;
+    }
+
+    .doc-header h2 {
+        font-size: 1.1rem;
+    }
+
+    /* Tabs: scrollable row */
+    .tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        gap: 4px;
+        padding-bottom: 2px;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab-btn {
+        white-space: nowrap;
+        padding: 9px 12px;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .tab-content {
+        padding: 14px;
+    }
+
+    /* Table: stack label/value */
+    .doc-table td:first-child {
+        width: 130px;
+        font-size: 13px;
+    }
+
+    .doc-table td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    /* PDF viewer: shorter height */
+    .pdf-viewer iframe,
+    .pdf-viewer embed {
+        height: 420px;
+    }
+
+    /* Graph: shorter */
+    #graph-network {
+        height: 380px;
+    }
+
+    /* Popup: full width */
+    .graph-popup {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        top: auto;
+        bottom: 80px;
+        max-height: 55vh;
+    }
+
+    /* Related section */
+    .related-section {
+        padding: 20px 16px;
+        margin-top: 30px;
+    }
+
+    /* Carousel slides: smaller */
+    .carousel-slide {
+        flex: 0 0 150px;
+    }
+
+    .carousel-img {
+        height: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Doc table: full stacked */
+    .doc-table {
+        display: block;
+    }
+
+    .doc-table tr {
+        display: block;
+        margin-bottom: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .doc-table td {
+        display: block;
+        width: 100% !important;
+        border-right: none;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .doc-table td:first-child {
+        background: #f1f5f9;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .doc-table tr:last-child td:last-child {
+        border-bottom: none;
+    }
+
+    /* PDF viewer */
+    .pdf-viewer iframe,
+    .pdf-viewer embed {
+        height: 320px;
+    }
+
+    /* Carousel: 1-per-view */
+    .carousel-slide {
+        flex: 0 0 140px;
+    }
+
+    .carousel-control {
+        width: 34px;
+        height: 34px;
+        font-size: 15px;
+    }
 }

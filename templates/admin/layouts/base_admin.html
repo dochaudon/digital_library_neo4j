@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
 
     <!-- CSS -->
@@ -23,6 +25,9 @@
     {% include 'admin/partials/header.html' %}
 
     <div class="admin-container">
+        <!-- Overlay for mobile sidebar -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         {% include 'admin/partials/sidebar.html' %}
 
         <main class="admin-content">

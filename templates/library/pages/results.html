@@ -12,7 +12,7 @@
     <div class="search-header-box">
         <form action="{{ url_for('main.search') }}" method="get" class="search-bar" id="mainSearchForm">
             <input type="hidden" name="search_type" id="searchTypeInput" value="{{ search_type or 'hybrid' }}">
-            <input type="text" name="query" value="{{ query }}" placeholder="Nhập câu truy vấn tự nhiên hoặc từ khóa cần tìm...">
+            <input type="text" name="query" value="{{ query }}" placeholder="Nhập câu truy vấn hoặc từ khóa (VD: Python cơ bản, quản lý chuỗi cung ứng...)">
             <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
         </form>
 
@@ -25,12 +25,12 @@
                     <span class="tab-badge">Đề xuất</span>
                 </div>
                 <div class="mode-tab {% if search_type == 'keyword' %}active{% endif %}" data-mode="keyword">
-                    <span class="tab-icon">🔍</span>
-                    <span class="tab-label">Từ khóa (Keyword)</span>
+                    <span class="tab-icon">📄</span>
+                    <span class="tab-label">Toàn văn (Fulltext)</span>
                 </div>
                 <div class="mode-tab {% if search_type == 'semantic' %}active{% endif %}" data-mode="semantic">
                     <span class="tab-icon">🧠</span>
-                    <span class="tab-label">Ngữ nghĩa (Semantic AI)</span>
+                    <span class="tab-label">Ngữ nghĩa + Đồ thị</span>
                 </div>
             </div>
         </div>
@@ -66,7 +66,7 @@
         <!-- ===== RESULTS ===== -->
         <div class="results-container">
 
-            <h2>Kết quả cho: "{{ query }}"</h2>
+            <h2>Kết quả cho: {{ search_desc }}</h2>
 
             <div id="results-list">
 

@@ -8,7 +8,8 @@ from models.qa_model import (
     get_university_by_title,
     get_abstract_by_title,
     get_keyword_by_title,
-    get_related_by_title
+    get_related_by_title,
+    get_docs_by_subject_with_related
 )
 
 from services.search_service import search_documents
@@ -248,12 +249,37 @@ def _get_qa_response_impl(question, history=None, filters=None):
             }
 
     if intent == "subject":
-        # Nếu filters đã có subject cụ thể (user đang TÌM tài liệu thuộc chủ đề)
-        # thì dùng search_documents với filter, không phải get_subject_by_title
-        if filters.get("subject"):
-            pass  # fall through to BRANCH B with filters intact
+        # Case 1: đã detect được chủ đề từ Knowledge Graph → tìm trực tiếp bằng graph
+        if expansion and main_subject:
+            all_detected = expansion.get("all_detected_subjects", [main_subject])
+            primary_docs, secondary_docs = get_docs_by_subject_with_related(
+                main_subjects=all_detected,
+                related_subjects=related_subjects,
+                limit=10
+            )
+            total = len(primary_docs) + len(secondary_docs)
+            if primary_docs or secondary_docs:
+                related_names = ", ".join(related_subjects[:5]) if related_subjects else "không có"
+                ans_lines = [
+                    f'Tìm thấy **{len(primary_docs)} tài liệu** thuộc chủ đề **"{main_subject}"**'
+                    + (f' và **{len(secondary_docs)} tài liệu** từ các chủ đề liên quan.' if secondary_docs else '.')
+                ]
+                if related_subjects:
+                    ans_lines.append(f'\n_Các chủ đề liên quan đã duyệt: {related_names}_')
+                all_docs = primary_docs + secondary_docs
+                titles = [f'- **[{d["title"]}](/document/{d["id"]})**' + (f' ({d.get("year")})' if d.get('year') else '') for d in all_docs[:5]]
+                ans_lines.append('\n\n**Tài liệu từ Thư viện:**\n' + '\n'.join(titles))
+                return {
+                    "answer": '\n'.join(ans_lines),
+                    "intent": intent,
+                    "documents": all_docs,
+                    "local_documents": all_docs,
+                    "external_documents": [],
+                    "main_subject": main_subject,
+                    "related_subjects": related_subjects
+                }
+        # Case 2: không detect được chủ đề → hỏi về tiêu đề cụ thể
         else:
-            # User đang hỏi về tiêu đề cụ thể: "Tài liệu X thuộc chủ đề gì?"
             res = get_subject_by_title(title)
             if res and res[0].get("subjects"):
                 ans = build_answer(f'Tài liệu **"{res[0]["title"]}"** thuộc các chủ đề: **{", ".join(res[0]["subjects"])}**.')

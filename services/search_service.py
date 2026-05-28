@@ -38,6 +38,21 @@ SUBJECT_ALIASES = {
     "Data Science": [
         "khoa học dữ liệu", "data science"
     ],
+    "Big data": [
+        "big data", "dữ liệu lớn", "dư liệu lớn", "phân tích dữ liệu lớn", "dữ liệu khổng lồ"
+    ],
+    "Data mining": [
+        "khai phá dữ liệu", "data mining", "khai thác dữ liệu"
+    ],
+    "Database management": [
+        "quản trị cơ sở dữ liệu", "quản lý cơ sở dữ liệu", "database management", "cơ sở dữ liệu", "csdl"
+    ],
+    "Research- Data processing": [
+        "xử lý dữ liệu", "research- data processing", "xử lý dữ liệu nghiên cứu"
+    ],
+    "Data warehousing": [
+        "kho dữ liệu", "data warehousing", "kho dữ liệu warehousing"
+    ],
     "Education": [
         "giáo dục", "education", "giảng dạy"
     ],
@@ -75,12 +90,27 @@ CASE
 END
 """
 def resolve_subject(text):
-    """Tìm chủ đề chính xác dựa trên danh sách aliases."""
+    """Tìm chủ đề chính xác dựa trên danh sách aliases, dùng word-boundary để tránh false positive."""
     text_lower = text.lower()
     for official_name, aliases in SUBJECT_ALIASES.items():
-        if any(alias in text_lower for alias in aliases):
+        # Use word-boundary regex, NOT plain substring to avoid e.g. 'it' matching inside 'website'
+        if any(re.search(rf'\b{re.escape(alias)}\b', text_lower) for alias in aliases):
             return official_name
     return None
+
+def clean_subject_query(query_text):
+    if not query_text:
+        return ""
+    text = query_text.lower()
+    indicator_words = [
+        "chủ đề", "lĩnh vực", "về", "tài liệu", "cuốn sách", "sách", "giáo trình", "bài báo", "luận văn",
+        "từ khóa", "trường", "đại học", "học viện", "nhà xuất bản", "nxb", "có", "các", "những",
+        "thuộc về", "thuộc", "là", "theo", "mang", "gồm", "của", "viết", "viết bởi", "được", "tìm", "tìm kiếm"
+    ]
+    for w in indicator_words:
+        text = re.sub(rf'\b{w}\b', ' ', text, flags=re.IGNORECASE)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 def expand_subject_relationship(query_text):
     """
@@ -101,45 +131,145 @@ def expand_subject_relationship(query_text):
     if not all_subjects:
         return None
 
-    # 2. Tìm xem có từ khóa nào khớp với tên Subject (không phân biệt hoa thường)
-    detected_subject = None
+    # 2. Clean query text
+    clean_q = clean_subject_query(query_text)
+    
+    # 3. Detect subjects matching the clean query
+    detected_subjects = []
+    matched_aliases = []
+    
+    # First, try exact whole-word matching using SUBJECT_ALIASES
+    # NOTE: Must use word-boundary regex, NOT plain substring match.
+    # Plain 'alias in query_lower' causes false positives, e.g.
+    # the alias 'it' (for 'Công nghệ thông tin') matches inside 'website'.
     query_lower = query_text.lower()
+    for official_name, aliases in SUBJECT_ALIASES.items():
+        for alias in aliases:
+            # Use word-boundary regex to avoid matching 'it' inside 'website', etc.
+            if re.search(rf'\b{re.escape(alias)}\b', query_lower):
+                if official_name not in detected_subjects:
+                    detected_subjects.append(official_name)
+                if alias not in matched_aliases:
+                    matched_aliases.append(alias)
+
+    # Next, scan all subjects in DB
+    # Use hyphen-normalisation so 'website thiết kế' can match DB subject 'Website- Thiết kế'
+    def _norm_for_cmp(s):
+        """Strips hyphens/slashes so 'Website- Thiết kế' compares equal to 'website thiết kế'."""
+        return re.sub(r'\s+', ' ', re.sub(r'[-/\\]+', ' ', s)).strip()
+
+    clean_q_norm = _norm_for_cmp(clean_q)
+    if len(clean_q_norm) >= 3:
+        for s in all_subjects:
+            s_name = s["name"]
+            s_name_lower = s_name.lower()
+            s_name_norm = _norm_for_cmp(s_name_lower)
+
+            # Guard short subject names (< 4 chars) to avoid matching e.g. 'AI', 'IT' as substrings
+            name_in_query = len(s_name_norm) >= 4 and s_name_norm in clean_q_norm
+            query_in_name = clean_q_norm in s_name_norm
+            pattern = rf"\b{re.escape(clean_q_norm)}\b"
+
+            if re.search(pattern, s_name_norm) or query_in_name or name_in_query:
+                if s_name not in detected_subjects:
+                    detected_subjects.append(s_name)
+                if s_name_lower in query_lower and s_name_lower not in matched_aliases:
+                    matched_aliases.append(s_name_lower)
+
+    # Also keep direct pattern matching for completeness
     for s in all_subjects:
         s_name = s["name"]
-        # Khớp từ đầy đủ để tránh match sai (ví dụ "AI" trong "tail")
-        pattern = rf"\b{re.escape(s_name.lower())}\b"
+        s_name_lower = s_name.lower()
+        pattern = rf"\b{re.escape(s_name_lower)}\b"
         if re.search(pattern, query_lower):
-            detected_subject = s_name
-            break
+            if s_name not in detected_subjects:
+                detected_subjects.append(s_name)
+            if s_name_lower not in matched_aliases:
+                matched_aliases.append(s_name_lower)
 
-    # Fallback dùng resolve_subject aliases nếu không khớp trực tiếp
-    if not detected_subject:
-        detected_subject = resolve_subject(query_text)
-
-    if not detected_subject:
+    if not detected_subjects:
         return None
 
-    # 3. Truy vấn các chủ đề liên quan (:RELATED_TO) trong khoảng 1..2 bước di chuyển (hops)
+    # 4. Truy vấn các chủ đề liên quan (:RELATED_TO) trong khoảng 1..2 bước di chuyển (hops) cho TẤT CẢ các chủ đề đã nhận diện
     cypher_related = """
     MATCH (s:Subject)
-    WHERE toLower(s.name) = toLower($subject)
+    WHERE toLower(s.name) IN $subjects
     MATCH (s)-[:RELATED_TO*1..2]-(rs:Subject)
-    WHERE toLower(rs.name) <> toLower($subject)
+    WHERE NOT toLower(rs.name) IN $subjects
     RETURN DISTINCT rs.name AS name, rs.id AS id
     """
     try:
-        related_rows = neo4j_conn.query(cypher_related, {"subject": detected_subject})
+        subjects_lower = [s.lower() for s in detected_subjects]
+        related_rows = neo4j_conn.query(cypher_related, {"subjects": subjects_lower})
         related_names = [r["name"] for r in related_rows]
         related_ids = [r["id"] for r in related_rows]
-        print(f"[Graph Expansion] Detected Subject: {detected_subject} | Related: {related_names}")
+        print(f"[Graph Expansion] Detected Subjects: {detected_subjects} | Related: {related_names}")
         return {
-            "main_subject": detected_subject,
+            "main_subject": detected_subjects[0],
+            "all_detected_subjects": detected_subjects,
             "related_subjects": related_names,
-            "related_subject_ids": related_ids
+            "related_subject_ids": related_ids,
+            "matched_aliases": matched_aliases
         }
     except Exception as e:
         print(f"[Graph Expansion] Cypher error: {e}")
-        return None
+        return {
+            "main_subject": detected_subjects[0],
+            "all_detected_subjects": detected_subjects,
+            "related_subjects": [],
+            "related_subject_ids": [],
+            "matched_aliases": matched_aliases
+        }
+
+def expand_related_documents(results, limit=10):
+    if not results:
+        return []
+    doc_ids = [d["id"] for d in results if d.get("id")]
+    if not doc_ids:
+        return []
+        
+    cypher = f"""
+    MATCH (d1:Document)-[:RELATED_TO]-(node:Document)
+    WHERE d1.id IN $doc_ids
+    AND (node:Book OR node:Article OR node:Thesis)
+    AND NOT node.id IN $doc_ids
+    AND (node.status IS NULL OR node.status = 'active')
+    
+    OPTIONAL MATCH (node)-[:HAS_AUTHOR]->(a:Author)
+    
+    RETURN DISTINCT
+        node.id AS id,
+        node.title AS title,
+        node.year AS year,
+        node.image_url AS image_url,
+        {TYPE_CASE} AS type,
+        collect(DISTINCT a.name) AS authors,
+        [(node)-[:PUBLISHED_BY]->(p) | p.name] AS publishers,
+        [(node)-[:OWNED_BY]->(u) | u.name] AS universities,
+        0.8 AS score,
+        70 AS priority,
+        'graph' AS source,
+        ['graph'] AS sources,
+        'graph_relation_expansion' AS retrieval_stage,
+        d1.title AS matched_title
+    LIMIT $limit
+    """
+    try:
+        rows = neo4j_conn.query(cypher, {"doc_ids": doc_ids, "limit": limit})
+        related_docs = []
+        seen = set(doc_ids)
+        for r in rows:
+            doc_id = r["id"]
+            if doc_id in seen:
+                continue
+            seen.add(doc_id)
+            doc_norm = normalize_doc(r)
+            doc_norm["explanation"] = [f"Liên quan đến tài liệu '{r['matched_title']}' trên sơ đồ tri thức"]
+            related_docs.append(doc_norm)
+        return related_docs
+    except Exception as e:
+        print(f"[Graph Document Expansion] Error: {e}")
+        return []
 def normalize_doc(doc):
     """Chuẩn hóa metadata của document với kiểu dữ liệu an toàn và đa nguồn."""
     
@@ -207,6 +337,7 @@ def search_title_index(query):
     cypher = f"""
     CALL db.index.fulltext.queryNodes("documentFulltextIndex", $q)
     YIELD node, score
+    WHERE node.status IS NULL OR node.status = 'active'
     RETURN
         node.id AS id,
         node.title AS title,
@@ -238,6 +369,7 @@ def search_fulltext(query, filters=None, limit=20):
     YIELD node, score
 
     WHERE (node:Book OR node:Article OR node:Thesis)
+    AND (node.status IS NULL OR node.status = 'active')
     AND ($doc_type IS NULL OR ANY(label IN labels(node) WHERE label IN $doc_type))
 
     OPTIONAL MATCH (node)-[:HAS_AUTHOR]->(a:Author)
@@ -286,6 +418,7 @@ def search_graph(filters, query="", limit=20):
     cypher = """
     MATCH (d)
     WHERE (d:Book OR d:Article OR d:Thesis)
+    AND (d.status IS NULL OR d.status = 'active')
     AND ($query = "" OR toLower(d.title) CONTAINS toLower($query))
 
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
@@ -370,25 +503,26 @@ def hybrid_search(query="", filters=None, limit=20, original_query=None, search_
         original_query = query
 
     if search_type == "keyword":
+        # NOTE: keyword mode is handled early in search_documents (pure fulltext, no expansion)
+        # This branch is kept as fallback only
         results_fulltext = search_fulltext(query, filters, limit)
         has_specific_filters = any(k for k in filters if k not in ["doc_type", "skip"] and filters[k])
-        if has_specific_filters or not query:
-            results_graph = search_graph(filters, query, limit)
-        else:
-            results_graph = []
+        results_graph = search_graph(filters, "", limit) if has_specific_filters else []
         results_vector = []
     elif search_type == "semantic":
+        # Semantic AI = Vector (embedding) + Graph search (subject/keyword expansion)
         results_fulltext = []
-        results_graph = []
         results_vector = vector_search(original_query, filters=filters, limit=limit)
-    else: # hybrid
+        has_specific_filters = any(k for k in filters if k not in ["doc_type", "skip"] and filters[k])
+        results_graph = search_graph(filters, "", limit) if has_specific_filters else []
+    else:  # hybrid = Fulltext + Vector + Graph (all 3)
         results_fulltext = search_fulltext(query, filters, limit)
+        results_vector = vector_search(original_query, filters=filters, limit=limit)
         has_specific_filters = any(k for k in filters if k not in ["doc_type", "skip"] and filters[k])
         if has_specific_filters or not query:
             results_graph = search_graph(filters, query, limit)
         else:
             results_graph = []
-        results_vector = vector_search(original_query, filters=filters, limit=limit)
 
     merged = {}
     
@@ -411,36 +545,51 @@ def hybrid_search(query="", filters=None, limit=20, original_query=None, search_
     for item in results_fulltext:
         item["fulltext_score"] = item.get("score", 0)
         item["score"] = item["fulltext_score"] * w1
-        item["explanation"] = ["Khớp từ khóa trong nội dung hoặc tiêu đề"]
+        item["explanation"] = ["Khớp nội dung toàn văn (tiêu đề, tóm tắt, từ khóa, chủ đề, tác giả)"]
         merged[item["id"]] = normalize_doc(item)
 
 
     # GRAPH (Priority 100)
     for item in results_graph:
+        item["graph_score"] = 0.1  # Gán giá trị điểm đồ thị chuẩn hóa mặc định (0.1 * 1000 = 100% trên giao diện)
         item_norm = normalize_doc(item)
-        
         doc_id = item_norm["id"]
+        
         if doc_id in merged:
-            # Gộp sources nếu đã tồn tại
-            merged[doc_id]["sources"] = list(set(merged[doc_id]["sources"] + item_norm["sources"]))
+            merged[doc_id]["sources"] = list(set(merged[doc_id]["sources"] + ["graph"]))
             merged[doc_id]["priority"] = max(merged[doc_id].get("priority", 0), 100)
+            merged[doc_id]["graph_score"] = 0.1
+            if "Tìm thấy qua liên kết dữ liệu" not in merged[doc_id]["explanation"]:
+                merged[doc_id]["explanation"].append("Tìm thấy qua liên kết dữ liệu")
         else:
-            merged[doc_id] = item_norm
+            item_norm["priority"] = 100
+            item_norm["sources"] = ["graph"]
             item_norm["explanation"] = ["Tìm thấy qua liên kết dữ liệu"]
-            merged[item_norm["id"]] = item_norm
+            merged[doc_id] = item_norm
 
 
-    # VECTOR (Priority 40)
+    # VECTOR (Priority 50 in semantic mode, 40 in hybrid)
+    vector_priority = 50 if search_type == "semantic" else 40
     for item in results_vector:
+        item["vector_score"] = item.get("score", 0.0)
         doc_id = item["id"]
+        
         if doc_id in merged:
             merged[doc_id]["sources"] = list(set(merged[doc_id]["sources"] + ["vector"]))
-            merged[doc_id]["vector_score"] = item.get("score", 0)
+            merged[doc_id]["vector_score"] = item.get("score", 0.0)
+            # Kết hợp điểm lai ghép (hybrid score) cho tài liệu khớp cả Fulltext và Vector
+            if "fulltext" in merged[doc_id]["sources"]:
+                merged[doc_id]["score"] = merged[doc_id].get("fulltext_score", 0) * w1 + item.get("score", 0) * w2
+            else:
+                merged[doc_id]["score"] = item.get("score", 0.0)
+            
+            if "Tìm thấy qua tìm kiếm ngữ nghĩa AI (embedding)" not in merged[doc_id]["explanation"]:
+                merged[doc_id]["explanation"].append("Tìm thấy qua tìm kiếm ngữ nghĩa AI (embedding)")
         else:
             item_norm = normalize_doc(item)
-            item_norm["priority"] = 40
+            item_norm["priority"] = vector_priority
             item_norm["sources"] = ["vector"]
-            item_norm["explanation"] = [f"Tìm thấy qua tìm kiếm ngữ nghĩa (AI)"]
+            item_norm["explanation"] = ["Tìm thấy qua tìm kiếm ngữ nghĩa AI (embedding)"]
             merged[doc_id] = item_norm
 
 
@@ -466,16 +615,29 @@ def hybrid_search(query="", filters=None, limit=20, original_query=None, search_
         # 3. EXACT METADATA BOOST (Priority 120)
         else:
             target_subject = filters.get("subject")
+            detected_subjs = [s.lower() for s in filters.get("detected_subjects", [])]
+            if target_subject and target_subject.lower() not in detected_subjs:
+                detected_subjs.append(target_subject.lower())
+
             subject_aliases = [s.lower() for s in filters.get("subject_aliases", [])]
+            related_subjs = [s for s in subject_aliases if s not in detected_subjs]
+
             doc_subjects = [s.lower() for s in doc.get("subjects", [])]
 
             is_exact_subject = False
-            if target_subject and target_subject.lower() in doc_subjects: is_exact_subject = True
-            if subject_aliases and any(s in doc_subjects for s in subject_aliases): is_exact_subject = True
+            is_related_subject = False
+
+            if any(s in doc_subjects for s in detected_subjs):
+                is_exact_subject = True
+            elif any(s in doc_subjects for s in related_subjs):
+                is_related_subject = True
 
             if is_exact_subject:
                 doc["priority"] = 120
                 doc["retrieval_stage"] = "exact_metadata_match"
+            elif is_related_subject:
+                doc["priority"] = 110
+                doc["retrieval_stage"] = "related_metadata_match"
             elif filters.get("university") and any(filters["university"].lower() in u.lower() for u in doc.get("universities", [])):
                 doc["priority"] = 120
                 doc["retrieval_stage"] = "exact_metadata_match"
@@ -546,7 +708,6 @@ def hybrid_search(query="", filters=None, limit=20, original_query=None, search_
     results = list(merged.values())
 
     # PRIORITY-BASED RERANKING
-    # 120: Exact Metadata, 100: Partial/Title Metadata, 80: Fulltext, 40: Vector
     results.sort(key=lambda x: (
         -x.get("priority", 0),
         -x.get("score", 0),
@@ -571,35 +732,69 @@ def search_documents(query="", filters=None, limit=20, search_type="hybrid"):
         print("[Pipeline] Empty query and no filters. Returning latest documents.")
         return get_latest_documents(limit)
 
-
     # Làm sạch query để tránh lỗi Lucene
-    query = re.sub(r'[\[\]\{\}\(\)\^\~\*\?\:\\\/\'\"]', ' ', query).strip()
+    query = re.sub(r'[\[\]\{\}\(\)\^\~\*\?\:\\\/\'\"]+', ' ', query).strip()
 
+    # ===========================================================
+    # FULLTEXT MODE: chỉ tìm trên title + abstract, không expansion
+    # ===========================================================
+    if search_type == "keyword":
+        # Chỉ áp dụng các filter tường minh từ người dùng (doc_type, author, year)
+        explicit_filters = {
+            k: v for k, v in filters.items()
+            if k in ["doc_type", "author", "year"] and v
+        }
+        ft_results = search_fulltext(query, explicit_filters, limit)
+        # Gán fulltext_score đúng để UI hiển thị score bar
+        if ft_results:
+            max_ft = max((r.get("score") or 0) for r in ft_results) or 1
+            for r in ft_results:
+                r["fulltext_score"] = round(r.get("score", 0) / max_ft, 4)
+                r["score"] = r["fulltext_score"]
+        return ft_results
 
     parsed_query, parsed_filters = parse_query(query)
     filters.update(parsed_filters)
 
-    # Subject Relationship Expansion
+    # Subject Relationship Expansion (hybrid / semantic only)
     original_parsed_query = parsed_query
     expansion = expand_subject_relationship(query)
     if expansion:
         main_subj = expansion["main_subject"]
         related_subjs = expansion["related_subjects"]
+        all_detected_subjs = expansion.get("all_detected_subjects", [main_subj])
         
         # Chỉ set subject filter nếu chưa được set từ caller (parse_filters của qa_service)
         if not filters.get("subject"):
             filters["subject"] = main_subj
         
+        # Lưu trữ danh sách phân biệt để phục vụ tính điểm ưu tiên (ranking)
+        filters["detected_subjects"] = all_detected_subjs
+        filters["related_subjects"] = related_subjs
+        
         # Luôn thêm subject_aliases để mở rộng graph search
         if "subject_aliases" not in filters:
             filters["subject_aliases"] = []
             
+        for ds in all_detected_subjs:
+            if ds.lower() not in [x.lower() for x in filters["subject_aliases"]]:
+                filters["subject_aliases"].append(ds)
+                
         for rs in related_subjs:
             if rs.lower() not in [x.lower() for x in filters["subject_aliases"]]:
                 filters["subject_aliases"].append(rs)
                 
+        # Dọn dẹp parsed_query để tránh việc filter cứng tiêu đề trong search_graph
+        matched_aliases = expansion.get("matched_aliases", [])
+        for ma in matched_aliases:
+            parsed_query = re.sub(rf'\b{re.escape(ma.lower())}\b', ' ', parsed_query, flags=re.IGNORECASE)
+        for ds in all_detected_subjs:
+            parsed_query = re.sub(rf'\b{re.escape(ds.lower())}\b', ' ', parsed_query, flags=re.IGNORECASE)
+        clean_q = clean_subject_query(query)
+        parsed_query = re.sub(rf'\b{re.escape(clean_q.lower())}\b', ' ', parsed_query, flags=re.IGNORECASE)
+        parsed_query = re.sub(r'\s+', ' ', parsed_query).strip()
+
         # Chỉ expand Lucene query khi KHÔNG có subject filter cứng
-        # (vì nếu có subject filter, graph search đã đảm bảo độ chính xác)
         if related_subjs and not filters.get("subject"):
             expansion_terms = " OR ".join([f'"{rs}"' for rs in related_subjs[:3]])
             if parsed_query:
@@ -614,9 +809,6 @@ def search_documents(query="", filters=None, limit=20, search_type="hybrid"):
     intent = detect_intent(query)
     title = extract_title(query)
 
-    # 1. STRUCTURED FILTERS (Already updated via parse_query)
-    # If we have filters but no query, search_graph is already strong.
-
     # 2. STRONG QA TITLE SEARCH (Only for specific factual intents)
     if intent in TITLE_QA_INTENTS and title:
         print(f"[Pipeline] Strong QA Intent detected: {intent}. Title Search for: {title}")
@@ -624,22 +816,76 @@ def search_documents(query="", filters=None, limit=20, search_type="hybrid"):
         if results:
             return [normalize_doc(r) for r in results]
 
-    # 3. HYBRID SEARCH (Delegates matching to hybrid_search based on search_type)
+    # 3. HYBRID SEARCH
     print(f"[Pipeline] Performing search of type: {search_type}")
-    results = hybrid_search(parsed_query, filters, limit, original_query=original_parsed_query, search_type=search_type)
+    results = hybrid_search(parsed_query, filters, limit, original_query=query, search_type=search_type)
 
     # 4. GRAPH SEARCH (Fallback if results are thin but we have filters)
     if not results and any(filters.values()):
         print("[Pipeline] Fallback to Graph Search")
         results = search_graph(filters, original_parsed_query, limit)
 
-
     # 5. WEAK QA INTENT Fallback
     if not results and title and title != query and len(title) > 3:
         print(f"[Pipeline] Weak QA Intent fallback. Trying Title Search for: {title}")
         results = search_title_index(title)
         if results:
-            return [normalize_doc(r) for r in results]
+            results = [normalize_doc(r) for r in results]
+
+    # 6. GRAPH RELATION DOCUMENT EXPANSION (RELATED_TO document connections)
+    if results:
+        related_docs = expand_related_documents(results, limit=5)
+        seen = {d["id"] for d in results}
+        
+        # doc_type filter
+        doc_type_filter = filters.get("doc_type")
+        if doc_type_filter and isinstance(doc_type_filter, str):
+            doc_type_filter = [doc_type_filter]
+
+        for rd in related_docs:
+            if rd["id"] not in seen:
+                # Check doc_type
+                if doc_type_filter and rd.get("type") not in doc_type_filter:
+                    continue
+                
+                # Check author
+                auth_filter = filters.get("author")
+                if auth_filter:
+                    doc_authors = [a.lower() for a in rd.get("authors", [])]
+                    if not any(auth_filter.lower() in a for a in doc_authors):
+                        continue
+                
+                # Check subject
+                subj_filter = filters.get("subject")
+                if subj_filter:
+                    doc_subjects = [s.lower() for s in rd.get("subjects", [])]
+                    if not any(subj_filter.lower() in s for s in doc_subjects):
+                        continue
+                        
+                # Check publisher
+                pub_filter = filters.get("publisher")
+                if pub_filter:
+                    doc_publishers = [p.lower() for p in rd.get("publishers", [])]
+                    if not any(pub_filter.lower() in p for p in doc_publishers):
+                        continue
+                        
+                # Check university
+                univ_filter = filters.get("university")
+                if univ_filter:
+                    doc_univs = [u.lower() for u in rd.get("universities", [])]
+                    if not any(univ_filter.lower() in u for u in doc_univs):
+                        continue
+                        
+                # Check year
+                year_filter = filters.get("year")
+                if year_filter:
+                    try:
+                        if int(rd.get("year", 0)) != int(year_filter):
+                            continue
+                    except (ValueError, TypeError):
+                        pass
+
+                results.append(rd)
 
     return results
 
@@ -722,6 +968,7 @@ def strict_search(query="", filters=None, limit=20):
     cypher = """
     MATCH (d)
     WHERE (d:Book OR d:Article OR d:Thesis)
+      AND (d.status IS NULL OR d.status = 'active')
 
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
@@ -805,7 +1052,8 @@ def suggest_documents(query, limit=10):
     CALL db.index.fulltext.queryNodes("documentSearchIndex", $query)
     YIELD node, score
 
-    WHERE node:Book OR node:Article OR node:Thesis
+    WHERE (node:Book OR node:Article OR node:Thesis)
+      AND (node.status IS NULL OR node.status = 'active')
 
     RETURN
         node.id AS id,
@@ -829,7 +1077,8 @@ def get_latest_documents(limit=20):
 
     query = """
     MATCH (d)
-    WHERE d:Book OR d:Article OR d:Thesis
+    WHERE (d:Book OR d:Article OR d:Thesis)
+      AND (d.status IS NULL OR d.status = 'active')
 
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
 

@@ -94,4 +94,20 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // ===== TOGGLE PASSWORD VISIBILITY =====
+    document.querySelectorAll(".toggle-password").forEach(icon => {
+        icon.addEventListener("click", function () {
+            const input = this.parentNode.querySelector("input");
+            if (input.type === "password") {
+                input.type = "text";
+                this.classList.remove("fa-eye");
+                this.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                this.classList.remove("fa-eye-slash");
+                this.classList.add("fa-eye");
+            }
+        });
+    });
+
 }); 

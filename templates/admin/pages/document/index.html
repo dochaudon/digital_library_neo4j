@@ -34,6 +34,7 @@
                     <th>Tiêu đề</th>
                     <th>Năm</th>
                     <th>Loại</th>
+                    <th>Trạng thái</th>
                     <th>Thao tác</th>
                 </tr>
             </thead>
@@ -56,8 +57,23 @@
                     <!-- TYPE -->
                     <td>
                         <span class="badge badge-{{ doc.type|lower }}">
-                            {{ doc.type }}
+                            {% if doc.type == "Book" %}Sách
+                            {% elif doc.type == "Article" %}Bài báo
+                            {% elif doc.type == "Thesis" %}Luận văn
+                            {% else %}{{ doc.type }}{% endif %}
                         </span>
+                    </td>
+
+                    <!-- STATUS -->
+                    <td>
+                        <div class="status-toggle-group">
+                            <span class="status-btn btn-active {{ 'active' if doc.status != 'hidden' else '' }}" data-id="{{ doc.id }}" data-status="active">
+                                Active
+                            </span>
+                            <span class="status-btn btn-hidden {{ 'active' if doc.status == 'hidden' else '' }}" data-id="{{ doc.id }}" data-status="hidden">
+                                Hidden
+                            </span>
+                        </div>
                     </td>
 
                     <!-- ACTION -->
@@ -79,5 +95,57 @@
     </div>
 
 </section>
+{% endblock %}
 
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.status-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.classList.contains('active')) {
+                return; // Already active
+            }
+            
+            const docId = this.getAttribute('data-id');
+            const group = this.closest('.status-toggle-group');
+            const activeBtn = group.querySelector('.btn-active');
+            const hiddenBtn = group.querySelector('.btn-hidden');
+            
+            // Add visual loading state
+            group.style.opacity = '0.5';
+            group.style.pointerEvents = 'none';
+
+            fetch(`/admin/documents/toggle-status/${docId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                group.style.opacity = '1';
+                group.style.pointerEvents = 'auto';
+                
+                if (data.success) {
+                    if (data.new_status === 'hidden') {
+                        activeBtn.classList.remove('active');
+                        hiddenBtn.classList.add('active');
+                    } else {
+                        activeBtn.classList.add('active');
+                        hiddenBtn.classList.remove('active');
+                    }
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Không thể thay đổi trạng thái'));
+                }
+            })
+            .catch(err => {
+                group.style.opacity = '1';
+                group.style.pointerEvents = 'auto';
+                console.error(err);
+                alert('Có lỗi kết nối xảy ra!');
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

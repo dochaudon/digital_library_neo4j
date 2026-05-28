@@ -171,3 +171,28 @@
 .toast.show { transform: translateX(0); }
 .toast-success { background: #10b981; }
 .toast-error { background: #ef4444; }
+
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 45px !important;
+    box-sizing: border-box;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #9ca3af;
+    z-index: 10;
+    transition: color 0.15s ease;
+}
+
+.toggle-password:hover {
+    color: #4b5563;
+}

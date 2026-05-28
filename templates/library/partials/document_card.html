@@ -16,7 +16,10 @@
 
         <!-- TYPE -->
         <div class="doc-type">
-            {{ doc.type }}
+            {% if doc.type == "Book" %}Sách
+            {% elif doc.type == "Article" %}Bài báo
+            {% elif doc.type == "Thesis" %}Luận văn
+            {% else %}{{ doc.type }}{% endif %}
         </div>
 
         <!-- AUTHOR -->

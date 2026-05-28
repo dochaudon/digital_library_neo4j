@@ -10,18 +10,29 @@
     <h2>{{ document.title }}</h2>
 
     {% if document.type %}
-    <span class="doc-type-link">{{ document.type }}</span>
+    <span class="doc-type-link">
+        {% if document.type == "Book" %}Sách
+        {% elif document.type == "Article" %}Bài báo
+        {% elif document.type == "Thesis" %}Luận văn
+        {% else %}{{ document.type }}{% endif %}
+    </span>
     {% endif %}
 </div>
 
 <div class="detail-layout">
 
     <!-- ================= LEFT ================= -->
-    <div class="left-panel">
+    <div class="left-panel" style="position: relative; overflow: hidden; border-radius: 8px;">
 
         <img src="{{ document.image_url or url_for('static', filename='images/pdf.jpg') }}"
             data-fallback="{{ url_for('static', filename='images/pdf.png') }}" class="pdf-image"
-            onerror="this.onerror=null; this.src=this.dataset.fallback;">
+            onerror="this.onerror=null; this.src=this.dataset.fallback;" style="width: 100%; display: block;">
+            
+        {% if session.get('user') %}
+        <button id="bookmarkBtn" class="bookmark-btn" onclick="toggleBookmark('{{ document.id }}')" title="Lưu tài liệu" style="position: absolute; top: -4px; right: 20px; background: transparent; border: none; cursor: pointer; display: flex; align-items: flex-start; justify-content: center; z-index: 10; padding: 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3)); transition: transform 0.2s ease; transform-origin: top center;">
+            <i class="far fa-bookmark" id="bookmarkIcon" style="font-size: 45px; color: #64748b; transition: all 0.2s ease;"></i>
+        </button>
+        {% endif %}
 
     </div>
 
@@ -180,21 +191,24 @@
 
             <div class="graph-wrapper">
 
-                <div class="graph-legend">
-                    <div><span class="legend-box blue circle"></span> Sách</div>
-                    <div><span class="legend-box green square"></span> Bài báo</div>
-                    <div><span class="legend-box purple triangle"></span> Luận văn</div>
+                <div class="graph-legend toggle-legend">
+                    <button class="legend-btn" id="legendToggleBtn"><i class="fas fa-info-circle"></i> Chú thích</button>
+                    <div class="legend-content" id="legendContent">
+                        <div><span class="legend-box blue circle"></span> Sách</div>
+                        <div><span class="legend-box green square"></span> Bài báo</div>
+                        <div><span class="legend-box purple triangle"></span> Luận văn</div>
 
-                    <hr>
+                        <hr>
 
-                    <div><span class="legend-box yellow circle"></span> Tác giả</div>
-                    <div><span class="legend-box orange diamond"></span> Chủ đề</div>
-                    <div><span class="legend-box pink star"></span> Từ khóa</div>
-                    <div><span class="legend-box cyan triangle-down"></span> Nhà xuất bản</div>
-                    <div><span class="legend-box indigo hexagon"></span> Trường đại học</div>
-                    <div><span class="legend-box pentagon" style="background: #ef4444;"></span> Tạp chí</div>
-                    <div><span class="legend-box teal square" style="background: #14b8a6;"></span> Danh mục</div>
-                    <div><span class="legend-box slate circle" style="background: #64748b; border-radius: 50%;"></span> Ngôn ngữ</div>
+                        <div><span class="legend-box yellow circle"></span> Tác giả</div>
+                        <div><span class="legend-box orange diamond"></span> Chủ đề</div>
+                        <div><span class="legend-box pink star"></span> Từ khóa</div>
+                        <div><span class="legend-box cyan triangle-down"></span> Nhà xuất bản</div>
+                        <div><span class="legend-box indigo hexagon"></span> Trường đại học</div>
+                        <div><span class="legend-box pentagon" style="background: #ef4444;"></span> Tạp chí</div>
+                        <div><span class="legend-box teal square" style="background: #14b8a6;"></span> Danh mục</div>
+                        <div><span class="legend-box slate circle" style="background: #64748b; border-radius: 50%;"></span> Ngôn ngữ</div>
+                    </div>
                 </div>
 
                 <div id="graph-network"></div>
@@ -210,19 +224,19 @@
     </div>
 </div>
 
-<!-- ================= RELATED BY AUTHOR ================= -->
-{% if related_by_author %}
-<section class="related-section">
+<!-- ================= RELATED RECOMMENDATIONS ================= -->
+{% if related_documents %}
+<section class="related-section" style="margin-top: 40px;">
     <div class="section-title">
-        <h3>📚 Tài liệu cùng tác giả</h3>
+        <h3>🔍 Tài liệu liên quan</h3>
     </div>
 
     <div class="carousel-container">
-        <button class="carousel-control prev" id="carousel-prev">❮</button>
+        <button class="carousel-control prev">❮</button>
 
         <div class="carousel-track-container">
-            <ul class="carousel-track" id="carousel-track">
-                {% for doc in related_by_author %}
+            <ul class="carousel-track">
+                {% for doc in related_documents %}
                 <li class="carousel-slide">
                     <a href="/document/{{ doc.id }}" class="carousel-card">
                         <div class="carousel-img">
@@ -234,7 +248,12 @@
                             <h4 title="{{ doc.title }}">{{ doc.title }}</h4>
                             <div class="carousel-meta">
                                 <span class="carousel-year">{{ doc.year or '' }}</span>
-                                <span class="carousel-type tag-{{ doc.type|lower }}">{{ doc.type }}</span>
+                                <span class="carousel-type tag-{{ doc.type|lower }}">
+                                    {% if doc.type == "Book" %}Sách
+                                    {% elif doc.type == "Article" %}Bài báo
+                                    {% elif doc.type == "Thesis" %}Luận văn
+                                    {% else %}{{ doc.type }}{% endif %}
+                                </span>
                             </div>
                         </div>
                     </a>
@@ -243,7 +262,7 @@
             </ul>
         </div>
 
-        <button class="carousel-control next" id="carousel-next">❯</button>
+        <button class="carousel-control next">❯</button>
     </div>
 </section>
 {% endif %}
@@ -270,6 +289,73 @@
 
 <script>
     const graphData = JSON.parse('{{ graph_data | tojson | safe }}');
+    
+    // Check initial bookmark status
+    document.addEventListener("DOMContentLoaded", function() {
+        const docId = "{{ document.id }}";
+        {% if session.get('user') %}
+        fetch(`/api/user/bookmark/status/${docId}`)
+            .then(response => response.json())
+            .then(data => {
+                if(data.bookmarked) {
+                    const icon = document.getElementById('bookmarkIcon');
+                    if(icon) {
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                        icon.style.color = '#ef4444';
+                        icon.style.webkitTextStroke = ''; // Clear any stroke if exists
+                    }
+                }
+            })
+            .catch(err => console.error(err));
+        
+        // Add hover effect for bookmark btn
+        const btn = document.getElementById('bookmarkBtn');
+        if(btn) {
+            btn.addEventListener('mouseover', function() {
+                this.style.transform = 'scale(1.1)';
+            });
+            btn.addEventListener('mouseout', function() {
+                this.style.transform = 'scale(1)';
+            });
+        }
+        {% endif %}
+    });
+
+    function toggleBookmark(docId) {
+        const icon = document.getElementById('bookmarkIcon');
+        if (!icon) return;
+        
+        const isBookmarked = icon.classList.contains('fas');
+        const action = isBookmarked ? 'remove' : 'add';
+        
+        fetch('/api/user/bookmark', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ doc_id: docId, action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            if (data.bookmarked) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                icon.style.color = '#ef4444';
+                icon.style.webkitTextStroke = '';
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                icon.style.color = '#64748b';
+                icon.style.webkitTextStroke = '';
+            }
+        })
+        .catch(err => console.error(err));
+    }
 </script>
 
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>

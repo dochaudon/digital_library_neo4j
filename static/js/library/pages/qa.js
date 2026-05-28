@@ -100,7 +100,7 @@ async function typeText(element, rawText, speed = 15) {
 // =========================
 // BOT RESPONSE (typing)
 // =========================
-async function addBotResponse(text, docs, keyword, intent, relatedSubjects = [], mainSubject = null) {
+async function addBotResponse(text, docs, keyword, intent, relatedSubjects = [], mainSubject = null, graphData = null) {
 
     // Không pre-render ở đây nữa, typeText sẽ tự xử lý
     const bubble = createMessage(`<p class="message-text"></p>`, "bot");
@@ -117,7 +117,140 @@ async function addBotResponse(text, docs, keyword, intent, relatedSubjects = [],
     if (relatedSubjects && relatedSubjects.length) {
         renderRelatedSubjects(relatedSubjects, mainSubject);
     }
+
+    // render graph
+    if (graphData && graphData.nodes && graphData.nodes.length > 0) {
+        renderGraph(graphData);
+    }
 }
+// =========================
+// GRAPH RENDER
+// =========================
+function formatLabel(text) {
+    if (!text) return "";
+    const max = 25;
+    let result = "";
+    for (let i = 0; i < text.length; i += max) {
+        result += text.substring(i, i + max) + "\n";
+    }
+    return result;
+}
+
+let graphCounter = 0;
+
+function renderGraph(graphData) {
+    graphCounter++;
+    const graphId = `chat-graph-${graphCounter}`;
+    
+    const html = `
+        <div class="chat-graph-wrapper" style="margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff; position: relative;">
+            <div class="graph-header" style="padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: 600; color: #475569; display: flex; justify-content: space-between; align-items: center;">
+                <span>Biểu đồ liên kết</span>
+                <div>
+                    <button onclick="const el = document.getElementById('legend-${graphId}'); el.style.display = el.style.display === 'none' ? 'block' : 'none';" style="background:none;border:none;cursor:pointer;color:#64748b; margin-right: 8px;" title="Chú thích">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Chú thích
+                    </button>
+                    <button onclick="document.getElementById('${graphId}').requestFullscreen()" style="background:none;border:none;cursor:pointer;color:#64748b;" title="Phóng to">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="legend-${graphId}" style="display: none; position: absolute; top: 40px; right: 10px; background: rgba(255, 255, 255, 0.95); border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 11px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-height: 250px; overflow-y: auto; color: #333;">
+                <div style="font-weight: bold; margin-bottom: 8px; color: #0f172a;">Tài liệu</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#2563eb; margin-right:8px; border: 1px solid #1e40af;"></span> Sách</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:12px; height:12px; background:#10b981; margin-right:8px; border: 1px solid #059669;"></span> Bài báo</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:12px solid #8b5cf6; margin-right:8px;"></span> Luận văn</div>
+                <hr style="margin: 8px 0; border: none; border-top: 1px solid #e2e8f0;">
+                <div style="font-weight: bold; margin-bottom: 8px; color: #0f172a;">Thực thể</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#fbbf24; margin-right:8px; border: 1px solid #d97706;"></span> Tác giả</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:10px; height:10px; background:#f97316; transform: rotate(45deg); margin-right:9px; margin-left: 1px; border: 1px solid #ea580c;"></span> <span style="margin-left: 0px;">Chủ đề</span></div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:12px; height:12px; background:#ec4899; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); margin-right:8px;"></span> Từ khóa</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:12px solid #06b6d4; margin-right:8px;"></span> Nhà xuất bản</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:12px; height:12px; background:#6366f1; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); margin-right:8px;"></span> Trường đại học</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:12px; height:12px; background:#14b8a6; margin-right:8px; border: 1px solid #0d9488;"></span> Danh mục</div>
+                <div style="display:flex; align-items:center; margin-bottom:6px;"><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#64748b; margin-right:8px; border: 1px solid #475569;"></span> Ngôn ngữ</div>
+            </div>
+            
+            <div id="${graphId}" style="width: 100%; height: 300px; background: #fafafa;"></div>
+        </div>
+    `;
+    
+    createMessage(html, "bot");
+    
+    setTimeout(() => {
+        const container = document.getElementById(graphId);
+        if (!container || !window.vis) return;
+        
+        const mappedNodes = graphData.nodes.map(n => {
+            return {
+                ...n,
+                label: formatLabel(n.label)
+            };
+        });
+
+        const data = {
+            nodes: new vis.DataSet(mappedNodes),
+            edges: new vis.DataSet(graphData.edges)
+        };
+
+        const options = {
+            nodes: {
+                shape: "dot",
+                size: 15,
+                font: { size: 11, color: "#333", vadjust: 20 },
+                borderWidth: 2,
+                shadow: { enabled: true, color: "rgba(0,0,0,0.1)", size: 5, x: 2, y: 2 }
+            },
+            edges: {
+                width: 1,
+                color: { color: "#cbd5e1", hover: "#64748b", highlight: "#2563eb" },
+                smooth: { type: "continuous" },
+                arrows: { to: { enabled: false } }
+            },
+            groups: {
+                book: { shape: "dot", color: { background: "#2563eb", border: "#1e40af" } },
+                article: { shape: "square", color: { background: "#10b981", border: "#059669" } },
+                thesis: { shape: "triangle", color: { background: "#8b5cf6", border: "#7c3aed" } },
+                author: { shape: "dot", color: { background: "#fbbf24", border: "#d97706" } },
+                subject: { shape: "diamond", color: { background: "#f97316", border: "#ea580c" } },
+                keyword: { shape: "star", color: { background: "#ec4899", border: "#be185d" } },
+                publisher: { shape: "triangleDown", color: { background: "#06b6d4", border: "#0891b2" } },
+                university: { shape: "hexagon", color: { background: "#6366f1", border: "#4f46e5" } },
+                category: { shape: "box", color: { background: "#14b8a6", border: "#0d9488" } },
+                language: { shape: "ellipse", color: { background: "#64748b", border: "#475569" } }
+            },
+            physics: {
+                enabled: true,
+                solver: "forceAtlas2Based",
+                forceAtlas2Based: { gravitationalConstant: -100, springLength: 150 },
+                stabilization: { iterations: 100 }
+            },
+            interaction: { hover: true, zoomView: true, dragNodes: true }
+        };
+
+        const network = new vis.Network(container, data, options);
+        
+        network.once("stabilized", function () {
+            network.fit({ animation: true });
+            scrollToBottom();
+        });
+        
+        network.on("doubleClick", (params) => {
+            if (!params.nodes.length) return;
+            const node = data.nodes.get(params.nodes[0]);
+            if (!node) return;
+            
+            if (["book", "article", "thesis"].includes(node.group)) {
+                window.open(`/document/${node.id}`, '_blank');
+            } else {
+                window.open(`/explore/${node.group}/${node.id}`, '_blank');
+            }
+        });
+
+    }, 100);
+}
+
 
 // =========================
 // RELATED SUBJECTS CHIPS
@@ -259,8 +392,9 @@ async function sendQuestion() {
         const intent = data.intent || "search";
         const relatedSubjects = data.related_subjects || [];
         const mainSubject = data.main_subject;
+        const graphData = data.graph_data;
 
-        await addBotResponse(answer, docs, question, intent, relatedSubjects, mainSubject);
+        await addBotResponse(answer, docs, question, intent, relatedSubjects, mainSubject, graphData);
 
         pushHistory("assistant", answer);
 

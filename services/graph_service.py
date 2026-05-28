@@ -4,7 +4,7 @@ from database.neo4j_connection import neo4j_conn
 # =========================
 # GET GRAPH DATA (UNIFIED)
 # =========================
-def get_graph_data(document_id):
+def get_graph_data(document_id, include_hidden=False):
 
     if not document_id:
         return {"nodes": [], "edges": []}
@@ -21,6 +21,7 @@ def get_graph_data(document_id):
     OPTIONAL MATCH (d)-[:HAS_CATEGORY]->(c:Category)
     OPTIONAL MATCH (d)-[:IN_LANGUAGE]->(l:Language)
     OPTIONAL MATCH (d)-[:RELATED_TO]-(rd)
+    WHERE $include_hidden OR rd.status IS NULL OR rd.status = 'active'
 
     RETURN
         d,
@@ -36,7 +37,7 @@ def get_graph_data(document_id):
         collect(DISTINCT {node: rd, labels: labels(rd)}) AS related
     """
 
-    result = neo4j_conn.query(query, {"id": document_id})
+    result = neo4j_conn.query(query, {"id": document_id, "include_hidden": include_hidden})
 
     if not result:
         return {"nodes": [], "edges": []}
@@ -48,6 +49,9 @@ def get_graph_data(document_id):
     node_ids = set()
 
     d = record.get("d") or {}
+    if not include_hidden and d.get("status") == "hidden":
+        return {"nodes": [], "edges": []}
+        
     labels = record.get("labels") or []
 
     # =========================
@@ -162,12 +166,133 @@ def get_graph_data(document_id):
 # =========================
 # WRAPPER (GIỮ CHUẨN SERVICE)
 # =========================
-def get_document_graph_service(document_id):
-    return get_graph_data(document_id)
+def get_document_graph_service(document_id, include_hidden=False):
+    return get_graph_data(document_id, include_hidden)
 
 
-def get_graph_auto(document_id):
-    return get_graph_data(document_id)
+def get_multi_document_graph_service(document_ids, include_hidden=False):
+    if not document_ids:
+        return {"nodes": [], "edges": []}
+
+    query = """
+    MATCH (d)
+    WHERE d.id IN $doc_ids
+    OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
+    OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
+    OPTIONAL MATCH (d)-[:HAS_KEYWORD]->(k:Keyword)
+    OPTIONAL MATCH (d)-[:PUBLISHED_BY]->(p:Publisher)
+    OPTIONAL MATCH (d)-[:OWNED_BY]->(u:University)
+    OPTIONAL MATCH (d)-[:PUBLISHED_IN]->(j:Journal)
+    OPTIONAL MATCH (d)-[:HAS_CATEGORY]->(c:Category)
+    OPTIONAL MATCH (d)-[:IN_LANGUAGE]->(l:Language)
+    OPTIONAL MATCH (d)-[:RELATED_TO]-(rd)
+    WHERE $include_hidden OR rd.status IS NULL OR rd.status = 'active'
+
+    RETURN
+        d,
+        labels(d) AS labels,
+        collect(DISTINCT a) AS authors,
+        collect(DISTINCT s) AS subjects,
+        collect(DISTINCT k) AS keywords,
+        collect(DISTINCT p) AS publishers,
+        collect(DISTINCT u) AS universities,
+        collect(DISTINCT j) AS journals,
+        collect(DISTINCT c) AS categories,
+        collect(DISTINCT l) AS languages,
+        collect(DISTINCT {node: rd, labels: labels(rd)}) AS related
+    """
+
+    result = neo4j_conn.query(query, {"doc_ids": document_ids, "include_hidden": include_hidden})
+
+    if not result:
+        return {"nodes": [], "edges": []}
+
+    nodes = []
+    edges = []
+    node_ids = set()
+    edges_set = set() # (from_id, to_id, label) to avoid duplicates
+
+    def add_node(n_id, label, group):
+        if n_id not in node_ids:
+            nodes.append({
+                "id": n_id,
+                "label": label,
+                "group": group
+            })
+            node_ids.add(n_id)
+            
+    def add_edge(from_id, to_id, label):
+        edge_key = (from_id, to_id, label)
+        if edge_key not in edges_set:
+            edges.append({
+                "from": from_id,
+                "to": to_id,
+                "label": label
+            })
+            edges_set.add(edge_key)
+
+    for record in result:
+        d = record.get("d") or {}
+        if not include_hidden and d.get("status") == "hidden":
+            continue
+            
+        labels = record.get("labels") or []
+        doc_group = "book"
+        if "Article" in labels:
+            doc_group = "article"
+        elif "Thesis" in labels:
+            doc_group = "thesis"
+
+        doc_id = d.get("id")
+        doc_title = d.get("title") or "Unknown"
+
+        add_node(doc_id, doc_title, doc_group)
+
+        def add_items(items, group, rel_type):
+            if not items: return
+            for item in items:
+                if not item: continue
+                name = item.get("name") or item.get("title") or "Unknown"
+                node_id = item.get("id") or f"{group}_{name}"
+                add_node(node_id, name, group)
+                add_edge(doc_id, node_id, rel_type)
+
+        add_items(record.get("authors"), "author", "HAS_AUTHOR")
+        add_items(record.get("subjects"), "subject", "HAS_SUBJECT")
+        add_items(record.get("keywords"), "keyword", "HAS_KEYWORD")
+        add_items(record.get("publishers"), "publisher", "PUBLISHED_BY")
+        add_items(record.get("universities"), "university", "OWNED_BY")
+        add_items(record.get("journals"), "journal", "PUBLISHED_IN")
+        add_items(record.get("categories"), "category", "HAS_CATEGORY")
+        add_items(record.get("languages"), "language", "IN_LANGUAGE")
+
+        related_items = record.get("related") or []
+        for item in related_items:
+            if not item: continue
+            node = item.get("node")
+            if not node: continue
+            node_id = node.get("id")
+            if not node_id: continue
+                
+            node_labels = item.get("labels") or []
+            rd_group = "book"
+            if "Article" in node_labels:
+                rd_group = "article"
+            elif "Thesis" in node_labels:
+                rd_group = "thesis"
+                
+            name = node.get("title") or "Unknown"
+            add_node(node_id, name, rd_group)
+            add_edge(doc_id, node_id, "RELATED_TO")
+
+    return {
+        "nodes": nodes,
+        "edges": edges
+    }
+
+
+def get_graph_auto(document_id, include_hidden=False):
+    return get_graph_data(document_id, include_hidden)
 
 # =========================
 # SUBJECT GRAPH (ADMIN)

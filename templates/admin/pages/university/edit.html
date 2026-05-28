@@ -1,58 +1,27 @@
 {% extends 'admin/layouts/base_admin.html' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/institution/form.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/pages/metadata.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="form-container">
-
-    <div class="form-header">
-        <a href="/admin/universities" class="btn-back"><i class="fas fa-arrow-left"></i> Quay lại</a>
-        <h2>🎓 Chỉnh Sửa Trường Đại Học</h2>
-    </div>
-
-    <div class="form-card">
-        <form action="/admin/universities/edit/{{ university.id }}" method="POST">
-
-            <!-- ID (Readonly) -->
-            <div class="form-group">
-                <label>Mã Trường Đại Học</label>
-                <input type="text" name="id" value="{{ university.id }}" readonly class="readonly-input">
-            </div>
-
-            <!-- NAME -->
-            <div class="form-group">
-                <label>Tên trường đại học <span class="required">*</span></label>
-                <input type="text" name="name" value="{{ university.name }}" required>
-            </div>
-
-            <div class="form-group">
-                <label>Địa chỉ</label>
-                <input type="text" name="address" value="{{ university.address or '' }}" placeholder="VD: Số 1 Đại Cồ Việt, Hà Nội...">
-            </div>
-
-            <div class="form-group">
-                <label>Email liên hệ</label>
-                <input type="email" name="email" value="{{ university.email or '' }}" placeholder="VD: contact@hust.edu.vn...">
-            </div>
-
-            <div class="form-group">
-                <label>Số điện thoại</label>
-                <input type="text" name="phone" value="{{ university.phone or '' }}" placeholder="VD: 024 3869 2222...">
-            </div>
-
-            <div class="form-group">
-                <label>Website</label>
-                <input type="url" name="website" value="{{ university.website or '' }}" placeholder="VD: https://hust.edu.vn...">
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn-submit">Cập nhật</button>
-            </div>
-
-        </form>
-    </div>
-
-</section>
+<div class="form-container">
+    <h2>🎓 Chỉnh Sửa Trường Đại Học</h2>
+    
+    <form action="/admin/universities/edit/{{ university.id }}" method="POST" class="metadata-form">
+        <div class="form-group">
+            <label>Mã Trường Đại Học</label>
+            <input type="text" name="id" value="{{ university.id }}" readonly class="readonly">
+        </div>
+        <div class="form-group">
+            <label>Tên trường đại học</label>
+            <input type="text" name="name" value="{{ university.name }}" required placeholder="Nhập tên trường đại học...">
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Cập nhật</button>
+            <a href="/admin/universities" class="btn-cancel">Hủy bỏ</a>
+        </div>
+    </form>
+</div>
 {% endblock %}

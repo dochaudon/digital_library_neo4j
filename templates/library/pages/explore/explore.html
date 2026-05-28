@@ -13,8 +13,8 @@
     <!-- HEADER -->
     <div class="explore-header">
         <div class="header-top" style="display: flex; align-items: center; gap: 15px; margin-bottom: 8px;">
-            <button id="btn-back" class="btn-back">
-                ← Trở lại
+            <button id="btn-back" class="btn-back" style="background: #64748b; color: white; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-weight: 600; text-decoration: none; box-shadow: 0 2px 4px rgba(0,0,0,0.08); border: none; font-size: 13px; transition: all 0.2s; white-space: nowrap; width: auto; cursor: pointer;">
+                <i class="fas fa-arrow-left"></i> Quay lại
             </button>
             <h2>🔎 Explore Graph</h2>
         </div>
@@ -43,20 +43,24 @@
             <div class="graph-wrapper">
 
                 <!-- 🔥 LEGEND FULL -->
-                <div class="graph-legend">
+                <div class="graph-legend toggle-legend">
+                    <button class="legend-btn" id="legendToggleBtnExplore"><i class="fas fa-info-circle"></i> Chú thích</button>
+                    <div class="legend-content">
+                        <div><span class="legend-box blue circle"></span> Sách</div>
+                        <div><span class="legend-box green square"></span> Bài báo</div>
+                        <div><span class="legend-box purple triangle"></span> Luận văn</div>
 
-                    <div><span class="legend-box blue circle"></span> Sách</div>
-                    <div><span class="legend-box green square"></span> Bài báo</div>
-                    <div><span class="legend-box purple triangle"></span> Luận văn</div>
+                        <hr>
 
-                    <hr>
-
-                    <div><span class="legend-box yellow circle"></span> Tác giả</div>
-                    <div><span class="legend-box orange diamond"></span> Chủ đề</div>
-                    <div><span class="legend-box pink star"></span> Từ khóa</div>
-                    <div><span class="legend-box cyan triangle-down"></span> Nhà xuất bản</div>
-                    <div><span class="legend-box indigo hexagon"></span> Trường đại học</div>
-                    <div><span class="legend-box pentagon" style="background: #ef4444;"></span> Tạp chí</div>
+                        <div><span class="legend-box yellow circle"></span> Tác giả</div>
+                        <div><span class="legend-box orange diamond"></span> Chủ đề</div>
+                        <div><span class="legend-box pink star"></span> Từ khóa</div>
+                        <div><span class="legend-box cyan triangle-down"></span> Nhà xuất bản</div>
+                        <div><span class="legend-box indigo hexagon"></span> Trường đại học</div>
+                        <div><span class="legend-box pentagon" style="background: #ef4444;"></span> Tạp chí</div>
+                        <div><span class="legend-box teal square" style="background: #14b8a6;"></span> Danh mục</div>
+                        <div><span class="legend-box slate circle" style="background: #64748b; border-radius: 50%;"></span> Ngôn ngữ</div>
+                    </div>
                 </div>
 
                 <!-- GRAPH -->
