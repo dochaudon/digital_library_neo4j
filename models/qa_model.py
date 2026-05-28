@@ -7,7 +7,7 @@ from database.neo4j_connection import neo4j_conn
 def get_document_match_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 
@@ -16,9 +16,9 @@ def get_document_match_by_title(title):
         d.title AS title,
         d.year AS year,
         CASE
-            WHEN d:Book THEN "Book"
-            WHEN d:Article THEN "Article"
-            WHEN d:Thesis THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
         END AS type
     LIMIT 1
     """
@@ -32,7 +32,7 @@ def get_document_match_by_title(title):
 def get_author_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 
@@ -54,7 +54,7 @@ def get_author_by_title(title):
 def get_year_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 
@@ -74,7 +74,7 @@ def get_year_by_title(title):
 def get_subject_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 
@@ -96,7 +96,7 @@ def get_subject_by_title(title):
 def get_publisher_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 
@@ -118,7 +118,7 @@ def get_publisher_by_title(title):
 def get_university_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 
@@ -143,9 +143,9 @@ def get_documents_by_author(author):
         d.title AS title,
         d.year AS year,
         CASE
-            WHEN d:Book THEN "Book"
-            WHEN d:Article THEN "Article"
-            WHEN d:Thesis THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
         END AS type
     ORDER BY d.year DESC
     LIMIT 20
@@ -163,9 +163,9 @@ def get_documents_by_subject(subject):
         d.title AS title,
         d.year AS year,
         CASE
-            WHEN d:Book THEN "Book"
-            WHEN d:Article THEN "Article"
-            WHEN d:Thesis THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
         END AS type
     ORDER BY d.year DESC
     LIMIT 20
@@ -190,7 +190,7 @@ def get_docs_by_subject_with_related(main_subjects, related_subjects, limit=10):
     primary_rows = neo4j_conn.query("""
     MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
     WHERE toLower(s.name) IN $subjects
-      AND (d:Book OR d:Article OR d:Thesis)
+      AND (d:Document)
       AND (d.status IS NULL OR d.status = 'active')
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     RETURN DISTINCT
@@ -199,9 +199,9 @@ def get_docs_by_subject_with_related(main_subjects, related_subjects, limit=10):
         d.year AS year,
         d.image_url AS image_url,
         CASE
-            WHEN d:Book THEN "Book"
-            WHEN d:Article THEN "Article"
-            WHEN d:Thesis THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
         END AS type,
         collect(DISTINCT a.name) AS authors
     ORDER BY d.year DESC
@@ -216,7 +216,7 @@ def get_docs_by_subject_with_related(main_subjects, related_subjects, limit=10):
         secondary_rows = neo4j_conn.query("""
         MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
         WHERE toLower(s.name) IN $subjects
-          AND (d:Book OR d:Article OR d:Thesis)
+          AND (d:Document)
           AND NOT d.id IN $exclude_ids
           AND (d.status IS NULL OR d.status = 'active')
         OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
@@ -226,9 +226,9 @@ def get_docs_by_subject_with_related(main_subjects, related_subjects, limit=10):
             d.year AS year,
             d.image_url AS image_url,
             CASE
-                WHEN d:Book THEN "Book"
-                WHEN d:Article THEN "Article"
-                WHEN d:Thesis THEN "Thesis"
+                WHEN d.type = 'book' THEN 'Book'
+                WHEN d.type = 'article' THEN 'Article'
+                WHEN d.type = 'thesis' THEN 'Thesis'
             END AS type,
             collect(DISTINCT a.name) AS authors
         ORDER BY d.year DESC
@@ -247,9 +247,9 @@ def get_documents_by_keyword(keyword):
         d.title AS title,
         d.year AS year,
         CASE
-            WHEN d:Book THEN "Book"
-            WHEN d:Article THEN "Article"
-            WHEN d:Thesis THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
         END AS type
     ORDER BY d.year DESC
     LIMIT 20
@@ -278,7 +278,7 @@ def get_related_documents(doc_id):
 def count_documents():
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND (d.status IS NULL OR d.status = 'active')
     RETURN count(d) AS total
     """
@@ -302,7 +302,7 @@ def get_top_authors(limit=5):
 def get_abstract_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 
@@ -320,7 +320,7 @@ def get_abstract_by_title(title):
 def get_keyword_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 
@@ -340,7 +340,7 @@ def get_keyword_by_title(title):
 def get_related_by_title(title):
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND toLower(d.title) CONTAINS toLower($title)
       AND (d.status IS NULL OR d.status = 'active')
 

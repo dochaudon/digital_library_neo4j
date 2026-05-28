@@ -24,7 +24,7 @@ def get_faiss_index():
         # Fetch all documents that have embeddings
         cypher = """
         MATCH (d)
-        WHERE (d:Book OR d:Article OR d:Thesis) AND d.embedding IS NOT NULL
+        WHERE (d:Document) AND d.embedding IS NOT NULL
         OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
         RETURN
             d.id AS id,
@@ -144,7 +144,7 @@ def get_similar_documents_by_embedding(doc_id, limit=10):
     # 1. Lấy embedding của tài liệu đích từ Neo4j
     cypher = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis) AND d.id = $id
+    WHERE (d:Document) AND d.id = $id
     RETURN d.embedding AS embedding
     """
     res = neo4j_conn.query(cypher, {"id": doc_id})

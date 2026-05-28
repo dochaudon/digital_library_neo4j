@@ -3,10 +3,10 @@ from database.neo4j_connection import neo4j_conn
 # Consts for Type Mapping
 TYPE_CASE_RELATED = """
     CASE 
-        WHEN "Book" IN labels(related) THEN "Book"
-        WHEN "Article" IN labels(related) THEN "Article"
-        WHEN "Thesis" IN labels(related) THEN "Thesis"
-        ELSE "Other"
+        WHEN related.type = 'book' THEN 'Book'
+        WHEN related.type = 'article' THEN 'Article'
+        WHEN related.type = 'thesis' THEN 'Thesis'
+        ELSE 'Other'
     END
 """
 
@@ -15,9 +15,8 @@ TYPE_CASE_RELATED = """
 # =========================
 def get_all_documents(skip=0, limit=20, q=None, include_hidden=False):
     query = f"""
-    MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
-      AND ($q IS NULL OR d.title CONTAINS $q)
+    MATCH (d:Document)
+    WHERE ($q IS NULL OR d.title CONTAINS $q)
       AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
@@ -28,10 +27,10 @@ def get_all_documents(skip=0, limit=20, q=None, include_hidden=False):
         d.image_url AS image_url,
         d.status AS status,
         CASE 
-            WHEN "Book" IN labels(d) THEN "Book"
-            WHEN "Article" IN labels(d) THEN "Article"
-            WHEN "Thesis" IN labels(d) THEN "Thesis"
-            ELSE "Other"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
+            ELSE 'Other'
         END AS type,
         collect(DISTINCT a.name) AS authors,
         collect(DISTINCT s.name) AS subjects
@@ -59,7 +58,7 @@ def get_document_by_id(doc_id):
 
     RETURN 
         d,
-        labels(d) AS doc_labels,
+        d.type AS doc_type,
         collect(DISTINCT {name: a.name, role: ra.role}) AS authors,
         collect(DISTINCT s.name) AS subjects,
         collect(DISTINCT k.name) AS keywords,
@@ -78,10 +77,10 @@ def get_document_by_id(doc_id):
     doc = dict(row["d"])
     
     # Mapping labels to type
-    labels = row["doc_labels"]
-    if "Book" in labels: doc["type"] = "Book"
-    elif "Article" in labels: doc["type"] = "Article"
-    elif "Thesis" in labels: doc["type"] = "Thesis"
+    doc_type = row.get("doc_type")
+    if doc_type == "book": doc["type"] = "Book"
+    elif doc_type == "article": doc["type"] = "Article"
+    elif doc_type == "thesis": doc["type"] = "Thesis"
     else: doc["type"] = "Other"
 
     # Grouping authors by role
@@ -109,9 +108,10 @@ def get_document_by_id(doc_id):
 # GET BY TYPE
 # =========================
 def get_documents_by_type(doc_types, skip=0, limit=20, include_hidden=False):
+    doc_types = [t.lower() for t in doc_types]
     query = f"""
-    MATCH (d)
-    WHERE ANY(label IN labels(d) WHERE label IN $types)
+    MATCH (d:Document)
+    WHERE d.type IN $types
       AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
@@ -122,10 +122,10 @@ def get_documents_by_type(doc_types, skip=0, limit=20, include_hidden=False):
         d.image_url AS image_url,
         d.status AS status,
         CASE 
-            WHEN "Book" IN labels(d) THEN "Book"
-            WHEN "Article" IN labels(d) THEN "Article"
-            WHEN "Thesis" IN labels(d) THEN "Thesis"
-            ELSE "Other"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
+            ELSE 'Other'
         END AS type,
         collect(DISTINCT a.name) AS authors,
         collect(DISTINCT s.name) AS subjects
@@ -140,9 +140,8 @@ def get_documents_by_type(doc_types, skip=0, limit=20, include_hidden=False):
 # =========================
 def count_documents(q=None, include_hidden=False):
     query = """
-    MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
-      AND ($q IS NULL OR d.title CONTAINS $q)
+    MATCH (d:Document)
+    WHERE ($q IS NULL OR d.title CONTAINS $q)
       AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     RETURN count(d) AS total
     """
@@ -155,9 +154,9 @@ def count_documents(q=None, include_hidden=False):
 # =========================
 def get_related_documents(doc_id, limit=5):
     query = f"""
-    MATCH (d {{id: $id}})
-    MATCH (related)
-    WHERE (related:Book OR related:Article OR related:Thesis) AND related <> d
+    MATCH (d:Document {{id: $id}})
+    MATCH (related:Document)
+    WHERE related <> d
     
     // 1. Direct document relation score (weight 15)
     WITH d, related
@@ -210,9 +209,8 @@ def get_related_documents(doc_id, limit=5):
 # =========================
 def get_related_documents_by_author(doc_id, limit=10):
     query = f"""
-    MATCH (d {{id: $id}})-[:HAS_AUTHOR]->(a:Author)<-[:HAS_AUTHOR]-(related)
+    MATCH (d:Document {{id: $id}})-[:HAS_AUTHOR]->(a:Author)<-[:HAS_AUTHOR]-(related:Document)
     WHERE related <> d
-      AND (related:Book OR related:Article OR related:Thesis)
 
     RETURN DISTINCT
         related.id AS id,

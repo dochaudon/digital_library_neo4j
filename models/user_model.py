@@ -183,7 +183,7 @@ def add_bookmark(user_id, doc_id):
     query = """
     MATCH (u:User {id: $user_id})
     MATCH (d {id: $doc_id})
-    WHERE d:Book OR d:Article OR d:Thesis OR d:Document
+    WHERE d:Document
     MERGE (u)-[r:BOOKMARKED]->(d)
     ON CREATE SET r.created_at = datetime()
     RETURN r
@@ -222,7 +222,7 @@ def is_bookmarked(user_id, doc_id):
 def count_bookmarked_documents(user_id):
     query = """
     MATCH (u:User {id: $user_id})-[r:BOOKMARKED]->(d)
-    WHERE (d:Book OR d:Article OR d:Thesis OR d:Document)
+    WHERE (d:Document)
       AND (d.status IS NULL OR d.status = 'active')
     RETURN count(d) AS total
     """
@@ -232,7 +232,7 @@ def count_bookmarked_documents(user_id):
 def get_bookmarked_documents(user_id, skip=0, limit=20):
     query = """
     MATCH (u:User {id: $user_id})-[r:BOOKMARKED]->(d)
-    WHERE (d:Book OR d:Article OR d:Thesis OR d:Document)
+    WHERE (d:Document)
       AND (d.status IS NULL OR d.status = 'active')
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     RETURN 
@@ -241,9 +241,9 @@ def get_bookmarked_documents(user_id, skip=0, limit=20):
         d.year AS year, 
         d.image_url AS image_url,
         CASE 
-            WHEN "Book" IN labels(d) THEN "Book"
-            WHEN "Article" IN labels(d) THEN "Article"
-            WHEN "Thesis" IN labels(d) THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
             ELSE "Other"
         END AS type,
         collect(DISTINCT a.name) AS authors,

@@ -83,9 +83,9 @@ TITLE_QA_INTENTS = [
 # =========================
 TYPE_CASE = """
 CASE
-    WHEN node:Book THEN "Book"
-    WHEN node:Article THEN "Article"
-    WHEN node:Thesis THEN "Thesis"
+    WHEN node.type = 'book' THEN 'Book'
+    WHEN node.type = 'article' THEN 'Article'
+    WHEN node.type = 'thesis' THEN 'Thesis'
     ELSE coalesce(node.type, "Document")
 END
 """
@@ -231,7 +231,7 @@ def expand_related_documents(results, limit=10):
     cypher = f"""
     MATCH (d1:Document)-[:RELATED_TO]-(node:Document)
     WHERE d1.id IN $doc_ids
-    AND (node:Book OR node:Article OR node:Thesis)
+    AND (node:Document)
     AND NOT node.id IN $doc_ids
     AND (node.status IS NULL OR node.status = 'active')
     
@@ -368,9 +368,9 @@ def search_fulltext(query, filters=None, limit=20):
     CALL db.index.fulltext.queryNodes($index, $query)
     YIELD node, score
 
-    WHERE (node:Book OR node:Article OR node:Thesis)
+    WHERE (node:Document)
     AND (node.status IS NULL OR node.status = 'active')
-    AND ($doc_type IS NULL OR ANY(label IN labels(node) WHERE label IN $doc_type))
+    AND ($doc_type IS NULL OR node.type IN $doc_type)
 
     OPTIONAL MATCH (node)-[:HAS_AUTHOR]->(a:Author)
 
@@ -417,7 +417,7 @@ def search_graph(filters, query="", limit=20):
 
     cypher = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
     AND (d.status IS NULL OR d.status = 'active')
     AND ($query = "" OR toLower(d.title) CONTAINS toLower($query))
 
@@ -434,7 +434,7 @@ def search_graph(filters, query="", limit=20):
 
     WHERE
         ($doc_type IS NULL OR
-            ANY(label IN labels(d) WHERE label IN $doc_type)
+            d.type IN $doc_type
         )
 
         AND ($author IS NULL OR
@@ -458,9 +458,9 @@ def search_graph(filters, query="", limit=20):
         d.year AS year,
         d.image_url AS image_url,
         CASE
-            WHEN d:Book THEN "Book"
-            WHEN d:Article THEN "Article"
-            WHEN d:Thesis THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
         END AS type,
         authors,
         subjects,
@@ -967,7 +967,7 @@ def strict_search(query="", filters=None, limit=20):
 
     cypher = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND (d.status IS NULL OR d.status = 'active')
 
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
@@ -983,7 +983,7 @@ def strict_search(query="", filters=None, limit=20):
         ($query IS NULL OR toLower(d.title) CONTAINS toLower($query))
 
         AND ($doc_type IS NULL OR
-            ANY(label IN labels(d) WHERE label IN $doc_type)
+            d.type IN $doc_type
         )
 
         AND ($year IS NULL OR d.year = $year)
@@ -1013,9 +1013,9 @@ def strict_search(query="", filters=None, limit=20):
         d.title AS title,
         d.year AS year,
         CASE
-            WHEN d:Book THEN "Book"
-            WHEN d:Article THEN "Article"
-            WHEN d:Thesis THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
         END AS type,
         authors,
         [(d)-[:PUBLISHED_BY]->(p) | p.name] AS publishers,
@@ -1052,16 +1052,16 @@ def suggest_documents(query, limit=10):
     CALL db.index.fulltext.queryNodes("documentSearchIndex", $query)
     YIELD node, score
 
-    WHERE (node:Book OR node:Article OR node:Thesis)
+    WHERE (node:Document)
       AND (node.status IS NULL OR node.status = 'active')
 
     RETURN
         node.id AS id,
         node.title AS title,
         CASE
-            WHEN node:Book THEN "Book"
-            WHEN node:Article THEN "Article"
-            WHEN node:Thesis THEN "Thesis"
+            WHEN node.type = 'book' THEN 'Book'
+            WHEN node.type = 'article' THEN 'Article'
+            WHEN node.type = 'thesis' THEN 'Thesis'
         END AS type
 
     ORDER BY score DESC
@@ -1077,7 +1077,7 @@ def get_latest_documents(limit=20):
 
     query = """
     MATCH (d)
-    WHERE (d:Book OR d:Article OR d:Thesis)
+    WHERE (d:Document)
       AND (d.status IS NULL OR d.status = 'active')
 
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
@@ -1088,9 +1088,9 @@ def get_latest_documents(limit=20):
         d.year AS year,
         d.image_url AS image_url,
         CASE
-            WHEN d:Book THEN "Book"
-            WHEN d:Article THEN "Article"
-            WHEN d:Thesis THEN "Thesis"
+            WHEN d.type = 'book' THEN 'Book'
+            WHEN d.type = 'article' THEN 'Article'
+            WHEN d.type = 'thesis' THEN 'Thesis'
         END AS type,
         collect(DISTINCT a.name) AS authors
 

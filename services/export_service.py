@@ -27,7 +27,7 @@ EXPORT_CONFIG = {
         "headers": ["id", "title", "alternative_title", "year", "pages", "abstract", "file_url", "image_url", "type", "status"],
         "query": """
             MATCH (n)
-            WHERE n:Book OR n:Article OR n:Thesis
+            WHERE n:Document
             RETURN 
                 n.id AS id, 
                 n.title AS title, 
@@ -38,14 +38,14 @@ EXPORT_CONFIG = {
                 n.file_url AS file_url, 
                 n.image_url AS image_url,
                 CASE 
-                    WHEN "Book" IN labels(n) THEN "Book"
-                    WHEN "Article" IN labels(n) THEN "Article"
-                    WHEN "Thesis" IN labels(n) THEN "Thesis"
+                    WHEN n.type = 'book' THEN 'Book'
+                    WHEN n.type = 'article' THEN 'Article'
+                    WHEN n.type = 'thesis' THEN 'Thesis'
                     ELSE "Other"
                 END AS type,
                 coalesce(n.status, "active") AS status
         """,
-        "count_query": "MATCH (n) WHERE n:Book OR n:Article OR n:Thesis RETURN count(n) AS c"
+        "count_query": "MATCH (n) WHERE n:Document RETURN count(n) AS c"
     },
     "node_journal.csv": {
         "description": "Dữ liệu Tạp chí khoa học (Journal Nodes)",
@@ -102,10 +102,10 @@ EXPORT_CONFIG = {
         "headers": ["doc_id", "author_id", "role"],
         "query": """
             MATCH (d)-[r:HAS_AUTHOR]->(a:Author) 
-            WHERE d:Book OR d:Article OR d:Thesis
+            WHERE d:Document
             RETURN d.id AS doc_id, coalesce(a.id, a.name) AS author_id, coalesce(r.role, 'author') AS role
         """,
-        "count_query": "MATCH (d)-[:HAS_AUTHOR]->(a:Author) WHERE d:Book OR d:Article OR d:Thesis RETURN count(*) AS c"
+        "count_query": "MATCH (d)-[:HAS_AUTHOR]->(a:Author) WHERE d:Document RETURN count(*) AS c"
     },
     "rel_document_category.csv": {
         "description": "Quan hệ Tài liệu - Loại tài liệu (HAS_CATEGORY)",
@@ -113,10 +113,10 @@ EXPORT_CONFIG = {
         "headers": ["doc_id", "category_id"],
         "query": """
             MATCH (d)-[:HAS_CATEGORY]->(c:Category) 
-            WHERE d:Book OR d:Article OR d:Thesis
+            WHERE d:Document
             RETURN d.id AS doc_id, coalesce(c.id, c.name) AS category_id
         """,
-        "count_query": "MATCH (d)-[:HAS_CATEGORY]->(c:Category) WHERE d:Book OR d:Article OR d:Thesis RETURN count(*) AS c"
+        "count_query": "MATCH (d)-[:HAS_CATEGORY]->(c:Category) WHERE d:Document RETURN count(*) AS c"
     },
     "rel_document_journal.csv": {
         "description": "Quan hệ Tài liệu - Tạp chí khoa học (PUBLISHED_IN)",
@@ -124,10 +124,10 @@ EXPORT_CONFIG = {
         "headers": ["doc_id", "journal_id"],
         "query": """
             MATCH (d)-[:PUBLISHED_IN]->(j:Journal) 
-            WHERE d:Book OR d:Article OR d:Thesis
+            WHERE d:Document
             RETURN d.id AS doc_id, coalesce(j.id, j.name) AS journal_id
         """,
-        "count_query": "MATCH (d)-[:PUBLISHED_IN]->(j:Journal) WHERE d:Book OR d:Article OR d:Thesis RETURN count(*) AS c"
+        "count_query": "MATCH (d)-[:PUBLISHED_IN]->(j:Journal) WHERE d:Document RETURN count(*) AS c"
     },
     "rel_document_keyword.csv": {
         "description": "Quan hệ Tài liệu - Từ khóa (HAS_KEYWORD)",
@@ -135,10 +135,10 @@ EXPORT_CONFIG = {
         "headers": ["doc_id", "keyword_id"],
         "query": """
             MATCH (d)-[:HAS_KEYWORD]->(k:Keyword) 
-            WHERE d:Book OR d:Article OR d:Thesis
+            WHERE d:Document
             RETURN d.id AS doc_id, coalesce(k.id, k.name) AS keyword_id
         """,
-        "count_query": "MATCH (d)-[:HAS_KEYWORD]->(k:Keyword) WHERE d:Book OR d:Article OR d:Thesis RETURN count(*) AS c"
+        "count_query": "MATCH (d)-[:HAS_KEYWORD]->(k:Keyword) WHERE d:Document RETURN count(*) AS c"
     },
     "rel_document_language.csv": {
         "description": "Quan hệ Tài liệu - Ngôn ngữ (IN_LANGUAGE)",
@@ -146,10 +146,10 @@ EXPORT_CONFIG = {
         "headers": ["doc_id", "language_id"],
         "query": """
             MATCH (d)-[:IN_LANGUAGE]->(l:Language) 
-            WHERE d:Book OR d:Article OR d:Thesis
+            WHERE d:Document
             RETURN d.id AS doc_id, coalesce(l.id, l.name) AS language_id
         """,
-        "count_query": "MATCH (d)-[:IN_LANGUAGE]->(l:Language) WHERE d:Book OR d:Article OR d:Thesis RETURN count(*) AS c"
+        "count_query": "MATCH (d)-[:IN_LANGUAGE]->(l:Language) WHERE d:Document RETURN count(*) AS c"
     },
     "rel_document_publisher.csv": {
         "description": "Quan hệ Tài liệu - Nhà xuất bản (PUBLISHED_BY)",
@@ -157,10 +157,10 @@ EXPORT_CONFIG = {
         "headers": ["doc_id", "publisher_id", "role"],
         "query": """
             MATCH (d)-[r:PUBLISHED_BY]->(p:Publisher) 
-            WHERE d:Book OR d:Article OR d:Thesis
+            WHERE d:Document
             RETURN d.id AS doc_id, coalesce(p.id, p.name) AS publisher_id, coalesce(r.role, 'publisher') AS role
         """,
-        "count_query": "MATCH (d)-[:PUBLISHED_BY]->(p:Publisher) WHERE d:Book OR d:Article OR d:Thesis RETURN count(*) AS c"
+        "count_query": "MATCH (d)-[:PUBLISHED_BY]->(p:Publisher) WHERE d:Document RETURN count(*) AS c"
     },
     "rel_document_related.csv": {
         "description": "Quan hệ giữa các Tài liệu liên quan (RELATED_TO)",
@@ -168,12 +168,12 @@ EXPORT_CONFIG = {
         "headers": ["doc1_id", "doc2_id"],
         "query": """
             MATCH (d1)-[:RELATED_TO]->(d2) 
-            WHERE (d1:Book OR d1:Article OR d1:Thesis) AND (d2:Book OR d2:Article OR d2:Thesis)
+            WHERE (d1:Document) AND (d2:Document)
             RETURN d1.id AS doc1_id, d2.id AS doc2_id
         """,
         "count_query": """
             MATCH (d1)-[:RELATED_TO]->(d2) 
-            WHERE (d1:Book OR d1:Article OR d1:Thesis) AND (d2:Book OR d2:Article OR d2:Thesis)
+            WHERE (d1:Document) AND (d2:Document)
             RETURN count(*) AS c
         """
     },
@@ -183,10 +183,10 @@ EXPORT_CONFIG = {
         "headers": ["doc_id", "subject_id"],
         "query": """
             MATCH (d)-[:HAS_SUBJECT]->(s:Subject) 
-            WHERE d:Book OR d:Article OR d:Thesis
+            WHERE d:Document
             RETURN d.id AS doc_id, coalesce(s.id, s.name) AS subject_id
         """,
-        "count_query": "MATCH (d)-[:HAS_SUBJECT]->(s:Subject) WHERE d:Book OR d:Article OR d:Thesis RETURN count(*) AS c"
+        "count_query": "MATCH (d)-[:HAS_SUBJECT]->(s:Subject) WHERE d:Document RETURN count(*) AS c"
     },
     "rel_document_university.csv": {
         "description": "Quan hệ Tài liệu - Trường đại học (OWNED_BY)",
@@ -194,10 +194,10 @@ EXPORT_CONFIG = {
         "headers": ["doc_id", "university_id", "role"],
         "query": """
             MATCH (d)-[r:OWNED_BY]->(u:University) 
-            WHERE d:Book OR d:Article OR d:Thesis
+            WHERE d:Document
             RETURN d.id AS doc_id, coalesce(u.id, u.name) AS university_id, coalesce(r.role, 'university') AS role
         """,
-        "count_query": "MATCH (d)-[:OWNED_BY]->(u:University) WHERE d:Book OR d:Article OR d:Thesis RETURN count(*) AS c"
+        "count_query": "MATCH (d)-[:OWNED_BY]->(u:University) WHERE d:Document RETURN count(*) AS c"
     },
     "rel_subject_related.csv": {
         "description": "Quan hệ các Chủ đề liên quan (RELATED_TO)",
@@ -215,10 +215,10 @@ EXPORT_CONFIG = {
         "headers": ["user_id", "doc_id"],
         "query": """
             MATCH (u:User)-[r:BOOKMARKED]->(d)
-            WHERE (d:Book OR d:Article OR d:Thesis OR d:Document)
+            WHERE (d:Document)
             RETURN u.id AS user_id, d.id AS doc_id
         """,
-        "count_query": "MATCH (u:User)-[:BOOKMARKED]->(d) WHERE (d:Book OR d:Article OR d:Thesis OR d:Document) RETURN count(*) AS c"
+        "count_query": "MATCH (u:User)-[:BOOKMARKED]->(d) WHERE (d:Document) RETURN count(*) AS c"
     }
 }
 
