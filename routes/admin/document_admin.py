@@ -43,7 +43,7 @@ def get_next_doc_id():
     """Tạo ID dạng D1, D2, D3 tự động."""
     result = neo4j_conn.query("""
         MATCH (d) 
-        WHERE (d:Book OR d:Article OR d:Thesis)
+        WHERE (d:Document)
           AND d.id STARTS WITH 'D'
         RETURN d.id AS id
     """)
@@ -78,7 +78,7 @@ def get_all_metadata():
             "MATCH (u:University) RETURN u.name AS name ORDER BY u.name"
         ),
         "documents": neo4j_conn.query(
-            "MATCH (d) WHERE d:Book OR d:Article OR d:Thesis RETURN d.id AS id, d.title AS title ORDER BY d.title"
+            "MATCH (d) WHERE d:Document RETURN d.id AS id, d.title AS title ORDER BY d.title"
         ),
     }
 

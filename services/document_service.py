@@ -43,7 +43,7 @@ def count_documents_service(doc_type=None, q=None, include_hidden=False):
 
     query = """
     MATCH (d)
-    WHERE ($type IS NULL OR ANY(label IN labels(d) WHERE label IN $type))
+    WHERE ($type IS NULL OR d.type IN $type)
       AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     RETURN count(d) AS total
     """
@@ -263,7 +263,7 @@ def create_document_service(data):
         if rel_id.strip():
             neo4j_conn.query("""
             MATCH (d {id: $id}), (r {id: $rel_id})
-            WHERE (r:Book OR r:Article OR r:Thesis)
+            WHERE (r:Document)
             MERGE (d)-[:RELATED_TO]->(r)
             """, {"id": doc_id, "rel_id": rel_id.strip()})
 
@@ -318,7 +318,7 @@ def update_document_service(doc_id, data):
 
     query = f"""
     MATCH (d {{id: $id}})
-    REMOVE d:Book:Article:Thesis
+    // REMOVE d:Book:Article:Thesis
     WITH d
     SET d:{data.get('type')}
     SET {", ".join(set_clauses)}
@@ -434,7 +434,7 @@ def update_document_service(doc_id, data):
         if rel_id.strip():
             neo4j_conn.query("""
             MATCH (d {id: $id}), (r {id: $rel_id})
-            WHERE (r:Book OR r:Article OR r:Thesis)
+            WHERE (r:Document)
             MERGE (d)-[:RELATED_TO]->(r)
             """, {"id": doc_id, "rel_id": rel_id.strip()})
 

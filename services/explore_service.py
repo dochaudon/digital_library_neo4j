@@ -56,9 +56,9 @@ def get_preview(entity_type, entity_id):
         d.id AS id,
         coalesce(d.title, d.name) AS title,
         CASE
-            WHEN d:Book THEN "book"
-            WHEN d:Article THEN "article"
-            WHEN d:Thesis THEN "thesis"
+            WHEN d.type = 'book' THEN 'book'
+            WHEN d.type = 'article' THEN 'article'
+            WHEN d.type = 'thesis' THEN 'thesis'
             ELSE "document"
         END AS type
     ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
@@ -140,9 +140,9 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
         coalesce(d.title, d.name) AS title,
         d.year AS year,
         CASE
-            WHEN d:Book THEN "book"
-            WHEN d:Article THEN "article"
-            WHEN d:Thesis THEN "thesis"
+            WHEN d.type = 'book' THEN 'book'
+            WHEN d.type = 'article' THEN 'article'
+            WHEN d.type = 'thesis' THEN 'thesis'
             ELSE "document"
         END AS type
     ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
