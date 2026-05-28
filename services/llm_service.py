@@ -1,4 +1,5 @@
 import os
+import re
 from google import genai
 from dotenv import load_dotenv
 
@@ -313,5 +314,4 @@ Keywords (English only):"""
     except:
         return query # Fallback về query gốc nếu lỗi
 
-        return query # Fallback về query gốc nếu lỗi
 
