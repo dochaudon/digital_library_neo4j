@@ -22,7 +22,7 @@ class Neo4jConnection:
         self.driver.close()
 
     def query(self, cypher_query, parameters=None):
-        with self.driver.session(database="digitallibrary") as session:
+        with self.driver.session(database="8e3367b3") as session:
             result = session.run(cypher_query, parameters)
             return [record.data() for record in result]
 
