@@ -125,7 +125,8 @@ def vector_search(query, filters=None, limit=20):
                 
             # Filter by type if requested
             if doc_type:
-                match = any(label in doc_type for label in doc_meta.get("labels", []))
+                doc_type_lower = [t.lower() for t in doc_type]
+                match = any(label.lower() in doc_type_lower for label in doc_meta.get("labels", []))
                 if not match:
                     continue
                     

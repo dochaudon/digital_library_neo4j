@@ -6,7 +6,8 @@ FULLTEXT_INDEX = "documentFulltextIndex"
 
 SUBJECT_ALIASES = {
     "Công nghệ thông tin": [
-        "công nghệ thông tin", "information technology", "it", "cntt", "it chuyên nghiệp"
+        "công nghệ thông tin", "information technology", "it", "cntt", "it chuyên nghiệp",
+        "lập trình", "programming", "phần mềm", "software", "coder", "developer"
     ],
     "Artificial Intelligence": [
         "trí tuệ nhân tạo", "artificial intelligence", "ai", "thông minh nhân tạo"
@@ -229,9 +230,13 @@ def expand_related_documents(results, limit=10):
         return []
         
     cypher = f"""
-    MATCH (d1:Document)-[:RELATED_TO]-(node:Document)
+    // Tìm các chủ đề của tài liệu gốc
+    MATCH (d1:Document)-[:HAS_SUBJECT]->(s1:Subject)
     WHERE d1.id IN $doc_ids
-    AND (node:Document)
+    
+    // Tìm tài liệu có cùng chủ đề hoặc thuộc chủ đề liên quan
+    MATCH (node:Document)-[:HAS_SUBJECT]->(s2:Subject)
+    WHERE (s1 = s2 OR (s1)-[:RELATED_TO]-(s2))
     AND NOT node.id IN $doc_ids
     AND (node.status IS NULL OR node.status = 'active')
     
@@ -370,7 +375,10 @@ def search_fulltext(query, filters=None, limit=20):
 
     WHERE (node:Document)
     AND (node.status IS NULL OR node.status = 'active')
-    AND ($doc_type IS NULL OR node.type IN $doc_type)
+    AND ($doc_type IS NULL OR 
+        toLower(coalesce(node.type, "")) IN [x IN $doc_type | toLower(x)] OR
+        ANY(lbl IN labels(node) WHERE toLower(lbl) IN [x IN $doc_type | toLower(x)])
+    )
 
     OPTIONAL MATCH (node)-[:HAS_AUTHOR]->(a:Author)
 
@@ -434,7 +442,8 @@ def search_graph(filters, query="", limit=20):
 
     WHERE
         ($doc_type IS NULL OR
-            d.type IN $doc_type
+            toLower(coalesce(d.type, "")) IN [x IN $doc_type | toLower(x)] OR
+            ANY(lbl IN labels(d) WHERE toLower(lbl) IN [x IN $doc_type | toLower(x)])
         )
 
         AND ($author IS NULL OR
@@ -658,7 +667,8 @@ def hybrid_search(query="", filters=None, limit=20, original_query=None, search_
         if doc_type_filter:
             if isinstance(doc_type_filter, str):
                 doc_type_filter = [doc_type_filter]
-            if doc.get("type") not in doc_type_filter:
+            dt_lower = [t.lower() for t in doc_type_filter]
+            if doc.get("type", "").lower() not in dt_lower:
                 continue
 
         # author filter
@@ -845,8 +855,10 @@ def search_documents(query="", filters=None, limit=20, search_type="hybrid"):
         for rd in related_docs:
             if rd["id"] not in seen:
                 # Check doc_type
-                if doc_type_filter and rd.get("type") not in doc_type_filter:
-                    continue
+                if doc_type_filter:
+                    dt_lower = [t.lower() for t in doc_type_filter]
+                    if rd.get("type", "").lower() not in dt_lower:
+                        continue
                 
                 # Check author
                 auth_filter = filters.get("author")
@@ -983,7 +995,8 @@ def strict_search(query="", filters=None, limit=20):
         ($query IS NULL OR toLower(d.title) CONTAINS toLower($query))
 
         AND ($doc_type IS NULL OR
-            d.type IN $doc_type
+            toLower(coalesce(d.type, "")) IN [x IN $doc_type | toLower(x)] OR
+            ANY(lbl IN labels(d) WHERE toLower(lbl) IN [x IN $doc_type | toLower(x)])
         )
 
         AND ($year IS NULL OR d.year = $year)
