@@ -56,10 +56,10 @@ def get_preview(entity_type, entity_id):
         d.id AS id,
         coalesce(d.title, d.name) AS title,
         CASE
-            WHEN d.type = 'book' THEN 'book'
-            WHEN d.type = 'article' THEN 'article'
-            WHEN d.type = 'thesis' THEN 'thesis'
-            ELSE "document"
+            WHEN toLower(d.type) = 'book' THEN 'book'
+            WHEN toLower(d.type) = 'article' THEN 'article'
+            WHEN toLower(d.type) = 'thesis' THEN 'thesis'
+            ELSE coalesce(toLower(d.type), "document")
         END AS type
     ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     LIMIT 5
@@ -140,10 +140,10 @@ def get_entity_detail(entity_type, entity_id, page=1, limit=10):
         coalesce(d.title, d.name) AS title,
         d.year AS year,
         CASE
-            WHEN d.type = 'book' THEN 'book'
-            WHEN d.type = 'article' THEN 'article'
-            WHEN d.type = 'thesis' THEN 'thesis'
-            ELSE "document"
+            WHEN toLower(d.type) = 'book' THEN 'book'
+            WHEN toLower(d.type) = 'article' THEN 'article'
+            WHEN toLower(d.type) = 'thesis' THEN 'thesis'
+            ELSE coalesce(toLower(d.type), "document")
         END AS type
     ORDER BY toInteger(substring(d.id, 1)) DESC, d.year DESC
     SKIP $skip LIMIT $limit
@@ -213,7 +213,7 @@ def get_graph_by_entity(entity_type, entity_id):
     {ENTITY_MATCH}
     MATCH (e)<-[:{rel}]-(d)
     WHERE d.status IS NULL OR d.status = 'active'
-    RETURN e, collect(d) AS docs, collect(labels(d)) AS labels_list
+    RETURN e, collect(d) AS docs, collect(d.type) AS type_list
     """
 
     results = neo4j_conn.query(query, {"id": entity_id})
@@ -239,21 +239,18 @@ def get_graph_by_entity(entity_type, entity_id):
     })
     node_ids.add(e_id)
 
-    # ===== DOCUMENT NODES =====
     all_docs = record.get("docs", [])
-    all_labels = record.get("labels_list", [])
+    all_types = record.get("type_list", [])
 
     for i in range(len(all_docs)):
         d = all_docs[i]
-        d_labels = all_labels[i] if i < len(all_labels) else []
+        d_type = all_types[i] if i < len(all_types) else "book"
         doc_id = d.get("id")
 
         if not doc_id: continue
 
         # Detect group
-        doc_group = "book"
-        if "Article" in d_labels: doc_group = "article"
-        elif "Thesis" in d_labels: doc_group = "thesis"
+        doc_group = (d_type or "book").lower()
 
         if doc_id not in node_ids:
             nodes.append({

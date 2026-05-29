@@ -3,10 +3,10 @@ from database.neo4j_connection import neo4j_conn
 # Consts for Type Mapping
 TYPE_CASE_RELATED = """
     CASE 
-        WHEN related.type = 'book' THEN 'Book'
-        WHEN related.type = 'article' THEN 'Article'
-        WHEN related.type = 'thesis' THEN 'Thesis'
-        ELSE 'Other'
+        WHEN toLower(related.type) = 'book' THEN 'Book'
+        WHEN toLower(related.type) = 'article' THEN 'Article'
+        WHEN toLower(related.type) = 'thesis' THEN 'Thesis'
+        ELSE coalesce(related.type, 'Other')
     END
 """
 
@@ -27,10 +27,10 @@ def get_all_documents(skip=0, limit=20, q=None, include_hidden=False):
         d.image_url AS image_url,
         d.status AS status,
         CASE 
-            WHEN d.type = 'book' THEN 'Book'
-            WHEN d.type = 'article' THEN 'Article'
-            WHEN d.type = 'thesis' THEN 'Thesis'
-            ELSE 'Other'
+            WHEN toLower(d.type) = 'book' THEN 'Book'
+            WHEN toLower(d.type) = 'article' THEN 'Article'
+            WHEN toLower(d.type) = 'thesis' THEN 'Thesis'
+            ELSE coalesce(d.type, 'Other')
         END AS type,
         collect(DISTINCT a.name) AS authors,
         collect(DISTINCT s.name) AS subjects
@@ -78,10 +78,10 @@ def get_document_by_id(doc_id):
     
     # Mapping labels to type
     doc_type = row.get("doc_type")
-    if doc_type == "book": doc["type"] = "Book"
-    elif doc_type == "article": doc["type"] = "Article"
-    elif doc_type == "thesis": doc["type"] = "Thesis"
-    else: doc["type"] = "Other"
+    if doc_type and doc_type.lower() == "book": doc["type"] = "Book"
+    elif doc_type and doc_type.lower() == "article": doc["type"] = "Article"
+    elif doc_type and doc_type.lower() == "thesis": doc["type"] = "Thesis"
+    else: doc["type"] = doc_type if doc_type else "Other"
 
     # Grouping authors by role
     groups = {}
@@ -111,8 +111,8 @@ def get_documents_by_type(doc_types, skip=0, limit=20, include_hidden=False):
     doc_types = [t.lower() for t in doc_types]
     query = f"""
     MATCH (d:Document)
-    WHERE d.type IN $types
-      AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
+    WHERE toLower(d.type) IN $types
+    AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     OPTIONAL MATCH (d)-[:HAS_AUTHOR]->(a:Author)
     OPTIONAL MATCH (d)-[:HAS_SUBJECT]->(s:Subject)
     RETURN 
@@ -122,10 +122,10 @@ def get_documents_by_type(doc_types, skip=0, limit=20, include_hidden=False):
         d.image_url AS image_url,
         d.status AS status,
         CASE 
-            WHEN d.type = 'book' THEN 'Book'
-            WHEN d.type = 'article' THEN 'Article'
-            WHEN d.type = 'thesis' THEN 'Thesis'
-            ELSE 'Other'
+            WHEN toLower(d.type) = 'book' THEN 'Book'
+            WHEN toLower(d.type) = 'article' THEN 'Article'
+            WHEN toLower(d.type) = 'thesis' THEN 'Thesis'
+            ELSE coalesce(d.type, 'Other')
         END AS type,
         collect(DISTINCT a.name) AS authors,
         collect(DISTINCT s.name) AS subjects

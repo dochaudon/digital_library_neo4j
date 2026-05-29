@@ -36,14 +36,16 @@ def get_documents_service(page=1, limit=20, doc_type=None, q=None, include_hidde
 # =========================
 def count_documents_service(doc_type=None, q=None, include_hidden=False):
     if doc_type and isinstance(doc_type, str):
-        doc_type = [doc_type]
+        doc_type = [doc_type.lower()]
+    elif doc_type:
+        doc_type = [t.lower() for t in doc_type]
         
     if not doc_type:
         return count_documents(q, include_hidden)
 
     query = """
     MATCH (d)
-    WHERE ($type IS NULL OR d.type IN $type)
+    WHERE ($type IS NULL OR toLower(d.type) IN $type)
       AND ($include_hidden OR d.status IS NULL OR d.status = 'active')
     RETURN count(d) AS total
     """
@@ -132,8 +134,9 @@ def create_document_service(data):
     embedding = create_embedding(doc_text)
 
     query = f"""
-    CREATE (d:{label} {{
+    CREATE (d:Document {{
         id: $id,
+        type: $type,
         title: $title,
         other_title: $other_title,
         year: $year,
@@ -150,6 +153,7 @@ def create_document_service(data):
 
     params = {
         "id": doc_id,
+        "type": doc_type,
         "title": data.get("title"),
         "other_title": data.get("other_title"),
         "year": int(data.get("year")) if data.get("year") else None,
@@ -287,6 +291,7 @@ def update_document_service(doc_id, data):
     embedding = create_embedding(doc_text)
 
     set_clauses = [
+        "d.type = $type",
         "d.title = $title",
         "d.other_title = $other_title",
         "d.year = $year",
@@ -299,6 +304,7 @@ def update_document_service(doc_id, data):
     
     params = {
         "id": doc_id,
+        "type": data.get("type"),
         "title": data.get("title"),
         "other_title": data.get("other_title"),
         "year": int(data.get("year")) if data.get("year") else None,
@@ -318,9 +324,7 @@ def update_document_service(doc_id, data):
 
     query = f"""
     MATCH (d {{id: $id}})
-    // REMOVE d:Book:Article:Thesis
-    WITH d
-    SET d:{data.get('type')}
+    SET d:Document
     SET {", ".join(set_clauses)}
     RETURN d
     """

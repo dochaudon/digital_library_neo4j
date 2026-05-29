@@ -77,22 +77,8 @@ SET
 
 
 /* =======================
-SET LABEL BY TYPE
+REMOVED SET LABEL BY TYPE (Now using 'type' property)
 ======================= */
-
-MATCH (d:Document)
-
-FOREACH (_ IN CASE WHEN d.type = "book" THEN [1] ELSE [] END |
-    SET d:Book
-)
-
-FOREACH (_ IN CASE WHEN d.type = "article" THEN [1] ELSE [] END |
-    SET d:Article
-)
-
-FOREACH (_ IN CASE WHEN d.type = "thesis" THEN [1] ELSE [] END |
-    SET d:Thesis
-);
 
 
 /* =======================
@@ -335,8 +321,7 @@ USER - DOCUMENT (BOOKMARK)
 LOAD CSV WITH HEADERS FROM 'file:///rel_user_document.csv' AS row
 
 MATCH (u:User {id: row.user_id})
-MATCH (d {id: row.doc_id})
-WHERE d:Book OR d:Article OR d:Thesis OR d:Document
+MATCH (d:Document {id: row.doc_id})
 
 MERGE (u)-[r:BOOKMARKED]->(d)
 ON CREATE SET r.created_at = datetime();
@@ -362,6 +347,6 @@ FULLTEXT INDEX
 ======================= */
 
 CREATE FULLTEXT INDEX documentFulltextIndex IF NOT EXISTS
-FOR (n:Book|Article|Thesis)
+FOR (n:Document)
 ON EACH [n.title, n.abstract];
 

@@ -31,7 +31,7 @@ def get_faiss_index():
             d.title AS title,
             d.year AS year,
             d.image_url AS image_url,
-            labels(d) AS labels,
+            d.type AS type,
             collect(DISTINCT a.name) AS authors,
             d.embedding AS embedding,
             d.status AS status
@@ -48,15 +48,8 @@ def get_faiss_index():
         for doc in docs:
             _doc_id_map.append(doc["id"])
             
-            # Map labels to type
-            labels = doc["labels"] or []
-            doc_type = "Other"
-            if "Book" in labels:
-                doc_type = "Book"
-            elif "Article" in labels:
-                doc_type = "Article"
-            elif "Thesis" in labels:
-                doc_type = "Thesis"
+            # Map type directly
+            doc_type = doc.get("type") or "Other"
 
             # Cache metadata to avoid querying DB for vector results
             _doc_metadata_map[doc["id"]] = {
@@ -65,7 +58,6 @@ def get_faiss_index():
                 "year": doc["year"],
                 "image_url": doc.get("image_url"),
                 "authors": doc.get("authors", []),
-                "labels": doc["labels"],
                 "type": doc_type,
                 "status": doc.get("status") or "active",
                 "source": "vector"
@@ -126,7 +118,7 @@ def vector_search(query, filters=None, limit=20):
             # Filter by type if requested
             if doc_type:
                 doc_type_lower = [t.lower() for t in doc_type]
-                match = any(label.lower() in doc_type_lower for label in doc_meta.get("labels", []))
+                match = (doc_meta.get("type", "").lower() in doc_type_lower)
                 if not match:
                     continue
                     
