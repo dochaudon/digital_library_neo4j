@@ -36,91 +36,67 @@ _OUT_OF_SCOPE_KEYWORDS = [
 from functools import lru_cache
 
 @lru_cache(maxsize=1024)
-def is_out_of_scope(question: str) -> bool:
+def classify_query_intent(question: str) -> str:
     q = question.lower().strip()
     if not q or len(q) < 2:
-        return True
+        return "OUT_OF_SCOPE"
 
     # 1. FAST PATH (0ms): Lời chào xã giao hoặc lời cảm ơn đơn giản
     chitchat_keywords = ["chào", "hello", "hi", "cảm ơn", "cám ơn", "thank", "tạm biệt", "bye", "ok", "oke", "alo"]
     if q in chitchat_keywords or any(q == ck for ck in chitchat_keywords):
-        return False
+        return "GENERAL_ACADEMIC"
 
-    # 2. FAST PATH (0ms): Chứa từ khóa mang tính chất tra cứu tài liệu hiển nhiên
-    strong_indicators = [
-        "tài liệu", "sách", "bài báo", "luận văn", "giáo trình", 
-        "tác giả", "nhà xuất bản", "năm xuất bản", 
-        "tra cứu", "tìm", "nghiên cứu", "chủ đề", "từ khóa"
-    ]
-    if any(ind in q for ind in strong_indicators):
-        return False
-
-    # 3. LLM CLASS-BASED INTENT DETECTION
-    # Gọi Gemini để phân tích ngữ cảnh học thuật và ý định tìm kiếm
+    # 2. LLM CLASS-BASED INTENT DETECTION
     prompt = f"""Bạn là một trợ lý phân loại ý định người dùng (User Intent Classifier) cho một hệ thống Thư viện số học thuật.
-Nhiệm vụ của bạn là kiểm tra xem câu hỏi/truy vấn của người dùng có NẰM TRONG phạm vi hỗ trợ (IN_SCOPE) hay NẰM NGOÀI phạm vi hỗ trợ (OUT_OF_SCOPE) của Thư viện.
+Nhiệm vụ của bạn là phân loại câu hỏi/truy vấn của người dùng thành 1 trong 4 nhãn duy nhất: OUT_OF_SCOPE, GENERAL_ACADEMIC, LIBRARY_SEARCH, hoặc HYBRID.
 
-Yêu cầu hỗ trợ (IN_SCOPE):
-- Tìm kiếm tài liệu, giáo trình, sách, bài báo khoa học, luận văn, nghiên cứu đề tài.
-- Các chủ đề nghiên cứu khoa học, kỹ thuật, y học, kinh tế, chính trị học, công nghệ thông tin, lịch sử, xã hội học (ví dụ: "AI trong y tế", "nghiên cứu WHO về ung thư", "phân tích chính trị học", "machine learning weather prediction").
-- Hỏi đáp học thuật, giải thích khái niệm khoa học, định nghĩa lý thuyết.
-- Tra cứu thông tin thư viện (tác giả, năm xuất bản, nhà xuất bản).
-- Các câu chào hỏi hoặc giao tiếp lịch sự cơ bản (ví dụ: "chào bạn", "hello").
+Quy tắc phân loại:
+1. OUT_OF_SCOPE:
+   - Câu hỏi đời sống thường nhật không mang tính nghiên cứu/học thuật (thời tiết, giá vàng).
+   - Giải trí, thể thao, bóng đá, showbiz, đời tư nghệ sĩ, nấu ăn, du lịch.
 
-Yêu cầu không hỗ trợ (OUT_OF_SCOPE):
-- Câu hỏi đời sống thường nhật không mang tính nghiên cứu/học thuật (ví dụ: "thời tiết hôm nay thế nào", "giá vàng hôm nay").
-- Giải trí thường nhật, kết quả thi đấu thể thao, bóng đá trực tiếp, showbiz, đời tư nghệ sĩ (ví dụ: "kết quả bóng đá ngoại hạng Anh", "ca sĩ Sơn Tùng").
-- Công thức nấu ăn thường ngày, du lịch tự phát (ví dụ: "cách nấu canh chua", "địa điểm du lịch hè").
-- Tin tức cập nhật trực tiếp hoặc biến động tài chính ngắn hạn (ví dụ: "giá bitcoin hiện tại", "tin tức thời sự nóng").
+2. GENERAL_ACADEMIC:
+   - Hỏi đáp học thuật, giải thích khái niệm khoa học, định nghĩa lý thuyết, công thức toán học (ví dụ: "Python là gì?", "Thuật toán DFS hoạt động thế nào?", "Đạo hàm là gì?").
+   - Hỏi đáp về các nhân vật lịch sử, danh nhân văn hóa, sự kiện lịch sử (ví dụ: "Napoléon là ai?").
+   - Các câu giao tiếp lịch sự cơ bản (ví dụ: "chào bạn", "hello").
+   *Lưu ý: Nếu câu hỏi KHÔNG nhắc đến chữ sách, tài liệu, bài báo, luận văn... thì xếp vào nhóm này.
+
+3. LIBRARY_SEARCH:
+   - Truy vấn tìm kiếm tài liệu thuần túy trong thư viện (ví dụ: "Tìm sách về AI", "Cho tôi luận văn về Blockchain", "Có sách nào của tác giả Nguyễn Văn A không?").
+   - Tra cứu metadata (năm xuất bản, tác giả, nhà xuất bản).
+
+4. HYBRID:
+   - Câu hỏi vừa yêu cầu giải thích kiến thức học thuật, vừa yêu cầu tìm/gợi ý tài liệu (ví dụ: "Giải thích Machine Learning và cho tôi tài liệu liên quan", "Transformer là gì, có sách nào nói về nó không?").
 
 Hãy phân loại câu hỏi sau của người dùng:
 "{question}"
 
-Chỉ trả về duy nhất từ "IN_SCOPE" hoặc "OUT_OF_SCOPE", tuyệt đối không viết thêm lời giải thích hay ký tự nào khác."""
+Chỉ trả về đúng 1 trong 4 nhãn (OUT_OF_SCOPE, GENERAL_ACADEMIC, LIBRARY_SEARCH, HYBRID), tuyệt đối không viết thêm lời giải thích."""
 
     try:
         response_text = call_gemini(prompt)
         if response_text:
             classification = response_text.strip().upper()
-            if "OUT_OF_SCOPE" in classification:
-                print(f"[Guardrail] LLM classified query '{question}' as OUT_OF_SCOPE")
-                return True
-            else:
-                print(f"[Guardrail] LLM classified query '{question}' as IN_SCOPE")
-                return False
+            for label in ["OUT_OF_SCOPE", "GENERAL_ACADEMIC", "LIBRARY_SEARCH", "HYBRID"]:
+                if label in classification:
+                    print(f"[Guardrail] LLM classified query '{question}' as {label}")
+                    return label
     except Exception as e:
         print(f"[Guardrail] LLM check failed: {e}. Falling back to smart heuristic.")
         
-    # 4. FALLBACK: Nếu gọi LLM lỗi, fallback về heuristic thông minh (tránh chặn nhầm)
-    academic_concepts = [
-        "sách", "luận văn", "bài báo", "giáo trình", "nghiên cứu", "tài liệu",
-        "tác giả", "nhà xuất bản", "năm xuất bản", "chủ đề", "từ khóa",
-        "trường", "đại học", "học viện", "thư viện", "tra cứu", "tìm",
-        "cntt", "công nghệ", "kinh tế", "toán", "vật lý", "hóa học", "sinh học",
-        "cơ khí", "xây dựng", "môi trường", "ngôn ngữ", "triết học", "chính trị học",
-        "ai", "trí tuệ nhân tạo", "machine learning", "deep learning", "data science",
-        "blockchain", "iot", "cloud", "security", "hệ thống", "phát triển",
-        "tóm tắt", "nội dung", "giải thích", "khái niệm", "định nghĩa",
-        "nuôi trồng", "thủy sản", "nông nghiệp", "y học", "pháp luật",
-        "lịch sử", "địa lý", "văn học", "khoa học", "kỹ thuật"
-    ]
-    if any(kw in q for kw in academic_concepts):
-        return False
-
-    q_clean = q
-    q_clean = q_clean.replace("thuốc lá", "")
-    q_clean = q_clean.replace("đời sống", "")
-    
+    # 4. FALLBACK: Nếu gọi LLM lỗi, fallback về HYBRID để đảm bảo không miss case
     for kw in _OUT_OF_SCOPE_KEYWORDS:
-        if kw in q_clean:
-            return True
-            
-    return False
+        if kw in q:
+            return "OUT_OF_SCOPE"
+    return "HYBRID"
+
+def is_out_of_scope(question: str) -> bool:
+    """Tương thích ngược: Kiểm tra xem có bị out of scope không."""
+    return classify_query_intent(question) == "OUT_OF_SCOPE"
 
 def is_academic_intent(question: str) -> bool:
-    """Kiểm tra xem câu hỏi có thuộc phạm vi học thuật/thư viện không."""
-    # Nếu câu hỏi nằm trong phạm vi (không bị out of scope) thì mặc định có academic intent
-    return not is_out_of_scope(question)
+    """Tương thích ngược: Kiểm tra xem có thuộc học thuật không."""
+    return classify_query_intent(question) != "OUT_OF_SCOPE"
 
 
 
@@ -216,19 +192,19 @@ NGUYÊN TẮC TRẢ LỜI (ACADEMIC RAG):
      - **Giải thích/Trả lời**: Nội dung kiến thức hoặc câu trả lời trực tiếp.
      - **Tài liệu chính**: Liệt kê từ 1 đến 5 tài liệu Local (nội bộ) phù hợp nhất.
      - **Tài liệu liên quan**: Liệt kê từ 1 đến 3 tài liệu bổ trợ (ưu tiên từ External References).
-3. LOGIC CHỌN TÀI LIỆU:
-   - Bạn PHẢI đảm bảo phần "Tài liệu chính" có từ 1-5 tài liệu nội bộ nếu tìm thấy.
-   - Bạn PHẢI đảm bảo phần "Tài liệu liên quan" có từ 1-3 tài liệu bên ngoài (External) hoặc tài liệu nội bộ bổ trợ.
+3. LOGIC CHỌN TÀI LIỆU VÀ KIẾN THỨC:
+   - Nếu Context có tài liệu liên quan, hãy ưu tiên sử dụng và trích dẫn chúng.
+   - NẾU Context KHÔNG CÓ tài liệu liên quan hoặc KHÔNG ĐỦ THÔNG TIN, nhưng câu hỏi mang tính học thuật (như giải thích khái niệm, công thức toán học, nhân vật lịch sử, v.v.), BẠN ĐƯỢC PHÉP SỬ DỤNG KIẾN THỨC SẴN CÓ CỦA MÌNH (General Knowledge) để giảng giải và trả lời chi tiết cho người dùng.
+   - Bạn PHẢI đảm bảo phần "Tài liệu chính" có từ 1-5 tài liệu nội bộ (nếu tìm thấy trong Context).
+   - Bạn PHẢI đảm bảo phần "Tài liệu liên quan" có từ 1-3 tài liệu bên ngoài (nếu tìm thấy trong Context).
 4. ĐỘ LIÊN QUAN (QUAN TRỌNG): 
-   - Chỉ sử dụng các tài liệu liên quan TRỰC TIẾP đến chủ đề người dùng hỏi.
-   - Nếu tài liệu trong context không liên quan, hãy bỏ qua chúng hoàn toàn.
-   - Luôn cố gắng cung cấp ít nhất 1 tài liệu bên ngoài nếu có trong context để mở rộng góc nhìn.
+   - Chỉ sử dụng các tài liệu trong Context nếu chúng thực sự liên quan.
+   - Nếu tài liệu trong Context không liên quan, hãy bỏ qua chúng hoàn toàn và chỉ dùng kiến thức của bạn để trả lời phần "Giải thích/Trả lời".
 5. TRÍCH DẪN & LIÊN KẾT (BẮT BUỘC):
    - Khi nhắc đến tài liệu Local, BẮT BUỘC cung cấp link ở dạng: [Tên tài liệu](/document/ID).
    - Khi nhắc đến tài liệu External, BẮT BUỘC cung cấp link URL ở dạng: [Tên tài liệu](URL).
-   - Tuyệt đối không bịa đặt tên sách hoặc link URL không có trong context.
-   - Mỗi tài liệu bạn đề cử PHẢI đi kèm với một đường link tương ứng.
-6. PHONG CÁCH: Trả lời bằng Tiếng Việt, học thuật, chuyên nghiệp.
+   - Tuyệt đối KHÔNG BỊA ĐẶT tên sách, tài liệu, tác giả hoặc link URL không có trong Context. Nếu dùng kiến thức tự thân, không được bịa ra nguồn tài liệu.
+6. PHONG CÁCH: Trả lời bằng Tiếng Việt, học thuật, chuyên nghiệp, rõ ràng và dễ hiểu.
 """
 
 
@@ -242,6 +218,25 @@ NGUYÊN TẮC TRẢ LỜI (ACADEMIC RAG):
     prompt_parts.append(f"\nCÂU HỎI HIỆN TẠI: {question}")
     prompt_parts.append("\nTRẢ LỜI (Grounded Academic Response):")
 
+    return "\n".join(prompt_parts)
+
+def build_general_knowledge_prompt(question: str, history: list = None) -> str:
+    """Xây dựng prompt cho câu hỏi học thuật chung (Không dùng Neo4j Context)."""
+    history_text = build_history_text(history or [])
+    
+    system_prompt = """Bạn là trợ lý học thuật chuyên sâu (Hybrid Academic Assistant) của thư viện số.
+
+NGUYÊN TẮC TRẢ LỜI (GENERAL ACADEMIC MODE):
+1. NGỮ CẢNH: Người dùng đang hỏi một câu hỏi mang tính học thuật tổng quát (giải thích khái niệm, lý thuyết, thuật toán, danh nhân lịch sử, toán học...).
+2. NHIỆM VỤ: Hãy sử dụng toàn bộ kiến thức nội tại (Pretrained Knowledge) của bạn để trả lời một cách chi tiết, dễ hiểu, và chính xác nhất. Không cần xin lỗi vì thiếu tài liệu.
+3. PHONG CÁCH: Trả lời bằng Tiếng Việt, văn phong học thuật, chuyên nghiệp, rõ ràng. Có thể dùng markdown để định dạng (in đậm, danh sách, khối code) cho dễ đọc.
+"""
+    prompt_parts = [system_prompt]
+    if history_text:
+        prompt_parts.append(f"\nLỊCH SỬ HỘI THOẠI GẦN ĐÂY:\n{history_text}\n---")
+
+    prompt_parts.append(f"\nCÂU HỎI HIỆN TẠI: {question}")
+    prompt_parts.append("\nTRẢ LỜI (General Academic Response):")
     return "\n".join(prompt_parts)
 
 

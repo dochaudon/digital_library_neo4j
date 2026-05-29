@@ -16,10 +16,11 @@ from services.search_service import search_documents
 from services.llm_service import (
     call_gemini,
     build_rag_prompt,
-    is_out_of_scope,
+    classify_query_intent,
     is_academic_intent,
     get_out_of_scope_response,
-    build_context_from_docs
+    build_context_from_docs,
+    build_general_knowledge_prompt
 )
 from services.external_search_service import get_external_academic_papers
 
@@ -45,6 +46,11 @@ def detect_intent(question):
         return "publisher"
     if any(x in q for x in ["năm", "năm nào", "vào năm"]):
         return "year"
+        
+    # Phân biệt tìm sách theo chủ đề vs hỏi chủ đề của một cuốn sách cụ thể
+    if any(x in q for x in ["sách có chủ đề", "sách chủ đề", "tài liệu chủ đề", "sách về chủ đề", "tài liệu về chủ đề", "sách thuộc chủ đề", "sách liên quan đến chủ đề"]):
+        return "search"
+        
     if any(x in q for x in ["chủ đề", "lĩnh vực", "về chủ đề", "về lĩnh vực"]):
         return "subject"
     if any(x in q for x in ["trường", "đại học", "học viện"]):
@@ -188,6 +194,30 @@ def get_qa_response(question, history=None, filters=None):
 def _get_qa_response_impl(question, history=None, filters=None):
     filters = filters or {}
     history = history or []
+    
+    # 1. Classify Main Intent
+    main_intent = classify_query_intent(question)
+    
+    if DEBUG_QA:
+        safe_print(f"[QA DEBUG] Question: {question} | Main Intent: {main_intent}")
+        
+    if main_intent == "OUT_OF_SCOPE":
+        return {"answer": get_out_of_scope_response(), "intent": "out_of_scope", "documents": []}
+        
+    if main_intent == "GENERAL_ACADEMIC":
+        prompt = build_general_knowledge_prompt(question, history)
+        answer = call_gemini(prompt) or "Xin lỗi, mình không có thông tin về vấn đề này."
+        return {
+            "answer": answer,
+            "intent": "general_academic",
+            "local_documents": [],
+            "external_documents": [],
+            "documents": [],
+            "main_subject": None,
+            "related_subjects": []
+        }
+
+    # 2. For LIBRARY_SEARCH and HYBRID
     intent = detect_intent(question)
     title = extract_title(question) or get_title_from_history(history)
 
@@ -204,10 +234,7 @@ def _get_qa_response_impl(question, history=None, filters=None):
         metadata_context += f"Related Subjects in Library Knowledge Graph (traversed via RELATED_TO): {', '.join(related_subjects)}\n"
 
     if DEBUG_QA:
-        safe_print(f"[QA DEBUG] Question: {question} | Intent: {intent} | Title: {title}")
-
-    if is_out_of_scope(question) or not is_academic_intent(question):
-        return {"answer": get_out_of_scope_response(), "intent": "out_of_scope", "documents": []}
+        safe_print(f"[QA DEBUG] Question: {question} | Sub-Intent: {intent} | Title: {title}")
 
     # BRANCH A: Factual (Early Return)
     if intent == "author":
@@ -282,13 +309,38 @@ def _get_qa_response_impl(question, history=None, filters=None):
         else:
             res = get_subject_by_title(title)
             if res and res[0].get("subjects"):
-                ans = build_answer(f'Tài liệu **"{res[0]["title"]}"** thuộc các chủ đề: **{", ".join(res[0]["subjects"])}**.')
+                doc_subjects = res[0]["subjects"]
+                ans_lines = [f'Tài liệu **"{res[0]["title"]}"** thuộc các chủ đề: **{", ".join(doc_subjects)}**.\n']
+                
+                all_docs = res[:1]
+                related_subjs_for_doc = []
+                if doc_subjects:
+                    # Find related subjects on the graph based on the book's subjects
+                    subj_exp = expand_subject_relationship(doc_subjects[0])
+                    if subj_exp:
+                        related_subjs_for_doc = subj_exp.get("related_subjects", [])
+                        
+                    p_docs, s_docs = get_docs_by_subject_with_related(
+                        main_subjects=doc_subjects,
+                        related_subjects=related_subjs_for_doc,
+                        limit=5
+                    )
+                    
+                    # exclude the original doc
+                    related_docs = [d for d in p_docs + s_docs if d["id"] != res[0]["id"]]
+                    
+                    if related_docs:
+                        ans_lines.append("**Các tài liệu cùng chủ đề hoặc liên quan:**")
+                        for d in related_docs[:4]:
+                            ans_lines.append(f'- **[{d["title"]}](/document/{d["id"]})**')
+                        all_docs.extend(related_docs)
+                
                 return {
-                    "answer": ans,
+                    "answer": '\n'.join(ans_lines),
                     "intent": intent,
-                    "documents": res[:1],
-                    "main_subject": main_subject,
-                    "related_subjects": related_subjects
+                    "documents": all_docs,
+                    "main_subject": doc_subjects[0] if doc_subjects else main_subject,
+                    "related_subjects": related_subjs_for_doc if related_subjs_for_doc else related_subjects
                 }
 
     if intent == "university":
@@ -340,18 +392,28 @@ def _get_qa_response_impl(question, history=None, filters=None):
         }
 
     # BRANCH B: Search/Recommendation
-    # Nếu đã có subject filter cứng, dùng query rỗng để ưu tiên graph search chính xác
     search_query = "" if filters.get("subject") else question
     results = search_documents(search_query, filters, 10)
     top_score = results[0].get("score", 0) if results else 0
     
     external_results = []
-    # ALWAYS trigger for search/recommendation to fulfill requirements
     if intent in ["search", "similar", "keyword"] or len(results) < 5 or top_score < 0.5:
         external_results = get_external_academic_papers(question, limit=5)
 
-    prompt = build_rag_prompt(question, local_docs=results[:8], external_docs=external_results, history=history, data=metadata_context)
-    answer = call_gemini(prompt) or format_smart_answer(results + external_results, intent, query=question)
+    all_found_docs = results + external_results
+    
+    # FALLBACK LOGIC
+    if not all_found_docs:
+        print("[QA Fallback] No documents found for search/hybrid intent. Falling back to General Academic Mode.")
+        prompt = build_general_knowledge_prompt(question, history)
+        answer = call_gemini(prompt) or format_smart_answer([], intent, query=question)
+    else:
+        if main_intent == "LIBRARY_SEARCH" and intent not in ["summary"]:
+            # Chỉ hiển thị danh sách sách, không bắt Gemini giải thích dài dòng
+            answer = format_smart_answer(all_found_docs, intent, query=question)
+        else: # HYBRID
+            prompt = build_rag_prompt(question, local_docs=results[:8], external_docs=external_results, history=history, data=metadata_context)
+            answer = call_gemini(prompt) or format_smart_answer(all_found_docs, intent, query=question)
 
     results = apply_highlights(results, question)
     external_results = apply_highlights(external_results, question)
@@ -361,7 +423,7 @@ def _get_qa_response_impl(question, history=None, filters=None):
 
     return {
         "answer": answer,
-        "intent": intent,
+        "intent": main_intent,
         "local_documents": final_local,
         "external_documents": final_external,
         "documents": final_local + final_external,

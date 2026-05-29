@@ -26,17 +26,16 @@ def allowed(filename, allowed_set):
 
 import uuid
 
-def save_upload(file, folder, allowed_set):
+from services.supabase_service import upload_file_to_supabase
+
+def save_upload(file, bucket_name, allowed_set):
     if not file or file.filename == "":
         return None
     if not allowed(file.filename, allowed_set):
         return None
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    os.makedirs(folder, exist_ok=True)
-    path = os.path.join(folder, filename)
-    file.save(path)
-    return "/" + path.replace("\\", "/")
+    
+    url = upload_file_to_supabase(file, bucket_name)
+    return url
 
 
 def get_next_doc_id():
@@ -141,8 +140,8 @@ def safe_json_loads(val, default=None):
 def create():
     data = request.form.to_dict()
 
-    image_url = save_upload(request.files.get("image_file"), UPLOAD_IMAGE_DIR, ALLOWED_IMAGES)
-    file_url  = save_upload(request.files.get("doc_file"),   UPLOAD_FILE_DIR,  ALLOWED_FILES)
+    image_url = save_upload(request.files.get("image_file"), "image", ALLOWED_IMAGES)
+    file_url  = save_upload(request.files.get("doc_file"),   "document",  ALLOWED_FILES)
 
     if image_url:
         data["image_url"] = image_url
@@ -174,8 +173,8 @@ def update(id):
     data = request.form.to_dict()
     page = request.args.get("page", 1)
 
-    image_url = save_upload(request.files.get("image_file"), UPLOAD_IMAGE_DIR, ALLOWED_IMAGES)
-    file_url  = save_upload(request.files.get("doc_file"),   UPLOAD_FILE_DIR,  ALLOWED_FILES)
+    image_url = save_upload(request.files.get("image_file"), "image", ALLOWED_IMAGES)
+    file_url  = save_upload(request.files.get("doc_file"),   "document",  ALLOWED_FILES)
 
     if image_url:
         data["image_url"] = image_url

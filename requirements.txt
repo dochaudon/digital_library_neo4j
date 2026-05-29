@@ -37,3 +37,4 @@ Pillow==12.0.0
 
 Werkzeug==3.1.3
 Jinja2==3.1.6
+supabase
