@@ -84,9 +84,9 @@ TITLE_QA_INTENTS = [
 # =========================
 TYPE_CASE = """
 CASE
-    WHEN node.type = 'book' THEN 'Book'
-    WHEN node.type = 'article' THEN 'Article'
-    WHEN node.type = 'thesis' THEN 'Thesis'
+    WHEN toLower(node.type) = 'book' THEN 'Book'
+    WHEN toLower(node.type) = 'article' THEN 'Article'
+    WHEN toLower(node.type) = 'thesis' THEN 'Thesis'
     ELSE coalesce(node.type, "Document")
 END
 """
@@ -467,9 +467,10 @@ def search_graph(filters, query="", limit=20):
         d.year AS year,
         d.image_url AS image_url,
         CASE
-            WHEN d.type = 'book' THEN 'Book'
-            WHEN d.type = 'article' THEN 'Article'
-            WHEN d.type = 'thesis' THEN 'Thesis'
+            WHEN toLower(d.type) = 'book' THEN 'Book'
+            WHEN toLower(d.type) = 'article' THEN 'Article'
+            WHEN toLower(d.type) = 'thesis' THEN 'Thesis'
+            ELSE coalesce(d.type, 'Document')
         END AS type,
         authors,
         subjects,

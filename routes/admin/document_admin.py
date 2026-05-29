@@ -161,8 +161,10 @@ def create():
         create_document_service(data)
         return redirect(url_for("document_admin.list_page"))
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print("CREATE ERROR:", e)
-        return "Create failed", 500
+        return f"Create failed: {str(e)}", 500
 
 
 # =========================
@@ -193,8 +195,10 @@ def update(id):
         update_document_service(id, data)
         return redirect(url_for("document_admin.list_page", page=page))
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print("UPDATE ERROR:", e)
-        return "Update failed", 500
+        return f"Update failed: {str(e)}", 500
 
 
 

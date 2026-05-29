@@ -25,7 +25,7 @@ def get_graph_data(document_id, include_hidden=False):
 
     RETURN
         d,
-        labels(d) AS labels,
+        d.type AS doc_type,
         collect(DISTINCT a) AS authors,
         collect(DISTINCT s) AS subjects,
         collect(DISTINCT k) AS keywords,
@@ -34,7 +34,7 @@ def get_graph_data(document_id, include_hidden=False):
         collect(DISTINCT j) AS journals,
         collect(DISTINCT c) AS categories,
         collect(DISTINCT l) AS languages,
-        collect(DISTINCT {node: rd, labels: labels(rd)}) AS related
+        collect(DISTINCT {node: rd, doc_type: rd.type}) AS related
     """
 
     result = neo4j_conn.query(query, {"id": document_id, "include_hidden": include_hidden})
@@ -52,17 +52,8 @@ def get_graph_data(document_id, include_hidden=False):
     if not include_hidden and d.get("status") == "hidden":
         return {"nodes": [], "edges": []}
         
-    labels = record.get("labels") or []
-
-    # =========================
-    # DETECT DOCUMENT TYPE
-    # =========================
-    doc_group = "book"
-
-    if "Article" in labels:
-        doc_group = "article"
-    elif "Thesis" in labels:
-        doc_group = "thesis"
+    doc_type = record.get("doc_type") or "Book"
+    doc_group = doc_type.lower()
 
     doc_id = d.get("id")
     doc_title = d.get("title") or "Unknown"
@@ -133,12 +124,8 @@ def get_graph_data(document_id, include_hidden=False):
         if not node_id:
             continue
             
-        node_labels = item.get("labels") or []
-        doc_group = "book"
-        if "Article" in node_labels:
-            doc_group = "article"
-        elif "Thesis" in node_labels:
-            doc_group = "thesis"
+        doc_type = item.get("doc_type") or "Book"
+        doc_group = doc_type.lower()
             
         name = node.get("title") or "Unknown"
         
@@ -190,7 +177,7 @@ def get_multi_document_graph_service(document_ids, include_hidden=False):
 
     RETURN
         d,
-        labels(d) AS labels,
+        d.type AS doc_type,
         collect(DISTINCT a) AS authors,
         collect(DISTINCT s) AS subjects,
         collect(DISTINCT k) AS keywords,
@@ -199,7 +186,7 @@ def get_multi_document_graph_service(document_ids, include_hidden=False):
         collect(DISTINCT j) AS journals,
         collect(DISTINCT c) AS categories,
         collect(DISTINCT l) AS languages,
-        collect(DISTINCT {node: rd, labels: labels(rd)}) AS related
+        collect(DISTINCT {node: rd, doc_type: rd.type}) AS related
     """
 
     result = neo4j_conn.query(query, {"doc_ids": document_ids, "include_hidden": include_hidden})
@@ -236,12 +223,8 @@ def get_multi_document_graph_service(document_ids, include_hidden=False):
         if not include_hidden and d.get("status") == "hidden":
             continue
             
-        labels = record.get("labels") or []
-        doc_group = "book"
-        if "Article" in labels:
-            doc_group = "article"
-        elif "Thesis" in labels:
-            doc_group = "thesis"
+        doc_type = record.get("doc_type") or "Book"
+        doc_group = doc_type.lower()
 
         doc_id = d.get("id")
         doc_title = d.get("title") or "Unknown"
@@ -274,12 +257,8 @@ def get_multi_document_graph_service(document_ids, include_hidden=False):
             node_id = node.get("id")
             if not node_id: continue
                 
-            node_labels = item.get("labels") or []
-            rd_group = "book"
-            if "Article" in node_labels:
-                rd_group = "article"
-            elif "Thesis" in node_labels:
-                rd_group = "thesis"
+            rd_type = item.get("doc_type") or "Book"
+            rd_group = rd_type.lower()
                 
             name = node.get("title") or "Unknown"
             add_node(node_id, name, rd_group)
